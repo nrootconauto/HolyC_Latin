@@ -947,9 +947,9 @@ DumpSentence("non","edam","vivo","sed","ut","vivam","edo");*/
 //InteractView("philosophia est vitae magistra");
 //DumpSentences("assentatio  es [malus vitium]");
 //DumpSentences("video hominem abire");
-InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
+InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
 //"si",
-//DumpSentences("Omne qui ens audiant nomen.");
+//DumpSentences("[Omne qui] ens audiant nomen.");
 //DumpSentences("puella nominis  nominis es");
 
 // Nroot's Doctrine 1
@@ -974,4 +974,3 @@ InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi]
 //InteractView("tunc Herodes videns");
 //DumpSentences("[[tunc Herodes videns] quoniam [inlusus esset a magis]] et [iratus est valde]");
 // et mittens occidit omnes pueros qui erant in Bethleem et in omnibus finibus eius a bimatu et infra secundum tempus quod exquisierat a magis");
-
