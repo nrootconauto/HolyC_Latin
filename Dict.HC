@@ -476,7 +476,7 @@ Bool IsFormOf(U8 *who,U8 *who2) {
   }
   return ret;
 }
-extern U8 *GetTranslation(U8*,Bool recurse=FALSE);
+extern U8 *GetTranslation(U8*,Bool recurse=FALSE);
 U8 *SmallDefinition(U8 *def) {
   if(!def) return def;
   U8 buf[STR_LEN],*bptr=buf,*want;

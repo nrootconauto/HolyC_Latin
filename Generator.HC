@@ -1,5 +1,5 @@
 #define GENF_ALLOW_NEXT 1
-#define GENF_DONE 2 //When the generator has exited
+#define GENF_DONE 2 //When the generator has exited
 #define GENF_DATA_READY 4
 class CGenerator {
   U8 (*fptr)(I64);
@@ -52,6 +52,7 @@ CGenerator *GeneratorNew(U8 (*fptr)(I64),I64 data) {
   CGenerator *gen=CAlloc(sizeof CGenerator);
   gen->fptr=fptr;
   gen->input_data=data;
+  gen->timeout_tS=tS+2.;
   gen->maximum=0x10000;
   gen->task=Spawn(&GeneratorTask,gen,"Generator",c,Fs);
   return gen;

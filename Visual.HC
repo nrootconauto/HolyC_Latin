@@ -630,7 +630,7 @@ U0 InteractViewDrawIt(CTask *t,CDC *dc) {
     while(toks[tcnt])
       tcnt++;
     ast=ASTClone(ast);
-    dc2=DrawSentence(ast,tcnt,toks,,,,x=ms.pos.x-t->pix_left,y=ms.pos.y-t->pix_top,&word);
+    dc2=DrawSentence(ast,tcnt,toks,,,,x=ms.pos.x-t->pix_left-t->scroll_x,y=ms.pos.y-t->pix_top-t->scroll_y,&word);
     GrBlot(dc,0,0,dc2);
     dc->color=RED;
     if(word&&word->str) {
@@ -947,7 +947,7 @@ DumpSentence("non","edam","vivo","sed","ut","vivam","edo");*/
 //InteractView("philosophia est vitae magistra");
 //DumpSentences("assentatio  es [malus vitium]");
 //DumpSentences("video hominem abire");
-InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
+InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
 //"si",
 //DumpSentences("[Omne qui] ens audiant nomen.");
 //DumpSentences("puella nominis  nominis es");
