@@ -1,5 +1,5 @@
 #define GENF_ALLOW_NEXT 1
-#define GENF_DONE 2 //When the generator has exited
+#define GENF_DONE 2 //When the generator has exited
 #define GENF_DATA_READY 4
 class CGenerator {
   U8 (*fptr)(I64);

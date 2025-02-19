@@ -252,28 +252,48 @@ U0 JsonDel(CJson *j) {
   }
   Free(j);
 }
-U0 DumpJson(CJson *j) {
+U0 DumpJson(U8 *d=NULL,CJson *j) {
   I64 bucket;
   CHashGeneric *g;
+  Bool first=TRUE;
   switch(j->type) {
     case J_STR:
-      "\"%Q\"",j->str;
+      CatPrint(d,"\"%Q\"",j->str);
       break;
     case J_NUM:
-      "%n",j->num;
+      CatPrint(d,"%n",j->num);
       break;
     case J_NODE:
     case J_ARRAY:
-      "{$$ID,2$$\n";
+      CatPrint(d,"{");
       for(bucket=0;bucket<=j->hash_table->mask;bucket++)
         for(g=j->hash_table->body[bucket];g;g=g->next) {
-	  "%s:",g->str;
-	  DumpJson(g->user_data0);
-	  ",\n";
+	  if(!first) CatPrint(d,",");
+	  CatPrint(d,"%s:",g->str);
+	  DumpJson(d,g->user_data0);
+	  first=FALSE;
         }
-      "$$ID,-2$$\n}";
+      CatPrint(d,"}");
   }
 }
+CJson *TrimJson(CJson *j,...) {
+  I64 i;
+  I64 bucket;
+  CHashGeneric *g;
+  if(j->type!=J_NODE) return j;
+again:;
+  for(bucket=0;bucket<=j->hash_table->mask;bucket++)
+    for(g=j->hash_table->body[bucket];g;g=g->next) {
+      for(i=0;i!=argc;i++) {
+        if(!StrCmp(argv[i],g->str))
+	  goto skip;
+      }
+      HashRemDel(g,j->hash_table);
+      goto again;
+skip:;
+    }  
+   return j;
+} 
 I64 GetWordPtr(I64 *max,CFile *file,U8*str,I64 ptr=0,Bool *new=NULL) {
   if(new) *new=FALSE;
   if(!*str) return ptr;
@@ -289,7 +309,7 @@ I64 GetWordPtr(I64 *max,CFile *file,U8*str,I64 ptr=0,Bool *new=NULL) {
     if(new) *new=TRUE;
     return GetWordPtr(max,file,str+1,ptr);
   }
-if(ptr>*max) throw('trie');
+  if(ptr>*max) throw('trie');
   return GetWordPtr(max,file,str+1,dummy.body[idx],new);
 }
 U0 MakeIndex(U8 *outname,U8 *in_name) {
@@ -297,7 +317,7 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
   U8 *optr=FileRead(in_name),*fptr;
   Bool new;
   CFile *file;
-  CHeapCtrl *cc;
+  CHeapCtrl *oc=Fs->data_heap;
   CHashGeneric *g;
   CJson *j,*str;
   Del(outname);
@@ -310,8 +330,9 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
     fptr=SkipWhitespace(fptr);
     off=fptr-optr;
     if(!*fptr) break;
+    Fs->data_heap=HeapCtrlInit(,NULL,0);
     j=ParseJson(fptr,&fptr);
-PrintI("j",j);
+    j=TrimJson(j,"senses","glosses","forms","tags","pos","word");
     if(j&&j->type==J_NODE) {
       g=HashFind("word",j->hash_table,-1);
       str=g->user_data0;
@@ -335,15 +356,17 @@ skip:;
       }
     }
     JsonDel(j);
+    HeapCtrlDel(Fs->data_heap);
+    Fs->data_heap=oc;
   } while(TRUE);
   file->de.size=sz<<BLK_SIZE_BITS;
   FClose(file); //Flush to disk to avoid long ram buffering
   Free(optr);
 }
-if(!FileFind(__DIR__"INDEX.TRIE",,0)) {
+if(!FileFind(__DIR__"/INDEX.TRIE",,0)) {
   if(FileFind(__DIR__"/Latin.json.Z")) {
     PopUpOk("I will generate the HolyC dictionary files(Grab a beer).\n  This may take a few seconds\n");
-    Copy(__DIR__"/Latin.json.Z",__DIR__"/Latin.json");
+    Copy(__DIR__"/Latin.json.Z",__DIR__"/Latin.json");
     MakeIndex(__DIR__"/INDEX.TRIE",__DIR__"/Latin.json");
   }
 }
@@ -453,7 +476,7 @@ Bool IsFormOf(U8 *who,U8 *who2) {
   }
   return ret;
 }
-extern U8 *GetTranslation(U8*,Bool recurse=FALSE);
+extern U8 *GetTranslation(U8*,Bool recurse=FALSE);
 U8 *SmallDefinition(U8 *def) {
   if(!def) return def;
   U8 buf[STR_LEN],*bptr=buf,*want;

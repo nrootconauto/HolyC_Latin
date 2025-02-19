@@ -10,3 +10,5 @@
   Visit https://kaikki.org/dictionary/Latin/
 
    Download it here: https://kaikki.org/dictionary/Latin/kaikki.org-dictionary-Latin.jsonl and rename it to Latin.json in your repo
+
+  I also includes a ZIP'ed version of it in `Latin.json.zip`. Ill let you unzip it,I dont wnat this project to be subject to link rot

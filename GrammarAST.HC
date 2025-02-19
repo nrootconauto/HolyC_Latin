@@ -82,7 +82,7 @@ extern U0 DumpAST(AST*a);
 extern ASTSet *ASTSetClone(ASTSet *orig);
 AST *ASTClone(AST *orig) {
   static I64 cnt=0;
-  AST *ret=CAlloc(sizeof(AST),mem_task);
+  AST *ret=CAlloc(sizeof(AST),mem_task);
   MemCpy(ret,orig,sizeof AST);
   ret->nomitive=ASTSetClone(ret->nomitive);
   ret->accusative=ASTSetClone(ret->accusative);
