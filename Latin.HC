@@ -1192,7 +1192,7 @@ U0 InitDict() {
   TrieAdd("me",ABLATIVE|PRONOUN|_1P|SINGULAR,"my");
   TrieAdd("nobis",ABLATIVE|PRONOUN|_1P|PLURAL,"we/us");
 //Pronoubns 2nd persionb
-  TrieAdd("tu",NOMITIVE|PRONOUN|_2P|SINGULAR,"you");
+  TrieAdd("tu",NOMITIVE|PRONOUN|_2P|SINGULAR,"you");
   TrieAdd("vos",NOMITIVE|PRONOUN|_2P|PLURAL,"yours");
   TrieAdd("tui",GENITIVE|PRONOUN|_2P|SINGULAR,"your");
   TrieAdd("vestrum",GENITIVE|PRONOUN|_2P|PLURAL,"yours");
