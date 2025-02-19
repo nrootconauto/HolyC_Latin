@@ -1,0 +1,405 @@
+//I must deposit a turd to the porcelain throne
+#include "Latin.HC";
+#include "Generator.HC";
+#define AST_NOUN 1
+#define AST_CONJUNCTION 2
+#define AST_VERB 3
+#define AST_OF 4
+#define AST_WHERE 5
+#define AST_ADJECTIVE 6
+#define AST_INFINITIVE 7
+//The boy is 5 feet tall
+#define AST_MEASURE 8
+#define AST_ADVERB 9
+//He was [eating pie]
+#define AST_INDIRECT_CLAUSE 10
+#define AST_COMPARSION 11
+#define AST_QUESTION 12
+extern class AST;
+extern class CDisplayNode;
+CTask *mem_task=Fs;
+CTask *debug_log_task=Fs;
+class ASTSet {
+  I64 cnt;
+  AST *body[0]; 
+};
+class I64Set {
+  I64 cnt;
+  I64 body[0];
+};
+Bool I64SetHasItem(I64Set*dst,I64 a) {
+  I64 i;
+  if(!dst) return FALSE;
+  for(i=0;i!=dst->cnt;i++)
+    if(dst->body[i]==a)
+      return TRUE;
+  return FALSE;
+}
+I64Set *I64SetAdd(I64Set *dst,I64 a,Bool repeats=FALSE){
+  I64Set *tmp;
+  I64 i;
+  if(!dst) {
+    dst=CAlloc(sizeof(ASTSet)+8,mem_task);
+    dst->cnt=1;
+    dst->body[0]=a;
+    return dst;
+  } 
+  if(!repeats)
+  for(i=0;i!=dst->cnt;i++) {
+    if(dst->body[i]==a)
+      return dst;
+  }
+  tmp=CAlloc(sizeof(I64Set)+8*(dst->cnt+1),mem_task);
+  tmp->cnt=dst->cnt+1;
+  MemCpy(tmp->body,dst->body,dst->cnt*8);
+  tmp->body[tmp->cnt-1]=a;
+  Free(dst);
+  return tmp;
+}
+class AST {
+  F64 prob,final_prob;
+  I64 raw_type,act_as_type;
+  I64 flags; //From Latin.HC
+  ASTSet *nomitive;
+  ASTSet *accusative;
+  ASTSet *dative;
+  ASTSet *ablative;
+  ASTSet *genitive;
+  ASTSet *adjective;
+  ASTSet *preposition;
+  ASTSet *conjunction;
+  ASTSet *measurement;
+  ASTSet *adverb;
+  ASTSet *question;
+  I64Set *args; //Dont free
+  CTrie *word; //May be NULL
+  I64 word_idx;
+  CDisplayNode *disp_node;
+//Private
+  I64 end;
+};
+extern U0 DumpAST(AST*a);
+extern ASTSet *ASTSetClone(ASTSet *orig);
+AST *ASTClone(AST *orig) {
+  static I64 cnt=0;
+  AST *ret=CAlloc(sizeof(AST),mem_task);
+  MemCpy(ret,orig,sizeof AST);
+  ret->nomitive=ASTSetClone(ret->nomitive);
+  ret->accusative=ASTSetClone(ret->accusative);
+  ret->dative=ASTSetClone(ret->dative);
+  ret->ablative=ASTSetClone(ret->ablative);
+  ret->genitive=ASTSetClone(ret->genitive);
+  ret->adjective=ASTSetClone(ret->adjective);
+  ret->preposition=ASTSetClone(ret->preposition);
+  ret->conjunction=ASTSetClone(ret->conjunction);
+  ret->measurement=ASTSetClone(ret->measurement);
+  ret->adverb=ASTSetClone(ret->adverb);
+  ret->question=ASTSetClone(ret->question);
+  if(ret->args) ret->args=MAllocIdent(ret->args,mem_task);
+  return ret;
+}
+ASTSet *ASTSetClone(ASTSet *orig) {
+  if(!orig) return NULL;
+  ASTSet *ret=CAlloc(sizeof(ASTSet)+8*orig->cnt,mem_task);
+  MemCpy(ret,orig,sizeof ASTSet);
+  I64 cnt=orig->cnt;
+  while(cnt--) {
+    ret->body[cnt]=ASTClone(orig->body[cnt]);
+  }
+  return ret;
+}
+Bool I64SetHasItem(I64Set*dst,I64 a) {
+  I64 i;
+  if(!dst) return FALSE;
+  for(i=0;i!=dst->cnt;i++)
+    if(dst->body[i]==a)
+      return TRUE;
+  return FALSE;
+}
+I64Set *I64SetAdd(I64Set *dst,I64 a,Bool repeats=FALSE){
+  I64Set *tmp;
+  I64 i;
+  if(!dst) {
+    dst=CAlloc(sizeof(ASTSet)+8,mem_task);
+    dst->cnt=1;
+    dst->body[0]=a;
+    return dst;
+  } 
+  if(!repeats)
+  for(i=0;i!=dst->cnt;i++) {
+    if(dst->body[i]==a)
+      return dst;
+  }
+  tmp=CAlloc(sizeof(I64Set)+8*(dst->cnt+1),mem_task);
+  tmp->cnt=dst->cnt+1;
+  MemCpy(tmp->body,dst->body,dst->cnt*8);
+  tmp->body[tmp->cnt-1]=a;
+  Free(dst);
+  return tmp;
+}
+ASTSet *ASTSetAdd(ASTSet *dst,AST *a) {
+  if(!a) return dst;
+  ASTSet *tmp;
+  if(!dst) {
+    dst=CAlloc(sizeof(ASTSet)+8,mem_task);
+    dst->cnt=1;
+    dst->body[0]=a;
+    return dst;
+  }
+  tmp=CAlloc(sizeof(ASTSet)+8*(dst->cnt+1),mem_task);
+  tmp->cnt=dst->cnt+1;
+  MemCpy(tmp->body,dst->body,dst->cnt*8);
+  tmp->body[tmp->cnt-1]=a;
+  Free(dst);
+  return tmp;
+}
+extern U0 ASTSetDel(ASTSet *s);
+extern class CRule;
+class CGrammarState {
+  I64 woff,cnt,*en;
+  U8 *rule;
+  U8 **words;
+  Bool is_conj2; //See RuleSet
+};
+extern U0 ASTDel(AST *a);
+class CSubGenPair {
+  CGrammarState *input_data;
+  U8 *fptr;
+};
+U0 ASTDel(AST *a) {
+  if(!a) return;
+  ASTSetDel(a->nomitive);
+  ASTSetDel(a->adjective);
+  ASTSetDel(a->conjunction);
+  ASTSetDel(a->accusative);
+  ASTSetDel(a->dative);
+  ASTSetDel(a->ablative);
+  ASTSetDel(a->genitive);
+  ASTSetDel(a->preposition);
+  ASTSetDel(a->measurement);
+  ASTSetDel(a->adverb);
+  Free(a->args); //Present in other things
+  MemSet(a,0xbe,sizeof AST);
+  Free(a);
+}
+U0 ASTSetDel(ASTSet *s) {
+  if(!s) return;
+  I64 cnt=s->cnt;
+  while(cnt--)
+    ASTDel(s->body[cnt]);
+  Free(s);
+}
+
+U0 DumpASTSet(ASTSet*s) {
+  I64 i;
+  for(i=0;i!=s->cnt;i++)
+    DumpAST(s->body[i]);
+}
+U0 DumpAST(AST *a) {
+  if(!a) return;
+  AST *t;
+  DocPrint(DocPut(mem_task),"$$ID,4$$\n");
+  if(a->word)
+    DocPrint(DocPut(mem_task),"(WORD%s,%d):",a->word->str,a->word_idx);
+  switch(a->act_as_type) {
+      break;case AST_VERB: DocPrint(DocPut(mem_task),"VERB\n");
+      break;case AST_ADJECTIVE: DocPrint(DocPut(mem_task),"ADJECTIVE\n");
+      break;case AST_NOUN:DocPrint(DocPut(mem_task), "NOUN\n");
+      break;case AST_OF:DocPrint(DocPut(mem_task), "OF\n");
+      break;case AST_CONJUNCTION:DocPrint(DocPut(mem_task),"CONUJUNCTION\n");
+      break;case AST_WHERE: DocPrint(DocPut(mem_task),"WHERE\n");
+      break;case AST_INFINITIVE: DocPrint(DocPut(mem_task),"INFINITIVE\n");
+      break;case AST_ADVERB: DocPrint(DocPut(mem_task),"ADVERB\n");
+  }
+  if(a->nomitive) {
+    DocPrint(DocPut(mem_task),"NOMITIVE:\n");
+    DumpASTSet(a->nomitive);
+  }
+  if(a->accusative) {
+    DocPrint(DocPut(mem_task),"ACCUSATIVE:\n");
+    DumpASTSet(a->accusative);
+  }
+  if(a->dative) {
+    DocPrint(DocPut(mem_task),"DATIVE:\n");
+    DumpASTSet(a->dative);
+  }
+  if(a->ablative) {
+    DocPrint(DocPut(mem_task),"ABLATIVE:\n");
+    DumpASTSet(a->ablative);
+  }
+  if(a->genitive) {
+    DocPrint(DocPut(mem_task),"GENITIVE:\n");
+    DumpASTSet(a->genitive);
+  }
+  if(a->preposition) {
+    DocPrint(DocPut(mem_task),"PREPOSITION\n");
+    DumpASTSet(a->preposition);
+  }
+  if(a->question) {
+    DocPrint(DocPut(mem_task),"QUESTION\n");
+    DumpASTSet(a->question);
+  }
+  if(a->adjective) {
+    DocPrint(DocPut(mem_task),"ADJECTIVE\n");
+    DumpASTSet(a->adjective);
+  }
+  if(a->conjunction) {
+    DocPrint(DocPut(mem_task),"CONJUNCTION\n");
+    DumpASTSet(a->conjunction);
+  }
+  if(a->measurement) {
+    DocPrint(DocPut(mem_task),"MEASURE\n");
+    DumpASTSet(a->measurement);
+  }
+  if(a->adverb) {
+    DocPrint(DocPut(mem_task),"ADVERB:\n");
+    DumpASTSet(a->adverb);
+  }
+  DocPrint(DocPut(mem_task),"$$ID,-4$$\n");
+}
+class CCacheNugget:CQue {
+  U8 *fun;
+  I64 start,end,hits;
+  U8 *rule;
+  ASTSet *results;
+//Still being generated
+  Bool in_progress;
+};
+
+CQue ast_cache[128][128];
+I64 cache_cnt=0;
+U0 InitCache() {
+  cache_cnt=0;
+  I64 i,j;
+  for(i=0;i!=128;i++)
+  for(j=0;j!=128;j++)
+    QueInit(&ast_cache[i][j]);
+}
+InitCache;
+U0 FlushCache() {
+  CCacheNugget *nug,*head;
+  I64 i,j;
+  for(i=0;i!=128;i++)
+    for(j=0;j!=128;j++) {
+      head=&ast_cache[i][j];
+      for(nug=head->next;nug!=head;nug=nug->next) {
+	Free(nug->rule);
+        ASTSetDel(nug->results);
+      }
+      QueDel(head);
+    }
+  InitCache;
+}
+U0 Repeater(CGrammarState *st) {
+  AST *a;
+  CCacheNugget *nug=st->rule;
+  if(nug->in_progress)
+    return;
+  if(!nug->results) return;
+  I64 idx=nug->results->cnt;
+  while(--idx>=0) {
+    a=ASTClone(nug->results->body[idx]);
+    if(st->en) *st->en=a->end;
+    GeneratorYield(a);
+  }
+}
+CGenerator *GeneratorNewC(U8 *fptr,CGrammarState *st) {
+  CCacheNugget *nug,*least;
+  CGenerator *g;
+  AST *have;
+  Bool ran_already=FALSE;
+  ASTSet *s=NULL;
+enter:;
+  CQue *head=&ast_cache[st->woff][st->woff+st->cnt];
+  for(nug=head->next;nug!=head;nug=nug->next) {
+    if(nug->fun==fptr)
+      if(!StrCmp(nug->rule,st->rule)) {
+        nug->hits++;
+        st->rule=nug;
+        return GeneratorNew(&Repeater,st);
+      }
+  }
+  if(!ran_already) {
+    g=GeneratorNew(fptr,st);
+    g->maximum;
+    nug=CAlloc(sizeof(CCacheNugget),mem_task);
+    nug->fun=fptr;
+    nug->start=st->woff;
+    nug->end=nug->start+st->cnt;
+    nug->rule=StrNew(st->rule,mem_task);
+    nug->in_progress=TRUE;
+    while(GeneratorGet(g,&have)) {
+      have->end=*st->en;
+      s=ASTSetAdd(s,have);
+    }
+    nug->in_progress=FALSE;
+    nug->results=s;
+    ran_already=TRUE;
+//I insert "empty" caches to signifiy nothing of intrest in in the cache spot(s==NULL if empty)
+    QueIns(nug,head);
+    goto enter;
+  }
+  return GeneratorNew(NULL,NULL);
+}
+extern U0 RunRule(CGrammarState*);
+AST *ParseSentenceJoin(I64 argc,U8 **argv) {
+  FlushCache;
+  F64 stS=tS;
+  I64 i,en;
+  AST *r,*r2;
+  ASTSet *canidates=NULL;
+  CGrammarState *st=CAlloc(sizeof(CGrammarState),mem_task);
+  CGenerator *gen;
+  st->words=argv;
+  st->cnt=argc;
+  st->en=&en;
+  st->rule="Sent";
+  gen=GeneratorNew(&RunRule,st);
+  while(GeneratorGet(gen,&r)) {
+    if(en==argc)
+      canidates=ASTSetAdd(canidates,r);
+    else
+      ASTDel(r);
+  }
+  r=NULL;
+  if(canidates) {
+    r=canidates->body[0];
+    for(i=0;i<canidates->cnt;i++) {
+      r2=canidates->body[i];
+      if(r->prob<r2->prob)
+        r=r2;
+    }
+  }
+  if(r) r=ASTClone(r);
+  ASTSetDel(canidates);
+  Free(st);
+  return r;
+}
+AST *ParseSentence(...) {
+  return ParseSentenceJoin(argc,argv);
+}
+I64 ASTGetTrieWords(AST *a,CTrie **words) {
+  I64 run,max=0,i;
+  ASTSet *s;
+  if(words) words[a->word_idx]=a->word;
+  max=a->word_idx;
+  for(run=0;run<=10;run++) {
+    switch(run) {
+      break;case 0: s=a->nomitive;
+      break;case: s=a->accusative;
+      break;case: s=a->dative;
+      break;case: s=a->ablative;
+      break;case: s=a->genitive;
+      break;case: s=a->adjective;
+      break;case: s=a->preposition;
+      break;case: s=a->conjunction;
+      break;case: s=a->measurement;
+      break;case: s=a->adverb;
+      break;case: s=a->question;
+    }
+    if(s)
+      for(i=0;i!=s->cnt;i++)
+	max=MaxI64(max,ASTGetTrieWords(s->body[i],words));
+  }
+  return max;
+}

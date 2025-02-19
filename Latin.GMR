@@ -1,0 +1,142 @@
+// ! is main word of AST 
+// Rule(FLAGS) is flags
+
+
+Adj@Adj ADJECTIVE = ADJECTIVE;
+// The Fat black cat
+Adj@Adj ADJECTIVE -> Adj@Adj Adj@Adj;
+//End
+
+
+Noun@Noun(FlagsTransfer) NOUN -> Adj@Adj; (.1) //Substanive adjective is rarley used
+Adverb@Adverb(FlagsTransfer) NOUN -> Adj@Adj; (.2) // Adjectives are like adverbs sometimes
+
+Pron@Inter QUESTION = INTEROGITIVE;
+Pron@Pron NOUN = PRONOUN;
+Pron@Nom NOUN = NOMITIVE,PRONOUN;
+Pron@Acc NOUN = ACCUSATIVE,PRONOUN;
+Pron@Gen OF = GENITIVE,PRONOUN;
+Pron@Dat NOUN = DATIVE,PRONOUN;
+Pron@Abl NOUN = ABLATIVE,PRONOUN;
+
+Noun@Nom NOUN = NOUN,NOMITIVE;
+Noun@Acc NOUN = NOUN,ACCUSATIVE;
+Noun@Abl NOUN = NOUN,ABLATIVE;
+Noun@Dat NOUN = NOUN,DATIVE;
+Noun@Nom NOUN -> Adj@Nom Noun@Nom;
+Noun@Acc NOUN -> Adj@Acc Noun@Acc;
+Noun@Gen OF = GENITIVE,NOUN;
+Noun@Gen OF -> Noun@Gen Noun@Gen;
+
+Partic@Partic NOUN = PARTICIPLE;
+Noun@Noun NOUN -> Partic@Partic;
+Adj@Adj ADJECTIVE -> Partic@Partic; (.3) //The "boiled" water
+
+Noun@Nom NOUN -> Pron@Nom;
+Noun@Acc NOUN -> Pron@Acc;
+Noun@Dat NOUN -> Pron@Dat;
+Noun@Abl NOUN -> Pron@Abl;
+Noun@Gen OF -> Pron@Gen;
+
+Conj@Conj CONJUNCTION = CONJUNCTION;
+Noun@Noun (CaseAgree)[FlagsPlural] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;
+
+Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCTION);
+
+Noun@Noun NOUN -> Noun@Gen !Noun@Noun; (1.)  //More common
+Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.5) //Less common
+
+
+Adverb@Adverb ADVERB = ADVERB;
+Prep@Prep WHERE = PREPOSITION;
+Verb@Verb VERB = VERB;
+Verb@Intran VERB = VERB,INTRANSITIVE;
+Noun@Noun NOUN -> Noun@Nom;
+Noun@Noun NOUN -> Pron@Inter; //I love Who I love
+Noun@Noun NOUN -> Noun@Acc;
+Noun@Noun NOUN -> Noun@Abl;
+Noun@Noun NOUN -> Noun@Dat;
+Noun@Noun NOUN -> Adj@Adj !Noun@Noun;
+
+Noun@Noun NOUN = INFINITIVE;
+Infin@Infin NOUN = INFINITIVE;
+Noun@Noun(CaseAcc) NOUN -> !Infin@Infin Noun@Noun(NOUN); (.5) //Less common
+Noun@Noun(CaseAcc) NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.) //more commons
+
+
+Prep@PrepNoun WHERE -> !Prep@Prep Noun@Noun;
+
+Noun@Noun NOUN -> !Noun@Noun Prep@PrepNoun;
+Noun@Noun NOUN -> Adj@Adj !Noun@Noun Prep@PrepNoun(WHERE); //sometimes adjective comes befoe preposition(with great care)
+Noun@Noun NOUN -> !Noun@Noun Adj@Adj;
+
+Verb@Verb VERB -> Verb@Verb Prep@PrepNoun;
+//Think [of him]
+Verb@Verb VERB -> !Verb@Verb Noun@Gen;  (.1) //Favor "I ate the food of life" over "I (ate of food) for life")
+Verb@Verb VERB -> Noun@Gen !Verb@Verb;
+
+Verb@Verb VERB -> !Verb@Verb Adverb@Adverb;
+Verb@Verb VERB -> !Verb@Verb;
+
+Verb@Verb VERB -> Verb@Verb(CONJUNCTION) !Conj@Conj Verb@Verb(CONJUNCTION); 
+
+Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;
+
+//
+// "In the begining",God created....
+//
+Sent CLAUSE -> Prep@PrepNoun !Sent;
+//End
+
+
+// This is for "those [who] eat" and
+// "watching all [who]..."
+Sent CLAUSE -> Noun@Noun(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.6) //Favor above default
+Sent CLAUSE -> Sent(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.55) //Favor lesser than top one
+//End
+
+
+//
+// The fact is "i ate potatoes"
+Verb@Is VERB = VERB,IS;
+Sent CLAUSE -> Noun@Noun Verb@Is Sent;
+
+// Predicate nouns are nouns of same case connected by "IS"
+Sent (CaseAgree) CLAUSE -> Noun@Noun !Verb@Is Noun@Noun;
+
+//Appositive nouns agree in case  The "Dog Cage"
+Sent (CaseAgree)[FlagsAppositive] NOUN -> !Noun@Noun Noun@Noun; (.4)  //Less common than genitives
+
+//Intranstive words can be used as transitive verbs when used with prepositions
+Verb@Verb(Intransitive) VERB -> !Verb@Verb Prep@Prep; (.7) //Favor explicit use of syntax
+
+//Gentives can be used with adjactives to "desirous of learning"
+Adj@Adj(CaseGen) ADJECTIVE -> !Adj@Adj Noun@Noun ; (.5) //Less common?
+Adj@Adj(CaseGen) ADJECTIVE -> Noun@Noun !Adj@Adj ; (.6)
+//
+
+
+//Sometimes "is" is implicit
+Sent(CaseAgree) CLAUSE -> Noun@Noun Adj@Adj;(.1) //Favor lesser than explicit "is".
+Sent(CaseAgree) CLAUSE -> Adj@Adj Noun@Noun;(.1) //Favor lesser than explicit "is".
+
+// Quam is certified word for  comparsions
+Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> Noun@Noun(COMPARE) !"quam" Noun@Noun(COMPARE);(.6) //Favor comparions
+Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION); //et ea means "and too XXXX"
+
+//End
+
+
+Sent(Transitive) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun;
+Sent(NumberAgree) CLAUSE -> Noun@Noun !Verb@Verb;
+Sent(Transitive) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;
+Sent(Transitive) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;
+Sent(NumberAgree) CLAUSE -> !Verb@Verb Noun@Noun;
+Sent(NumberAgree) CLAUSE -> !Verb@Verb;
+Sent(NumberAgree) CLAUSE -> !Conj@Conj Sent(CONJUNCTION);
+Sent(NumberAgree) CLAUSE -> Pron@Inter !Verb@Verb;
+Sent(Transitive) CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun Noun@Noun;
+Sent CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun;
+Sent CLAUSE -> Sent !Conj@Conj Sent;
+Sent CLAUSE -> Adverb@Adverb Sent; (.1) //Now he [is] brave
+Sent CLAUSE -> Sent Adverb@Adverb; //"I praise them all [at once]" dafuq?
