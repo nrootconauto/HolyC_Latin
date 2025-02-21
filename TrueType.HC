@@ -53,25 +53,29 @@ I64 CMapFmt4(U8 *f,I64 table,U64 g) {
   U16 *starts=(&map->end)(U8*)+sx2+2;
   U16 *deltas=starts(U8*)+sx2;
   U16 *offsets=deltas(U8*)+sx2;
-  while(--idx>=0) {
-    if(g>=EndianU16(map->end[idx])) {
-      break;
+  for(idx=0;idx!=sx2/2;idx++) {
+    if(g<=EndianU16(map->end[idx])) {
+	goodi=idx;
+	break;
     }
-    good=EndianU16(map->end[idx]);
-    goodi=idx;
   }
+  if(idx==sx2/2)
+    return -1;
+again:;
   idx=goodi;
   U16 start_code=EndianU16(starts[idx]);
-  U16 delta=EndianU16(deltas[idx]);
+  if(start_code>g)
+    return -1;
+  U16 delta=EndianU16	(deltas[idx]);
   U16 range_offset;
   range_offset=EndianU16(offsets[idx]);
   if(!range_offset) {
-     return (g+delta)&0xffFF;
+     return (g+delta)&U16_MAX;
   }
   U16 id=EndianU16(offsets[idx+range_offset+g-start_code]);
   if(id)
     return (id+delta)&U16_MAX;
-  return 0;
+  return -1;
 }
 I64 CMapFmt13(U8 *f,I64 table,U64 g,I64 which) {
   U64 first,s,l;
@@ -272,7 +276,7 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
   DCDel(dc);
 }
 
-U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=100) {
+U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=100,U0 (*trans)(F64 *x,F64 *y,U8 *d)=NULL,U8 *td=NULL) {
   U16 *ends=data,*oends=ends;
   data+=2*cnt;
   I64 last,next;
@@ -319,9 +323,17 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=1
       got=got.i16[0];
       xcords+=2;
     }
-     accum+=got;
-     points[idx].y=accum/ppem;
+    accum+=got;
+    points[idx].y=accum/ppem;
   }
+  if(trans)
+    for(idx=0;idx<ilen;idx++) {
+      points[idx].x/=ppem;
+      points[idx].y/=ppem;
+      trans(&points[idx].x,&points[idx].y,td);
+      points[idx].x*=ppem;
+      points[idx].y*=ppem;
+    }
   last=0;
   for(idx=0;idx!=cnt;idx++) {
     next=EndianU16(ends[idx]);
@@ -331,14 +343,88 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=1
   Free(points);
   Free(flags);
 }
-F64 Fixed2F64(CFixed f) {
-  f=EndianU16(f);
-  if(f.hi>=0)
-    return f.hi+f.low/ToF64(U8_MAX);
-  return f.hi+f.low/ToF64(U8_MAX);
+F64 Fixed2F64(CFixed f) {  
+  I64 f64=EndianU16(f);
+  f64=f64.i16[0];
+  return f64/ToF64(I16_MAX);
 }
-U0 TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc,F64 scale=16) {
-  I64 g=TTF_UCToGlyph(file,uc);
+
+extern U0 TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *trans,U8*td);
+
+class CCompound {
+  U16 flags;
+  U16 gi;
+};
+#define COMPOUND_MORE (1<<5)
+#define COMPOUND_SCALE (1<<3)
+#define COMPOUND_XY_SCALE (1<<6)
+#define COMPOUND_MATRIX (1<<7)
+#define COMPOUND_U16 (1)
+
+U0 TTF_Trans(F64 *x,F64 *y,F64 *mat6) {
+  F64 X=*x;
+  F64 Y=*y;
+  F64 m=1;
+  F64 n=1;
+  I64 i;
+  *x=m*(mat6[0]/m*X+mat6[2]/m*Y+mat6[4]);
+  *y=n*(mat6[1]/n*X+mat6[3]/n*Y+mat6[5]);
+}
+U0 TTF_Compound(CDC *dc,I64 x,I64 y,U8 *fbase,U8 *file,I64 gc,F64 scale=16) {
+  U8 *head=TTF_GetTablePtr('head',fbase);
+  F64 ppem=EndianU16((head+18)(U16*)[0]);
+  CCompound *hdr=file;
+  I64 flags,gi;
+  I64 a1,a2;
+  F64 a=0,b=0,c=0,d=0,e=0,f=0;
+  do {
+    flags=EndianU16(hdr->flags);
+    gi=EndianU16(hdr->gi);
+    hdr++;
+    if(flags&COMPOUND_U16) {
+      a1=EndianU16(hdr(I16*)[0]);
+      a2=EndianU16(hdr(I16*)[1]);
+      a1=a1.i16[0];
+      a2=a2.i16[0];
+      hdr=hdr(I8*)+4;
+    } else {
+      a1=hdr(I8*)[0];
+      a2=hdr(I8*)[1];
+      hdr=hdr(I8*)+2;
+    }
+    e=a1;
+    f=a2;
+    if(flags&COMPOUND_SCALE) {
+      d=a=Fixed2F64(hdr(I16*)[0]);
+      hdr=hdr(I8*)+2;
+    } else if(flags&COMPOUND_XY_SCALE) {
+      a=Fixed2F64(hdr(I16*)[0]);
+      d=Fixed2F64(hdr(I16*)[1]);
+      hdr=hdr(I8*)+4;
+    } else if(flags&COMPOUND_MATRIX) {
+      a=Fixed2F64(hdr(I16*)[0]);
+      b=Fixed2F64(hdr(I16*)[1]);
+      c=Fixed2F64(hdr(I16*)[2]);
+      d=Fixed2F64(hdr(I16*)[3]);
+      hdr=hdr(I8*)+8;
+    } else {
+      a=1.;
+      d=1.;
+    }
+
+    F64 mr_ass[6];
+    mr_ass[0]=a;
+    mr_ass[1]=b;
+    mr_ass[2]=c;
+    mr_ass[3]=d;
+    mr_ass[4]=0;
+    mr_ass[5]=0;
+    TTF_RenderGl(dc,x,y,fbase,gi,scale,&TTF_Trans,mr_ass);
+//"%x\n",flags&COMPOUND_MORE;
+  } while(flags&COMPOUND_MORE);
+}
+
+U0 TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *trans,U8 *td) {
 //  g=68+'y'-'a';
 //g=68+1;
   if(g<0) return;
@@ -355,28 +441,34 @@ U0 TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc,F64 scale=16) {
     goff=EndianU32(loca[width*g](U32));
   }
   CGlyphHdr *gh=TTF_GetTablePtr('glyf',file)+goff;
-  if(EndianU16(gh->cont_cnt)<=I16_MAX) {
+  I64 gc=EndianU16(gh->cont_cnt);
+  if(gc<=I16_MAX) {
 //21 Savage Simple
-   TTF_RenderChrSimple(dc,x,y,gh+1,EndianU16(gh->cont_cnt),ppem,scale);
+   TTF_RenderChrSimple(dc,x,y,gh+1,EndianU16(gh->cont_cnt),ppem,scale,trans,td);
   } else {
 //Complex 
-    Beep;
+    TTF_Compound(dc,x,y,file,gh+1,-gc.i16[0],scale);
   }
 }
+U0 TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc,F64 scale=16) {
+  I64 g=TTF_UCToGlyph(file,uc);
+  TTF_RenderGl(dc,x,y,file,g,scale,NULL,NULL);
+}
+
 #ifdef __CMD_LINE__
 Cd(__DIR__);;;;
 U8 *f=FileRead("mono.ttf");
 DCFill;
 WinMax;
-#if 1
-TTF_RenderChr(gr.dc,200,150,f,0x3b1,250);
-TTF_RenderChr(gr.dc,400,150,f,0x3b9,250);
-TTF_RenderChr(gr.dc,200,350,f,0x3c9,250);
-TTF_RenderChr(gr.dc,400,350,f,0x3bd,250);
+#if 0
+TTF_RenderChr(gr.dc,200,185,f,0x391,250);
+TTF_RenderChr(gr.dc,400,185,f,0x399,250);
+TTF_RenderChr(gr.dc,200,385,f,0x1ff7,250);		
+TTF_RenderChr(gr.dc,400,385,f,0x39d,250);
 #else
-TTF_RenderChr(gr.dc,200,150,f,'a',250);
-TTF_RenderChr(gr.dc,400,150,f,'i',250);
-TTF_RenderChr(gr.dc,200,350,f,'w',250);
-TTF_RenderChr(gr.dc,400,350,f,'v',250);
+TTF_RenderChr(gr.dc,200,175,f,0xe1,250);
+TTF_RenderChr(gr.dc,400,175,f,0xee,250);
+TTF_RenderChr(gr.dc,200,375,f,'w',250);
+TTF_RenderChr(gr.dc,400,375,f,0xf1,250);
 #endif
-#endif
+#endif
