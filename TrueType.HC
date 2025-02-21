@@ -53,9 +53,7 @@ I64 CMapFmt4(U8 *f,I64 table,U64 g) {
   U16 *starts=(&map->end)(U8*)+sx2+2;
   U16 *deltas=starts(U8*)+sx2;
   U16 *offsets=deltas(U8*)+sx2;
-ClassRep(map);
   while(--idx>=0) {
-"GGG:%d,%x,%x\n",idx,EndianU16(map->end[idx]),EndianU16(starts[idx]);
     if(g>=EndianU16(map->end[idx])) {
       break;
     }
@@ -63,11 +61,8 @@ ClassRep(map);
     goodi=idx;
   }
   idx=goodi;
-"%d\n",idx;
   U16 start_code=EndianU16(starts[idx]);
-"S:%d\n",start_code;
   U16 delta=EndianU16(deltas[idx]);
-"D:%d\n",delta;
   U16 range_offset;
   range_offset=EndianU16(offsets[idx]);
   if(!range_offset) {
@@ -119,10 +114,8 @@ I64 TTF_UCToGlyph(U8 *font,U64 uc) {
   while(--ents>=0) {
     CTTFCmapSub *csub=&cmap->subs[ents];
     use=EndianU16(csub->platform)<<8|EndianU16(csub->id);
-    "%x\n",use;
     if(use==4||use==0x301) {
       use=EndianU16((font+off+EndianU32(csub->offset))(U32*)[0]);
-      "1.%d\n",use;
       if(use==12) {
         ret=CMapFmt13(font,off+EndianU32(csub->offset),uc,12);
       } else if(use==13) {
@@ -130,7 +123,6 @@ I64 TTF_UCToGlyph(U8 *font,U64 uc) {
       }
     }else  if(use==3||use==0x30a) {
       use=EndianU16((font+off+EndianU32(csub->offset))(U32*)[0]);
-      "2.%d\n",use;
       if(use==6) {       
         ret=CMapFmt6(font,off+EndianU32(csub->offset)+2,uc);
       } else if(use==4)
@@ -222,17 +214,69 @@ U8 *SGetInsts(U8 *f,I64 ilen) {
       --ilen;
     }
   }
-"C:%d,%d\n",l,oilen;
   return oret;
 }
-U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem) {
+U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
+  if(len<2) return; 
+  I64 i;
+  CD2 *control=NULL,*cur,*st=NULL,*en=NULL;
+  CD2 *c2=NULL;
+  CD3I32 bcontrols[4];
+  dc=DCAlias(dc);
+  dc->flags|=DCF_TRANSFORMATION;
+  dc->color=RED;
+  dc->thick=2;
+  Mat4x4TranslationEqu(dc->r,x,y,0);
+  bcontrols[0].z=0;
+  bcontrols[1].z=0;
+  bcontrols[2].z=0;
+  bcontrols[3].z=0;
+  for(i=0;i!=len+1;i++) {
+    cur=&points[i%len];
+    if(!control&&!(flags[i%len]&SOF_CURVE))
+      control=cur; 
+    else if(!c2&&!(flags[i%len]&SOF_CURVE))
+      c2=cur;
+    else if(!st&&flags[i%len]&SOF_CURVE)
+      st=cur;
+    else if(!en&&flags[i%len]&SOF_CURVE) {
+      en=cur;
+      if(!control) {
+        GrLine3(dc,st->x*scale,-st->y*scale,0,en->x*scale,-en->y*scale,0);
+      } else if(control&&!c2) {
+        bcontrols[0].x=st->x*scale;
+        bcontrols[0].y=-st->y*scale;
+        bcontrols[1].x=control->x*scale;
+        bcontrols[1].y=-control->y*scale;
+        bcontrols[2].x=en->x*scale;
+        bcontrols[2].y=-en->y*scale;
+        Gr2Bezier3(dc,bcontrols);
+        control=NULL;
+      } else if(control&&c2) {
+        bcontrols[0].x=st->x*scale;
+        bcontrols[0].y=-st->y*scale;
+        bcontrols[1].x=control->x*scale;
+        bcontrols[1].y=-control->y*scale;
+        bcontrols[2].x=c2->x*scale;
+        bcontrols[2].y=-c2->y*scale;
+        bcontrols[3].x=en->x*scale;
+        bcontrols[3].y=-en->y*scale;
+        Gr3Bezier3(dc,bcontrols);
+        control=NULL;
+	c2=NULL;
+      }
+      st=en;
+      en=NULL;
+    }
+  }
+  DCDel(dc);
+}
+
+U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=100) {
   U16 *ends=data,*oends=ends;
   data+=2*cnt;
-"ASS:%d,%d\n",EndianU16(ends[0]),EndianU16(ends[1]);
-  
-  I64 ilen=EndianU16(data[-2](U16))+1,idx,flag,proced;
-"%d\n",ilen;
-//PressAKey;
+  I64 last,next;
+  I64 ilen=EndianU16(data[-2](U16))+1,idx,flag,proced,idx2;
   U8 *insts=data+2;
   data=insts+EndianU16(insts[-2](U16));
   U8 *flags=data;
@@ -243,7 +287,6 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem) {
   CD2 *points=CAlloc(MSize(flags)*sizeof(CD2));
   F64 accum=0;
   I64 got;
-  "%d\n",proced;
   for(idx=0;idx<ilen;idx++) {
     flag=flags[idx];
     got=0;
@@ -279,12 +322,11 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem) {
      accum+=got;
      points[idx].y=accum/ppem;
   }
-  DCFill;
-  for(idx=0;idx!=ilen;idx++) {
-   "%f,%f,%d\n",points[idx].x*ppem,points[idx].y*ppem,idx;
-   GrLine(gr.dc,points[idx].x*300+200,-points[idx].y*300+200,
-	points[idx+1].x*300+200,-points[idx+1].y*300+200
-	);
+  last=0;
+  for(idx=0;idx!=cnt;idx++) {
+    next=EndianU16(ends[idx]);
+    RenderCon(dc,x,y,points+last,flags+last,next-last+1,scale);
+    last=next+1;
   }
   Free(points);
   Free(flags);
@@ -295,10 +337,8 @@ F64 Fixed2F64(CFixed f) {
     return f.hi+f.low/ToF64(U8_MAX);
   return f.hi+f.low/ToF64(U8_MAX);
 }
-
-U0 TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc) {
+U0 TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc,F64 scale=16) {
   I64 g=TTF_UCToGlyph(file,uc);
-"G:%d\n",g;
 //  g=68+'y'-'a';
 //g=68+1;
   if(g<0) return;
@@ -314,16 +354,29 @@ U0 TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc) {
     width=4; 
     goff=EndianU32(loca[width*g](U32));
   }
-"%x\n",goff;
   CGlyphHdr *gh=TTF_GetTablePtr('glyf',file)+goff;
-  if(EndianU16(gh->cont_cnt)>=0) {
+  if(EndianU16(gh->cont_cnt)<=I16_MAX) {
 //21 Savage Simple
-"%n,%n,%n,%n\n",Fixed2F64(gh->x_min),Fixed2F64(gh->x_max),Fixed2F64(gh->y_min),Fixed2F64(gh->y_max);
-   TTF_RenderChrSimple(dc,x,y,gh+1,EndianU16(gh->cont_cnt),ppem);
+   TTF_RenderChrSimple(dc,x,y,gh+1,EndianU16(gh->cont_cnt),ppem,scale);
   } else {
 //Complex 
+    Beep;
   }
 }
+#ifdef __CMD_LINE__
 Cd(__DIR__);;;;
 U8 *f=FileRead("mono.ttf");
-TTF_RenderChr(NULL,0,0,f,'$$');
+DCFill;
+WinMax;
+#if 1
+TTF_RenderChr(gr.dc,200,150,f,0x3b1,250);
+TTF_RenderChr(gr.dc,400,150,f,0x3b9,250);
+TTF_RenderChr(gr.dc,200,350,f,0x3c9,250);
+TTF_RenderChr(gr.dc,400,350,f,0x3bd,250);
+#else
+TTF_RenderChr(gr.dc,200,150,f,'a',250);
+TTF_RenderChr(gr.dc,400,150,f,'i',250);
+TTF_RenderChr(gr.dc,200,350,f,'w',250);
+TTF_RenderChr(gr.dc,400,350,f,'v',250);
+#endif
+#endif
