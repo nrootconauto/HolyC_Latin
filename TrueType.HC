@@ -447,7 +447,7 @@ U0 TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *trans,U8 *td
    TTF_RenderChrSimple(dc,x,y,gh+1,EndianU16(gh->cont_cnt),ppem,scale,trans,td);
   } else {
 //Complex 
-    TTF_Compound(dc,x,y,file,gh+1,-gc.i16[0],scale);
+    TTF_Compound(dc,x,y,file,gh+1,-gc.i16[0],scale);
   }
 }
 U0 TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc,F64 scale=16) {
@@ -460,7 +460,7 @@ Cd(__DIR__);;;;
 U8 *f=FileRead("mono.ttf");
 DCFill;
 WinMax;
-#if 0
+#if 1
 TTF_RenderChr(gr.dc,200,185,f,0x391,250);
 TTF_RenderChr(gr.dc,400,185,f,0x399,250);
 TTF_RenderChr(gr.dc,200,385,f,0x1ff7,250);		

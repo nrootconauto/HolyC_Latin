@@ -238,7 +238,7 @@ Bool CaseDat(I64 argc,AST **argv) {
 Bool CaseGen(I64 argc,AST **argv) {
   return CaseX(GENITIVE,argc,argv);
 }
-
+I64Set *rules_list=NULL;
 U0 ParseRules(U8 *text) {
   CCmpCtrl *cc=CmpCtrlNew(text,CCF_DONT_FREE_BUF|CCF_NO_DEFINES);
   CRule *rule;
@@ -283,7 +283,7 @@ U0 ParseRules(U8 *text) {
       LexExcept(cc,"Expected valid type at ");
     Lex(cc);
     if(cc->token==TK_DEREFERENCE) { //->
-      rule->main_item_idx=-1;
+      rule->main_item_idx=0;
       Lex(cc);
       while(cc->token==TK_IDENT||cc->token=='!'||cc->token==TK_STR) {
         member_type=-1;
@@ -338,6 +338,8 @@ U0 ParseRules(U8 *text) {
       Lex(cc);
     }
     FramePtrAdd(rule->name,rule);
+    rules_list=I64SetAdd(rules_list,rule);
+    StrCpy(rule->name,rule->name+1);
   }
   CmpCtrlDel(cc);
 }
@@ -394,6 +396,7 @@ U0 AddThingToAST(AST *have,AST *to,I64 where=-1) {
       to->flags|=ADVERB;
       to->adverb=ASTSetAdd(to->adverb,have);
       break;
+    case AST_VERB:
     case AST_INDIRECT_CLAUSE:
       to->nomitive=ASTSetAdd(to->nomitive,have);
       break;
@@ -404,9 +407,10 @@ U0 AddThingToAST(AST *have,AST *to,I64 where=-1) {
       to->question=ASTSetAdd(to->question,have);
       break;
 default:
+"FUCK,%d\n",where;
+Break;
   }
 }
-extern U0 Chain(CRule *chain,I64 idx,ASTSet *add_to,CGrammarState *st,I64 start_woff=0,I64 recursion_level=0);
 
 Bool IsLeftRecursive(CRule *r) {
   if(!r) return FALSE;
@@ -415,254 +419,285 @@ Bool IsLeftRecursive(CRule *r) {
     return !StrCmp(r->name+1,r->made_from->body[0]);
   return FALSE;
 }
-
-U0 RunRule(CGrammarState *st) {
-  if(st->cnt<=0) return;
-  U8 dummy[STR_LEN];
-  StrPrint(dummy,"!%s",st->rule);
-  FramePtrAdd(RESULTS_FP,NULL);
-  I64 inst=1,idx,depth,en2,try2;
-  I64 left_recursive=0;
-  I64 attempt=0,find_cnt;
-  CHashGeneric *h;
-  CRule *r;
-  AST *ret;
-  CTrie **flat;
-  ASTSet *results=NULL,*dummy_set;
-  CGenerator *g;
-  CGrammarState orig,clone;
+I64Set **MatrixPtr(U8 **matrix,I64 x,I64 y,I64 cnt) {
+  return &matrix[x+y*cnt];
+}
+Bool RulePost(AST *ast,CRule *rule,I64 *args,I64 arg_cnt) {
+  Bool ret=TRUE;
+  if(rule->validate_fun)
+    if(!CallExtStr(rule->validate_fun,arg_cnt,args))
+      ret=FALSE;
+  if(rule->flags_fun)
+    ast->flags|=CallExtStr(rule->flags_fun,arg_cnt,args);
+  return ret;
+}
+ASTSet *DoTerminals(U8 *_word,I64 idx) {
+  I64 i=rules_list->cnt;
+  CRule *rule;
   CTrie *word;
-  MemCpy(&orig,st,sizeof CGrammarState);
-again: 
-  for(inst=1;h=HashFind(dummy,grammar_task->hash_table,HTT_FRAME_PTR,inst);inst++) {
-    MemCpy(st,&orig,sizeof CGrammarState);
-    MemCpy(&clone,st,sizeof CGrammarState);
-    r=h->user_data0;
-    left_recursive|=IsLeftRecursive(r);
-//TODO allow other forms of the word
-    if(GetWord(r->name)&&IsFormOf(r->name,st->words[0])) {
-      word=GetWord(st->words[0]);
+  AST *ret;
+  ASTSet *all=NULL;
+  while(--i>=0) {
+    rule=rules_list->body[i];
+    if(rule->is_word)
+     if(word=GetWord(_word)) {
       while(word) {
-        ret=CAlloc(sizeof(AST),mem_task);
-        ret->prob=1.;
-        ret->word_idx=st->woff;
-        if(r->raw_type) { 
-	  ret->act_as_type=ret->raw_type=r->raw_type;
-        } else if(word->flags&NOUN) {
-	  ret->act_as_type=ret->raw_type=AST_NOUN;
-        } else if(word->flags&VERB) {
-	  ret->act_as_type=ret->raw_type=AST_VERB;
-        } else if(word->flags&CONJUNCTION) {
-	  ret->act_as_type=ret->raw_type=AST_CONJUNCTION;
-        } else if(word->flags&ADJECTIVE) {
-	  ret->act_as_type=ret->raw_type=AST_ADJECTIVE;
-        } else if(word->flags&INFINITIVE) {
-	  ret->act_as_type=ret->raw_type=AST_INFINITIVE;
-        } else if(word->flags&ADVERB) {
-	  ret->act_as_type=ret->raw_type=AST_ADVERB;
-        }
-
-        ret->word=word;
-        ret->flags=word->flags;
-        ret->end=1;
-        ret->prob=r->weight;
-        ret->args=I64SetAdd(ret->args,ret);
-        FramePtrSet(RESULTS_FP,ASTSetAdd(FramePtr(RESULTS_FP),ASTClone(ret)));
-        GeneratorYield(ret);
-        word=word->next;
-      }
-    }
-    if(r->is_word) {
-      word=GetWord(st->words[0]);
-      while(word&&!attempt) {
-        if(st->en) *st->en=1;
-        if(word->flags&r->word_flags==r->word_flags) {
+        if(word->flags&rule->word_flags==rule->word_flags) {
 	  ret=CAlloc(sizeof(AST),mem_task);
 	  ret->prob=1.;
-	  ret->word_idx=st->woff;
-	  ret->act_as_type=ret->raw_type=r->raw_type;
+	  ret->word_idx=idx;
+	  if(rule->raw_type) { 
+	    ret->act_as_type=ret->raw_type=rule->raw_type;
+	  } else if(word->flags&NOUN) {
+	    ret->act_as_type=ret->raw_type=AST_NOUN;
+	  } else if(word->flags&VERB) {
+	    ret->act_as_type=ret->raw_type=AST_VERB;
+	  } else if(word->flags&CONJUNCTION) {
+	    ret->act_as_type=ret->raw_type=AST_CONJUNCTION;
+	  } else if(word->flags&ADJECTIVE) {
+	    ret->act_as_type=ret->raw_type=AST_ADJECTIVE;
+	  } else if(word->flags&INFINITIVE) {
+	    ret->act_as_type=ret->raw_type=AST_INFINITIVE;
+	  } else if(word->flags&ADVERB) {
+	    ret->act_as_type=ret->raw_type=AST_ADVERB;
+	  }
 	  ret->word=word;
 	  ret->flags=word->flags;
-	  ret->end=1;
-	  ret->prob=r->weight;
+	  ret->end=idx+1;
+	  ret->start=idx;
+	  ret->prob=rule->weight;
 	  ret->args=I64SetAdd(ret->args,ret);
-	  FramePtrSet(RESULTS_FP,ASTSetAdd(FramePtr(RESULTS_FP),ASTClone(ret)));
-	  GeneratorYield(ret);
+	  ret->rule=rule;
+
+          if(RulePost(ret,rule,ret->args->body,ret->args->cnt))
+	    all=ASTSetAdd(all,ret);
+	  else {
+//	    ret->args
+//	    ASTDel(ret);
+          }
         }
         word=word->next;
       }
+    }
+  }
+  return all;
+}
+I64 Next(U8 **words,I64 x,I64 cnt){
+  I64 bracket_depth=0;
+  if(!StrCmp(words[x],"[")) {
+    bracket_depth=1;
+    ++x;
+    while(bracket_depth&&x<cnt) {
+      if(!StrCmp(words[x],"[")) {
+        bracket_depth++;
+        x++;
+      } if(!StrCmp(words[x],"]")) {
+        bracket_depth--;
+        x++;
+      } else
+        x++;
+    }
+    return x;
+  } 
+  return x+1;
+}
+I64 SubExprWidth(U8 **words,I64 x,I64 cnt) {
+  return Next(words,x,cnt)-x-2;
+}
+ASTSet *Scan(U8 **words,ASTSet *add_to,CRule *r,U8 **matrix,I64 y,I64 cnt,I64 x=0,I64 ra=0,ASTSet *args=NULL) {
+  I64 next;
+  ASTSet *cell;
+  AST *tmp,*ret;
+  CRule *rule;
+  ASTSet *old=add_to;
+  if(!r->made_from)
+    return add_to;
+  I64 rcnt=r->made_from->cnt,idx;
+  I64 boundary,attempt;
+  U8 *desired,*tmp2;
+  I64 repeat_cnt=0;
+  if(ra>=rcnt) {
+pass:
+    if(r->main_item_idx>=0) {
+      tmp=args->body[r->main_item_idx];
+      ret=ASTClone(tmp);
+    }
+    ret->prob=1.;
+    ret->rule=r;
+    ret->raw_type=ret->	act_as_type=r->raw_type;
+//DONT make an item have a single child,just "overshadow" it.
+    if(args->cnt==1) {
     } else {
-      if(r->made_from) {
+      tmp=args->body[0];
+      ret->start=tmp->start;
+/***********************************************
+MAKE SURE ARGUMNENTS DONT OVERLAP,use boundary.
+************************************************/
+      boundary=tmp->end;
+      for(idx=1;idx!=args->cnt;idx++) {
+        tmp=args->body[idx];
+        if(boundary!=tmp->start) {
+	  goto fail;
+        }
+        boundary=tmp->end;
+      }
+      ret->end=boundary;
+      for(idx=0;idx!=args->cnt;idx++) {
+        tmp=args->body[idx];
+        if(r->main_item_idx!=idx)
+	  AddThingToAST(ASTClone(tmp),ret);
+      }
+    }
+    if(!args) {
+      add_to=ASTSetAdd(add_to,ret);
+    } else if(RulePost(ret,r,args->body,ra)) {
+      add_to=ASTSetAdd(add_to,ret);
+    } else {
+fail:;
+      ret->args=NULL;
+      ASTDel(ret);
+    }
+    return add_to;
+  }	
+  desired=r->made_from->body[ra];
+  if(x>=cnt)
+    return add_to;
+  cell=*MatrixPtr(matrix,x,y,cnt);
+  if(!StrCmp(words[AbsI64(x)],"]"))
+    return add_to;
+  for(attempt=0;attempt!=2;attempt++) {
+    repeat_cnt=0;
+    if(AbsI64(x)+attempt>=cnt)
+      return add_to;
+    cell=*MatrixPtr(matrix,AbsI64(x)+attempt,y,cnt);
+    if(cell)
+      for(idx=0;idx!=cell->cnt;idx++) {
+        tmp=cell->body[idx];
+//Dont repeat same rule
+        if(r==tmp->rule) {
+//Unless recursive
+	  if(!ra&&!StrCmp(r->name,desired)) {
+//All is good
+	  } else
+;//	    goto skip2;
+        }
+      }
+
+
+    if(cell)
+      for(idx=0;idx!=cell->cnt;idx++) {
+        tmp=cell->body[idx];
         if(attempt) {
-	  if(results&&IsLeftRecursive(r)) {
-	    for(idx=0;idx!=results->cnt;idx++) {
-	      ret=results->body[idx];
-	      dummy_set=ASTSetAdd(NULL,ASTClone(ret));
-	      MemCpy(&clone,st,sizeof CGrammarState);
-	      clone.is_conj2=TRUE;
-	      clone.woff+=ret->end;
-	      clone.cnt-=ret->end;
-	      clone.words+=ret->end;
-	      Chain(r,1,dummy_set,&clone,st->woff,attempt);
-	      ASTSetDel(dummy_set);
+//If you are in attempt==1,that means [expression]
+	  //Check if expression spans full range between "["and "]"
+	  if(tmp->end-tmp->start!=SubExprWidth(words,AbsI64(x),cnt)) {
+	    goto skip;
+	  } else{
+	    tmp=ASTClone(tmp);
+	    tmp->start=AbsI64(x);
+	    tmp->end=Next(words,tmp->start,cnt);
+	  }
+        } else
+	  tmp=ASTClone(tmp);
+
+
+        if(!StrCmp(desired,tmp->rule->name)) {
+	  if(args)
+	    tmp2=I64SetAdd(MAllocIdent(args,mem_task),tmp);
+	  else
+	    tmp2=I64SetAdd(NULL,tmp);
+	  old=add_to;
+	  add_to=Scan(words,add_to,r,matrix,y,cnt,tmp->end,ra+1,tmp2);
+	  Free(tmp2);
+	  if(old!=add_to) {
+	    if(++repeat_cnt>=8) {
+	      ASTDel(tmp);
+	      break;
 	    }
 	  }
-        } else if(!IsLeftRecursive(r)) {
-	  MemCpy(&clone,st,sizeof CGrammarState);
-	  Chain(r,0,NULL,&clone,st->woff,attempt);
         }
-      }
-    }
+//Heres the deal,if we encounter a "[",that is the same as our rule,
+        //Just use it("[Sentence]"  is the same as "Sentence")
+        if(attempt&&r==tmp->rule) {
+	  add_to=ASTSetAdd(add_to,ASTClone(tmp));
+        }
+        ASTDel(tmp);
 skip:;
-  }
-//Do "sub-parts" outside of the nain loop;WE ONLY NEED TO COMPUTE ONCE
-  if(!attempt)
-    if(!StrCmp(st->words[0],"[")) {
-      depth=0;
-      for(idx=0;idx<st->cnt;idx++) {
-        if(!StrCmp(st->words[idx],"["))
-	  depth++;
-        else if(!StrCmp(st->words[idx],"]"))
-	  depth--;
-        if(!depth) break;
       }
-      if(!depth) {
-        MemCpy(&clone,st,sizeof CGrammarState);
-        clone.woff++;
-        clone.words++;
-        clone.cnt=idx-1;
-        clone.en=&en2;
-        g=GeneratorNewC(&RunRule,&clone);
-        while(GeneratorGet(g,&ret)) {
-	  if(en2==idx-1) {
-	    if(st->en) *st->en=idx+1;
-	    ret->end=idx+1;
-	    FramePtrSet(RESULTS_FP,ASTSetAdd(FramePtr(RESULTS_FP),ASTClone(ret)));
-	    GeneratorYield(ret);
-	  } else 
-	    ASTDel(ret);
+skip2:;
+    if(StrCmp(words[AbsI64(x)],"["))
+      break;
+  }
+fin:;
+  return add_to;
+}
+I64Set *PackratMatrix(U8 **words,I64 cnt) {
+  I64Set **matrix=CAlloc(sizeof(I64Set*)*cnt*cnt);
+  ASTSet **ptr,*new;
+  CRule *rule;
+  AST *old;
+  I64 x,y;
+  I64 rc=rules_list->cnt,tries;
+  I64 ri;
+  I64 old_cnt;
+  for(x=0;x!=cnt;x++)
+    for(y=0;y!=cnt;y++) {
+      *MatrixPtr(matrix,x,y,cnt)=NULL;
+    }
+  for(x=cnt-1;x>=0;--x) {
+    ptr=MatrixPtr(matrix,x,cnt-1,cnt);
+    *ptr=DoTerminals(words[x],x);
+  }
+
+  //tries is set to 2 o handle recursion,but not forever
+  y=cnt-2;
+  for(tries=0;tries!=1;tries++) {
+    for(x=cnt-1;x>=0;x--) {
+      for(ri=0;ri!=rc;ri++) {
+        rule=rules_list->body[ri];
+        if(rule->made_from) {
+	  ptr=MatrixPtr(matrix,x,y+1,cnt);
+	  new=Scan(words,MAllocIdent(*ptr),rule,matrix,y+1,cnt,-x);
+	  Free(*ptr);
+	  *ptr=new;
         }
       }
     }
-  if(!left_recursive)
-    goto fin;
-  results=FramePtr(RESULTS_FP);
-  FramePtrSet(RESULTS_FP,NULL);
-  if(attempt++) {
-fin:
-    if(FramePtr(RESULTS_FP))
-      ASTSetDel(FramePtr(RESULTS_FP));
-    FramePtrDel(RESULTS_FP);
-    return;
   }
-  goto again;
+
+  return matrix;
+
 }
-
-U0 Chain(CRule *rule,I64 idx,ASTSet *add_to,CGrammarState *st,I64 start_woff=0,I64) {
-  CGrammarState orig,clone,clone2;
-  AST *grab,*tmp,*main=NULL,*conj2;
-  CGenerator *g;
-  I64Set *chain=rule->made_from;
-  I64 width,dummy,main_idx,depth,idx2,cnt;
-  CTrie **flat;
-//Avoid infinitie left recursion
-  CHashGeneric *h;
-  U8 buf[STR_LEN];
-  StrPrint(buf,"PrntRule:%d,%x",st->woff,rule);
-  if(!idx)  {
-    dummy=1;
-    if(FramePtr(buf)) {
-      return;
-    }
-    FramePtrAdd(buf,1);
-  }
-  if(!st->en) st->en=&dummy;
-  if(idx>chain->cnt)
-    return;
-  if(idx==chain->cnt) {
-    if(!add_to) return;
-    if(st->en) *st->en=st->woff-start_woff;
-    for(idx=0;idx!=add_to->cnt;idx++) {
-      if(idx==rule->main_item_idx) {
-        main=add_to->body[idx];
-        main_idx=idx;
-        break;
-      }
-    } 
-
-    if(!main) {
-      main=add_to->body[0];
-      main_idx=0;
-    }
-
-    main=ASTClone(main);
-    main->end=st->woff-start_woff;
-    main->raw_type=main->act_as_type=rule->raw_type;
-    for(idx=0;idx!=add_to->cnt;idx++) {
-      if(main_idx!=idx)
-        AddThingToAST(ASTClone(add_to->body[idx]),main,rule->member_types->body[idx]);
-    }
-    main->prob*=rule->weight;
-    if(rule->flags_fun&&main->args)
-      main->flags|=CallExtStr(rule->flags_fun,main->args->cnt,main->args->body);
-    if(rule->validate_fun&&main->args) {
-      if(CallExtStr(rule->validate_fun,main->args->cnt,main->args->body)) {
-        FramePtrSet(RESULTS_FP,ASTSetAdd(FramePtr(RESULTS_FP),ASTClone(main)));    
-        GeneratorYield(main);
-      }
-    } else{
-      FramePtrSet(RESULTS_FP,ASTSetAdd(FramePtr(RESULTS_FP),ASTClone(main)));
-      GeneratorYield(main);
-    }
-    return;
-  }
-  MemCpy(&orig,st,sizeof CGrammarState);
-  MemCpy(&clone,st,sizeof CGrammarState);
-  clone.en=&width;
-  clone.rule=chain->body[idx];
-  g=GeneratorNewC(&RunRule,&clone);
-  while(GeneratorGet(g,&grab)) {
-    MemCpy(&clone2,&orig,sizeof CGrammarState);
-    clone2.woff+=width;
-    clone2.cnt-=width;
-    clone2.words+=width;
-    tmp=ASTSetClone(add_to);
-    tmp=ASTSetAdd(tmp,ASTClone(grab));
-    Chain(rule,idx+1,tmp,&clone2,start_woff,0);
-    if(!st->is_conj2) {
-      MemCpy(&clone2,&orig,sizeof CGrammarState);
-      clone2.woff+=width;
-      clone2.cnt-=width;
-      clone2.words+=width;
-      cnt=ASTGetTrieWords(grab,NULL);
-      flat=CAlloc(8*(cnt+1)); //cnt here is the last word_idx,add 1
-      ASTGetTrieWords(grab,flat);
-      for(idx2=0;idx2<=cnt;idx2++) {
-        if(flat[idx2]) {
-	  if(flat[idx2]->flags&CONJUNCTION2) {
-	    main=CAlloc(sizeof(AST),mem_task);
-	    main->prob=1.;
-	    main->word_idx=st->woff;
-	    main->act_as_type=main->raw_type=AST_CONJUNCTION;
-	    main->word=flat[idx2];
-	    main->end=1;
-	    main->args=I64SetAdd(main->args,main);
-	    conj2=ASTSetClone(add_to);
-	    conj2=ASTSetAdd(conj2,main);
-	    conj2=ASTSetAdd(conj2,ASTClone(grab));
-	    Chain(rule,idx+2,tmp,&clone2,start_woff,0);
-	  }
-	  break;
+AST *ParseSentenceJoin(I64 argc,U8 **argv) {
+  U8 **matrix=PackratMatrix(argv,argc);
+  AST *ret=NULL,*cur;
+  ASTSet *set;
+  I64 y;
+  I64 ass;
+  for(y=0;y!=argc;y++) {
+    set=*MatrixPtr(matrix,0,y,argc);
+    if(set) {
+      I64 can=set->cnt;
+      while(--can>=0) {
+        cur=set->body[can];
+        if(cur->start==0&&cur->end==argc) {
+	  ret=ASTClone(cur);
         }
       }
-      Free(flat);
     }
-    ASTDel(grab);
-    ASTSetDel(tmp);
   }
-  if(!idx)
-    FramePtrDel(buf);
+  for(y=0;y!=argc*argc;y++) {
+    cur=matrix[y];
+    if(cur)
+      ASTSetDel(cur);
+  }
+  Free(matrix);
+  return ret;
 }
+AST *ParseSentence(...) {
+  return ParseSentenceJoin(argc,argv);
+}
+
 U8*rules=FileRead("Latin.GMR");
 ParseRules(rules);
 Free(rules);
