@@ -457,6 +457,54 @@ U0 OddEven(CDC *dc) {
   DCColorChg(dc,PURPLE,TRANSPARENT);
   DCColorChg(dc,RED,BLACK);
 }
+class CTTFKernTable {
+  U16 ver;
+  U16 num_tables;
+};
+#define KF_VERT 0x8000
+#define KF_CROSS_STREAM 0x4000
+#define KF_VARIATION 0x2000
+class CTTFKernSub {
+  U16 pad;// Fuck apple //https://learn.microsoft.com/en-us/typography/opentype/spec/kern
+  U16 len;
+  U16 coverage;
+};
+class CTTFKernType0 {
+  U16 pairs;
+  U16 range;
+ U16 selector;
+  U16 shift;
+};
+class CTTFKern0Ent {
+  U16 a,b;
+  I16 shift;
+};
+I64 TTF_Kerning(U8 *file,I64 a,I64 b) {
+  CTTFKernTable *kt=TTF_GetTablePtr('kern',file);
+  if(!kt) return 0;
+  I64 num_tabs=EndianU16(kt->num_tables);
+  CTTFKernSub *tables=kt+1;
+  CTTFKernType0 *ass0;
+  CTTFKern0Ent *ent0;
+  U16 fmt;
+  I64 num_pairs;
+  while(--num_tabs>=0) {
+    fmt=EndianU16(tables->coverage);
+    if(fmt.u8[1]==0) {
+      ass0=tables+1;
+      ent0=ass0+1;
+      num_pairs=EndianU16(ass0->pairs);
+      while(--num_pairs>=0) {
+        if(EndianU16(ent0->a)==a&&b==EndianU16(ent0->b)) {
+	  return EndianI16(ent0->shift);
+	}
+        ent0++;
+      }
+    }
+    tables=tables(U8*)+EndianU16(tables->len);
+  }
+  return 0;
+}
 CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *trans,U8 *td,Bool fill=TRUE) {
 //  g=68+'y'-'a';
   //g=68+1;
@@ -499,7 +547,7 @@ CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *tran
 
   DCDel(dumb);
   CGlAdvance ret;
-  ret.x=xmax-xmin-left_bear/ppem*scale;
+  ret.x=Max(aw/ppem*scale,xmax-xmin	);
   ret.y=0;
   return ret;
 }
@@ -510,9 +558,12 @@ CGlAdvance TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc,F64 scale=16) {
 I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
   CGlAdvance ga;
   I64 ox=x;
+  U8 *head=TTF_GetTablePtr('head',file);
+  F64 ppem=EndianU16((head+18)(U16*)[0]);
   while(*text) {
     ga=TTF_RenderChr(dc,x,y,file,*text,scale);
     x+=ga.x;
+    x+=TTF_Kerning(file,text[0],text[1])/ppem*scale;
     text++;
   }
   return x-ox;
@@ -523,12 +574,14 @@ U8 *f=FileRead("mono.ttf");
 DCFill;
 WinMax;
 #if 1
+//U32 text[5]={'a','i','w','n',0};
+U32 watermelon[6]={0x5D0,0x5D1,0x5D8,0x5D9,0x5D7,0};
 U32 text[5]={0x391,0x399,0x1ff7,0x39d,0};
-TTF_RenderTextU32(gr.dc,100,200,f,&text,64);
+TTF_RenderTextU32(gr.dc,100,200,f,text,100);
 #else
 TTF_RenderChr(gr.dc,200,175,f,0xe1,250);
 TTF_RenderChr(gr.dc,400,175,f,0xee,250);
-TTF_RenderChr(gr.dc,200,375,f,'w',250);
+	TTF_RenderChr(gr.dc,200,375,f,'w',250);
 TTF_RenderChr(gr.dc,400,375,f,0xf1,250);
 #endif
 #endif
