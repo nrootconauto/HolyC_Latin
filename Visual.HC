@@ -987,7 +987,7 @@ DocClear;
 //DumpSentences("[Formamentum sunt haut] et [res sunt]");
 //InteractView("tenebrae [super faciem] abyssi");
 //InteractView("[res sunt haut]");
-DumpSentences(//"Res finitus sunt."
+DumpSentences("Res finitus sunt."
 	"Formamentum sunt haut."
 	"Res creat e [formamentis abditis]."
 	"Animi sunt abditi."
@@ -998,7 +998,6 @@ DumpSentences(//"Res finitus sunt."
 	"[[unus corpus] teneat haut [alius positum]]."
 	"[corpus tenet diversum animos] quando [diversum positum existit]."
 );
-PressAKey;
 InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
 //InteractView("Res sunt [formamentis abditis].");
-//DumpSentences("res  creat e[ formamentis abditis ].");`
+//DumpSentences("res  creat e[ formamentis abditis ].");
