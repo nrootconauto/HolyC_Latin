@@ -1,4 +1,4 @@
-//I must deposit a turd to the porcelain throne
+ //I must deposit a turd to the porcelain throne
 #include "Latin.HC";
 #include "Generator.HC";
 #define AST_NOUN 1
@@ -27,36 +27,9 @@ class I64Set {
   I64 cnt;
   I64 body[0];
 };
-Bool I64SetHasItem(I64Set*dst,I64 a) {
-  I64 i;
-  if(!dst) return FALSE;
-  for(i=0;i!=dst->cnt;i++)
-    if(dst->body[i]==a)
-      return TRUE;
-  return FALSE;
-}
-I64Set *I64SetAdd(I64Set *dst,I64 a,Bool repeats=FALSE){
-  I64Set *tmp;
-  I64 i;
-  if(!dst) {
-    dst=CAlloc(sizeof(ASTSet)+8,mem_task);
-    dst->cnt=1;
-    dst->body[0]=a;
-    return dst;
-  } 
-  if(!repeats)
-  for(i=0;i!=dst->cnt;i++) {
-    if(dst->body[i]==a)
-      return dst;
-  }
-  tmp=CAlloc(sizeof(I64Set)+8*(dst->cnt+1),mem_task);
-  tmp->cnt=dst->cnt+1;
-  MemCpy(tmp->body,dst->body,dst->cnt*8);
-  tmp->body[tmp->cnt-1]=a;
-  Free(dst);
-  return tmp;
-}
+extern class CRule;
 class AST {
+  CRule *rule;
   F64 prob,final_prob;
   I64 raw_type,act_as_type;
   I64 flags; //From Latin.HC
@@ -72,10 +45,12 @@ class AST {
   ASTSet *adverb;
   ASTSet *question;
   I64Set *args; //Dont free
-  CTrie *word; //May be NULL
+  CTrie *word; //May be NULL,if NULL use base_expression
   I64 word_idx;
+  AST *base_expression;
   CDisplayNode *disp_node;
 //Private
+  I64 start;
   I64 end;
 };
 extern U0 DumpAST(AST*a);
@@ -154,18 +129,7 @@ ASTSet *ASTSetAdd(ASTSet *dst,AST *a) {
   return tmp;
 }
 extern U0 ASTSetDel(ASTSet *s);
-extern class CRule;
-class CGrammarState {
-  I64 woff,cnt,*en;
-  U8 *rule;
-  U8 **words;
-  Bool is_conj2; //See RuleSet
-};
 extern U0 ASTDel(AST *a);
-class CSubGenPair {
-  CGrammarState *input_data;
-  U8 *fptr;
-};
 U0 ASTDel(AST *a) {
   if(!a) return;
   ASTSetDel(a->nomitive);
@@ -201,6 +165,11 @@ U0 DumpAST(AST *a) {
   DocPrint(DocPut(mem_task),"$$ID,4$$\n");
   if(a->word)
     DocPrint(DocPut(mem_task),"(WORD%s,%d):",a->word->str,a->word_idx);
+  else if(a->base_expression) {
+    DocPrint(DocPut(mem_task),"BASE_EXPR:\n");
+    DumpAST(a->base_expression);
+    DocPrint(DocPut(mem_task),"BASE_EXPR_END:\n");
+  }
   switch(a->act_as_type) {
       break;case AST_VERB: DocPrint(DocPut(mem_task),"VERB\n");
       break;case AST_ADJECTIVE: DocPrint(DocPut(mem_task),"ADJECTIVE\n");
@@ -257,127 +226,6 @@ U0 DumpAST(AST *a) {
   }
   DocPrint(DocPut(mem_task),"$$ID,-4$$\n");
 }
-class CCacheNugget:CQue {
-  U8 *fun;
-  I64 start,end,hits;
-  U8 *rule;
-  ASTSet *results;
-//Still being generated
-  Bool in_progress;
-};
-
-CQue ast_cache[128][128];
-I64 cache_cnt=0;
-U0 InitCache() {
-  cache_cnt=0;
-  I64 i,j;
-  for(i=0;i!=128;i++)
-  for(j=0;j!=128;j++)
-    QueInit(&ast_cache[i][j]);
-}
-InitCache;
-U0 FlushCache() {
-  CCacheNugget *nug,*head;
-  I64 i,j;
-  for(i=0;i!=128;i++)
-    for(j=0;j!=128;j++) {
-      head=&ast_cache[i][j];
-      for(nug=head->next;nug!=head;nug=nug->next) {
-	Free(nug->rule);
-        ASTSetDel(nug->results);
-      }
-      QueDel(head);
-    }
-  InitCache;
-}
-U0 Repeater(CGrammarState *st) {
-  AST *a;
-  CCacheNugget *nug=st->rule;
-  if(nug->in_progress)
-    return;
-  if(!nug->results) return;
-  I64 idx=nug->results->cnt;
-  while(--idx>=0) {
-    a=ASTClone(nug->results->body[idx]);
-    if(st->en) *st->en=a->end;
-    GeneratorYield(a);
-  }
-}
-CGenerator *GeneratorNewC(U8 *fptr,CGrammarState *st) {
-  CCacheNugget *nug,*least;
-  CGenerator *g;
-  AST *have;
-  Bool ran_already=FALSE;
-  ASTSet *s=NULL;
-enter:;
-  CQue *head=&ast_cache[st->woff][st->woff+st->cnt];
-  for(nug=head->next;nug!=head;nug=nug->next) {
-    if(nug->fun==fptr)
-      if(!StrCmp(nug->rule,st->rule)) {
-        nug->hits++;
-        st->rule=nug;
-        return GeneratorNew(&Repeater,st);
-      }
-  }
-  if(!ran_already) {
-    g=GeneratorNew(fptr,st);
-    g->maximum;
-    nug=CAlloc(sizeof(CCacheNugget),mem_task);
-    nug->fun=fptr;
-    nug->start=st->woff;
-    nug->end=nug->start+st->cnt;
-    nug->rule=StrNew(st->rule,mem_task);
-    nug->in_progress=TRUE;
-    while(GeneratorGet(g,&have)) {
-      have->end=*st->en;
-      s=ASTSetAdd(s,have);
-    }
-    nug->in_progress=FALSE;
-    nug->results=s;
-    ran_already=TRUE;
-//I insert "empty" caches to signifiy nothing of intrest in in the cache spot(s==NULL if empty)
-    QueIns(nug,head);
-    goto enter;
-  }
-  return GeneratorNew(NULL,NULL);
-}
-extern U0 RunRule(CGrammarState*);
-AST *ParseSentenceJoin(I64 argc,U8 **argv) {
-  FlushCache;
-  F64 stS=tS;
-  I64 i,en;
-  AST *r,*r2;
-  ASTSet *canidates=NULL;
-  CGrammarState *st=CAlloc(sizeof(CGrammarState),mem_task);
-  CGenerator *gen;
-  st->words=argv;
-  st->cnt=argc;
-  st->en=&en;
-  st->rule="Sent";
-  gen=GeneratorNew(&RunRule,st);
-  while(GeneratorGet(gen,&r)) {
-    if(en==argc)
-      canidates=ASTSetAdd(canidates,r);
-    else
-      ASTDel(r);
-  }
-  r=NULL;
-  if(canidates) {
-    r=canidates->body[0];
-    for(i=0;i<canidates->cnt;i++) {
-      r2=canidates->body[i];
-      if(r->prob<r2->prob)
-        r=r2;
-    }
-  }
-  if(r) r=ASTClone(r);
-  ASTSetDel(canidates);
-  Free(st);
-  return r;
-}
-AST *ParseSentence(...) {
-  return ParseSentenceJoin(argc,argv);
-}
 I64 ASTGetTrieWords(AST *a,CTrie **words) {
   I64 run,max=0,i;
   ASTSet *s;
@@ -402,4 +250,11 @@ I64 ASTGetTrieWords(AST *a,CTrie **words) {
 	max=MaxI64(max,ASTGetTrieWords(s->body[i],words));
   }
   return max;
+}
+ASTSet *ASTSetAddAll(ASTSet *a,ASTSet *b) {
+  if(!b) return a;
+  I64 i=b->cnt;
+  while(--i>=0)
+    a=ASTSetAdd(a,b->body[i]);
+  return a;
 }

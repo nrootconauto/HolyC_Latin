@@ -638,6 +638,7 @@ loop:;
     return;
   }
   CJson *j=ParseJson(str,NULL),*n,*f,*senses;
+DbgPrint("%s,%s\n",word,str);
   if(n=GetJsonMember(j,"pos",J_STR)) {
     if(!StrICmp(n->str,"verb")) flags|=VERB;
     else if(!StrICmp(n->str,"noun")) flags|=NOUN;
@@ -692,7 +693,7 @@ loop:;
 	      if(!StrICmp(f->str,"passive")) flags|=PASSIVE;
 	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
 	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
-	      if(!StrICmp(f->str,"participle")) flags|=PARTICIPLE;
+	      if(!StrICmp(f->str,"participle")){ flags|=PARTICIPLE;}
 	      if(!StrICmp(f->str,"determiner")) flags|=DETIRMINER;
 	      if(!StrICmp(f->str,"pronoun")) flags|=PRONOUN;
 	      if(!StrICmp(f->str,"declension-1")) flags|=DECLENSION1;

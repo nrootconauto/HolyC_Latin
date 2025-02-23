@@ -23,20 +23,21 @@ Noun@Nom NOUN = NOUN,NOMITIVE;
 Noun@Acc NOUN = NOUN,ACCUSATIVE;
 Noun@Abl NOUN = NOUN,ABLATIVE;
 Noun@Dat NOUN = NOUN,DATIVE;
-Noun@Nom NOUN -> Adj@Nom Noun@Nom;
-Noun@Acc NOUN -> Adj@Acc Noun@Acc;
+Noun@Nom NOUN -> Adj@Nom !Noun@Nom;
+Noun@Acc NOUN -> Adj@Acc !Noun@Acc;
 Noun@Gen OF = GENITIVE,NOUN;
-Noun@Gen OF -> Noun@Gen Noun@Gen;
+Noun@Gen OF -> !Noun@Gen Noun@Gen;
 
 Partic@Partic NOUN = PARTICIPLE;
-Noun@Noun NOUN -> Partic@Partic;
-Adj@Adj ADJECTIVE -> Partic@Partic; (.3) //The "boiled" water
+Adj@Adj ADJECTIVE = PARTICIPLE; (.3) //The "boiled" water
+Noun@Noun NOUN -> !Partic@Partic;
+Adj@Adj ADJECTIVE -> !Partic@Partic; (.3) //The "boiled" water
 
-Noun@Nom NOUN -> Pron@Nom;
-Noun@Acc NOUN -> Pron@Acc;
-Noun@Dat NOUN -> Pron@Dat;
-Noun@Abl NOUN -> Pron@Abl;
-Noun@Gen OF -> Pron@Gen;
+Noun@Nom NOUN -> !Pron@Nom;
+Noun@Acc NOUN -> !Pron@Acc;
+Noun@Dat NOUN -> !Pron@Dat;
+Noun@Abl NOUN -> !Pron@Abl;
+Noun@Gen OF -> !Pron@Gen;
 
 Conj@Conj CONJUNCTION = CONJUNCTION;
 Noun@Noun (CaseAgree)[FlagsPlural] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;
@@ -51,11 +52,11 @@ Adverb@Adverb ADVERB = ADVERB;
 Prep@Prep WHERE = PREPOSITION;
 Verb@Verb VERB = VERB;
 Verb@Intran VERB = VERB,INTRANSITIVE;
-Noun@Noun NOUN -> Noun@Nom;
-Noun@Noun NOUN -> Pron@Inter; //I love Who I love
-Noun@Noun NOUN -> Noun@Acc;
-Noun@Noun NOUN -> Noun@Abl;
-Noun@Noun NOUN -> Noun@Dat;
+Noun@Noun NOUN -> !Noun@Nom;
+Noun@Noun NOUN -> !Pron@Inter; //I love Who I love
+Noun@Noun NOUN -> !Noun@Acc;
+Noun@Noun NOUN -> !Noun@Abl;
+Noun@Noun NOUN -> !Noun@Dat;
 Noun@Noun NOUN -> Adj@Adj !Noun@Noun;
 
 Noun@Noun NOUN = INFINITIVE;
@@ -70,7 +71,7 @@ Noun@Noun NOUN -> !Noun@Noun Prep@PrepNoun;
 Noun@Noun NOUN -> Adj@Adj !Noun@Noun Prep@PrepNoun(WHERE); //sometimes adjective comes befoe preposition(with great care)
 Noun@Noun NOUN -> !Noun@Noun Adj@Adj;
 
-Verb@Verb VERB -> Verb@Verb Prep@PrepNoun;
+Verb@Verb VERB -> !Verb@Verb Prep@PrepNoun;
 //Think [of him]
 Verb@Verb VERB -> !Verb@Verb Noun@Gen;  (.1) //Favor "I ate the food of life" over "I (ate of food) for life")
 Verb@Verb VERB -> Noun@Gen !Verb@Verb;
@@ -99,7 +100,7 @@ Sent CLAUSE -> Sent(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.55) //Favor les
 //
 // The fact is "i ate potatoes"
 Verb@Is VERB = VERB,IS;
-Sent CLAUSE -> Noun@Noun Verb@Is Sent;
+Sent CLAUSE -> Noun@Noun !Verb@Is Sent;
 
 // Predicate nouns are nouns of same case connected by "IS"
 Sent (CaseAgree) CLAUSE -> Noun@Noun !Verb@Is Noun@Noun;
@@ -117,8 +118,8 @@ Adj@Adj(CaseGen) ADJECTIVE -> Noun@Noun !Adj@Adj ; (.6)
 
 
 //Sometimes "is" is implicit
-Sent(CaseAgree) CLAUSE -> Noun@Noun Adj@Adj;(.1) //Favor lesser than explicit "is".
-Sent(CaseAgree) CLAUSE -> Adj@Adj Noun@Noun;(.1) //Favor lesser than explicit "is".
+Sent(CaseAgree) CLAUSE -> !Noun@Noun Adj@Adj;(.1) //Favor lesser than explicit "is".
+Sent(CaseAgree) CLAUSE -> Adj@Adj !Noun@Noun;(.1) //Favor lesser than explicit "is".
 
 // Quam is certified word for  comparsions
 Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> Noun@Noun(COMPARE) !"quam" Noun@Noun(COMPARE);(.6) //Favor comparions
@@ -127,7 +128,7 @@ Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION)
 //End
 
 
-Sent(Transitive) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun;
+Sent(Transitive) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun;
 Sent(NumberAgree) CLAUSE -> Noun@Noun !Verb@Verb;
 Sent(Transitive) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;
 Sent(Transitive) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;
@@ -138,5 +139,5 @@ Sent(NumberAgree) CLAUSE -> Pron@Inter !Verb@Verb;
 Sent(Transitive) CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun Noun@Noun;
 Sent CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun;
 Sent CLAUSE -> Sent !Conj@Conj Sent;
-Sent CLAUSE -> Adverb@Adverb Sent; (.1) //Now he [is] brave
-Sent CLAUSE -> Sent Adverb@Adverb; //"I praise them all [at once]" dafuq?
+Sent CLAUSE -> !Adverb@Adverb Sent; (.1) //Now he [is] brave
+Sent CLAUSE -> Sent !Adverb@Adverb; //"I praise them all [at once]" dafuq?

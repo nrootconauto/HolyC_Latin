@@ -247,7 +247,6 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
   ret->level=level;
   ASTSet *set;
   F64 x,y,ww=0,x2,y2,handle_x,handle_y;
-  F64 bound_y=F64_MIN;
   I64 color=LTGRAY,idx,run,run2,idx2,old_color,old_color2;
   I64Set *left_sides=NULL,*right_sides=NULL,*set2=NULL;
   U8 *optr,*base_word;
@@ -323,9 +322,11 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
     ret->bound_l=x2;
     ret->bound_r=x2;
     ret->max_y=y2;
-    bound_y=y2;
+  } else if(ast->base_expression) {
+    ret=DisplayNode(world,dc,ast->base_expression,,&y);
+    y2=y;
   } else
-    throw('Visual');
+	Break;
 //I will sort the left and right sides by distance
   for(run=0;run<=10;run++) {
     if((set=ast->nomitive)&&run==0) {
@@ -469,6 +470,7 @@ CDC *SplitImageIntoColumn(CDC *img,I64 width=GR_WIDTH) {
 }
 
 CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *w=NULL,I64 *h=NULL,I64 ms_x=0,I64 ms_y=0,CTrie **hover_over=NULL) { 
+//DumpAST(sentence);
   I64 off,idx,inf_d,wc,cw;
   CDC *dc,*wrapped;
   I64 last_wrap=0,diff;
@@ -571,7 +573,6 @@ U0 DumpSentence(...) {
     FileWrite("sent.BMP",bmp,bmp->file_size);
     Free(bmp);
     DCDel(dc);
-    DumpAST(sent);
     ASTDel(sent);
   }
   Free(dummy_stk);
@@ -947,12 +948,20 @@ DumpSentence("non","edam","vivo","sed","ut","vivam","edo");*/
 //InteractView("philosophia est vitae magistra");
 //DumpSentences("assentatio  es [malus vitium]");
 //DumpSentences("video hominem abire");
-InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
+//InteractView("et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
+//DumpSentences("tenebrae super faciem abyssi et spiritus Dei ferebatur super aquas");
+//DumpSentences("[[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
 //"si",
 //DumpSentences("[Omne qui] ens audiant nomen.");
-//DumpSentences("puella nominis  nominis es");
-
+/*DumpSentences("spiritus Dei ferebatur super aquas");
+DumpSentences(
+"res finitus sunt."
+"Formamentum sunt haut."
+"Res creat e formamentis abditis."
+"Animi sunt abditi."
+"animos sunt mutationes [formamentorum].");*/
 // Nroot's Doctrine 1
+DocClear;
 /*DumpSentences("Res finitus sunt."
 	"Formamentum sunt haut."
 	"Res creat e [formamentis abditis]."
@@ -964,7 +973,8 @@ InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi]
 	"[[unus corpus] teneat haut [alius positum]]."
 	"[corpus tenet diversum animos] quando [diversum positum existit]."
 	"[animus est juxta [diversum animos]] hac [tela tenet [diversum fila]."
-	"[idem animi ] sunt [[omnia animos] in [diversum positum]].");*/
+	"[idem animi ] sunt [[omnia animos] in [diversum positum]]."
+);*/
 //InteractView("decorum est pro patria mori");
 //
 //InteractView("in principio creavit Deus [caelum et  terram]");
@@ -974,3 +984,21 @@ InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi]
 //InteractView("tunc Herodes videns");
 //DumpSentences("[[tunc Herodes videns] quoniam [inlusus esset a magis]] et [iratus est valde]");
 // et mittens occidit omnes pueros qui erant in Bethleem et in omnibus finibus eius a bimatu et infra secundum tempus quod exquisierat a magis");
+//DumpSentences("[Formamentum sunt haut] et [res sunt]");
+//InteractView("tenebrae [super faciem] abyssi");
+//InteractView("[res sunt haut]");
+DumpSentences(//"Res finitus sunt."
+	"Formamentum sunt haut."
+	"Res creat e [formamentis abditis]."
+	"Animi sunt abditi."
+	"animos sunt  [formamentorum mutationes]."
+	"tela tenet unus  fila ilico."
+        "[duo fila existit haut]  ubi [unus existat]."
+	"sed fila existat juxta alius fila."
+	"[[unus corpus] teneat haut [alius positum]]."
+	"[corpus tenet diversum animos] quando [diversum positum existit]."
+);
+PressAKey;
+InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
+//InteractView("Res sunt [formamentis abditis].");
+//DumpSentences("res  creat e[ formamentis abditis ].");`
