@@ -106,7 +106,7 @@ read_one:
       if(ch<1023)
         buf[ch++]=*(ptr++);
       else
-	ptr++;
+	ptr++;
     } else
 	goto read_one;
   }
