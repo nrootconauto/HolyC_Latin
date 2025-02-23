@@ -94,7 +94,7 @@ class CJson {
 };
 
 U8 *sqstring(U8 *ptr,U8 **en) {
-  U8 *buf=MAlloc(256);
+  U8 *buf=MAlloc(1024);
   I64 ch=0,C;
   if(en) *en=ptr;
   if(*ptr!='\'') return NULL;
@@ -103,9 +103,10 @@ U8 *sqstring(U8 *ptr,U8 **en) {
     if(*ptr=='\\') {
       ptr++;
 read_one:
-      C=ReadUTF8(ptr,&ptr);
-      if(ch<255)
-        buf[ch++]=Transliterate(C);
+      if(ch<1023)
+        buf[ch++]=*(ptr++);
+      else
+	ptr++;
     } else
 	goto read_one;
   }
@@ -115,7 +116,7 @@ read_one:
 }
 
 U8 *dqstring(U8 *ptr,U8 **en) {
-  U8 *buf=MAlloc(256);
+  U8 *buf=MAlloc(1024);
   I64 ch=0,C;
   if(en) *en=ptr;
   if(*ptr!='"') return NULL;
@@ -124,9 +125,10 @@ U8 *dqstring(U8 *ptr,U8 **en) {
     if(*ptr=='\\') {
       ptr++;
 read_one:
-      C=ReadUTF8(ptr,&ptr);
-      if(ch<255)
-        buf[ch++]=Transliterate(C);
+      if(ch<1023)
+        buf[ch++]=*(ptr++);
+      else
+	ptr++;
     } else
 	goto read_one;
   }
@@ -314,7 +316,7 @@ I64 GetWordPtr(I64 *max,CFile *file,U8*str,I64 ptr=0,Bool *new=NULL) {
 }
 U0 MakeIndex(U8 *outname,U8 *in_name) {
   CIndexBlk dummy;
-  U8 *optr=FileRead(in_name),*fptr;
+  U8 *optr=FileRead(in_name),*fptr,*ostr;
   Bool new;
   CFile *file;
   CHeapCtrl *oc=Fs->data_heap;
@@ -325,7 +327,7 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
   MemSet(&dummy,0,sizeof CIndexBlk);
   FBlkWrite(file,&dummy);
   fptr=optr;
-  I64 off=0,blk,sz=1;
+  I64 off=0,blk,sz=1,idx;
   do {
     fptr=SkipWhitespace(fptr);
     off=fptr-optr;
@@ -336,6 +338,12 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
     if(j&&j->type==J_NODE) {
       g=HashFind("word",j->hash_table,-1);
       str=g->user_data0;
+      ostr=str;
+      for(idx=0;ReadUTF8(str);idx++) {
+        ostr[idx]=Transliterate(ReadUTF8(str,&str));
+      }
+      ostr[idx]=0;
+      str=ostr;
       if(str&&str->type=J_STR) {
 //Ensure all charactors are alpha
         for(blk=0;blk!=StrLen(str->str);blk++) {
@@ -365,11 +373,12 @@ skip:;
 }
 if(!FileFind(__DIR__"/INDEX.TRIE",,0)) {
   if(FileFind(__DIR__"/Latin.json.Z")) {
-    PopUpOk("I will generate the HolyC dictionary files(Grab a beer).\n  This may take a few seconds\n");
+    PopUpOk("I will generate the HolyC dictionary files(Grab a beer).\n  This may take a few minutess\n");
     Copy(__DIR__"/Latin.json.Z",__DIR__"/Latin.json");
     MakeIndex(__DIR__"/INDEX.TRIE",__DIR__"/Latin.json");
   }
 }
+
 I64 GetWordOffset(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
 PrintI(index_file,word);
   CFile *file=FOpen(index_file,"r");
@@ -391,7 +400,7 @@ PrintI(index_file,word);
   FClose(file);
   return off;
 }
-U8 *GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
+U8 *_GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
   I64 off=GetWordOffset(word,index_file,inst),off2;
   if(off==-1) return NULL;
   U8 buffer[0x10000],fbuf[BLK_SIZE],*ret,*tmp;
@@ -416,14 +425,24 @@ loop:
     goto loop;
   } else *StrFirstOcc(buffer,"\n")=0;
   FClose(file);
-  ret=CAlloc(bo+1);
-  tmp=buffer;
-  off=0;
+  return StrNew(buffer);
+}
+U8 *GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0)  {
+  U8 *tmp=_GetWordString(word,json_file,index_file,inst);
+  if(!tmp) {
+    return NULL;
+  }
+  U8 *otmp=tmp;
+  U8 bo,*ret=MAllocIdent(tmp);
+  I64 off=0;
   while(bo=Transliterate(ReadUTF8(tmp,&tmp))) {
     ret[off++]=bo;
   }
+  ret[off++]=bo;
+  Free(otmp);
   return ret;
 }
+
 CJson *GetJsonMember(CJson *j,U8 *member,I64 type=-1) {
   CHashGeneric *g;
   if(j->type==J_ARRAY||j->type==J_NODE) {
@@ -726,4 +745,42 @@ skip:;
   JsonDel(j);
   Free(str);
   goto loop;
+}
+U32 *GetNativeWord(U8 *have) {
+  U8 *raw=_GetWordString(have),*ptr;
+  U8 buf[STR_LEN];
+  U32 *ret=NULL,c,idx,off;
+  CJson *j=ParseJson(raw,NULL),*m,*head_templates;
+  "%s\n",raw;
+  if(j&&(head_templates=GetJsonMember(j,"head_templates"))) {
+    if(head_templates->type==J_ARRAY) {
+      idx=0;
+      while(TRUE) {
+        StrPrint(buf,"%d",idx++);
+        if(m=GetJsonMember(head_templates,buf)) {
+	  if(m->type==J_NODE) {
+	    m=GetJsonMember(m,"expansion");
+	    if(m->type==J_STR) {
+	      ret=CAlloc((StrLen(m->str)+1)*4);
+	      ptr=m->str;
+	      off=0;
+	      while(c=ReadUTF8(ptr,&ptr)) {
+		if(c==' '||c=='.')
+		  break;
+		if(c=='('||c=='[')
+		  break;
+	        ret[off++]=c;
+	      }
+	     goto fin;
+	    }
+	  }
+        } else
+	  break;
+      } 
+    }
+  }
+fin:;
+  JsonDel(j);
+  Free(raw);
+  return ret;
 }
