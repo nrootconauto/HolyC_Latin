@@ -1,3 +1,5 @@
+#ifndef UTILS_H
+#define UTILS_H 1
 // a b c NULL (NULL terminated),ends at end of input or '.'
 U8 *SkipWhitespace(U8 *s) {
   while(Bt(char_bmp_white_space,*s))
@@ -77,3 +79,23 @@ fin:
   ret[tcnt]=NULL;
   return ret;
 }
+
+I64 ReadUTF8(U8 *st,U8 **en=NULL) {
+  I64 ch=*st;
+  if(0b10000000&ch==0) {
+    if(en) *en=st+1;
+    return ch;
+  }
+  if(0b11100000&ch==0b11000000) {
+    if(en) *en=st+2;
+    return (st[0]&0b11111)<<6|((st[1]&0b111111));
+  }
+  if(0b11110000&ch==0b11100000) {
+    if(en) *en=st+3;
+    return (st[0]&0b1111)<<12|(st[1]&0b111111)<<6|((st[2]&0b111111));
+  }
+  if(en) *en=st+4;
+  return (st[1]&0b111)<<18|(st[1]&0b111111)<<12|(st[2]&0b111111)<<6|((st[3]&0b111111));  
+}
+
+#endif

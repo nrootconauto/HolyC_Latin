@@ -72,7 +72,7 @@ again:;
   if(!range_offset) {
      return (g+delta)&U16_MAX;
   }
-  U16 id=EndianU16(offsets[idx+range_offset+g-start_code]);
+  U16 id=EndianU16(offsets[idx+range_offset/2+g-start_code]);
   if(id)
     return (id+delta)&U16_MAX;
   return -1;
@@ -209,6 +209,7 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
   CD2 *control=NULL,*cur,*st=NULL,*en=NULL;
   CD2 *c2=NULL;
   CD3I32 bcontrols[4];
+  I64 rendered=0,to_render=0;
   dc=DCAlias(dc);
   dc->flags|=DCF_TRANSFORMATION;
   dc->color=RED;
@@ -218,7 +219,15 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
   bcontrols[1].z=0;
   bcontrols[2].z=0;
   bcontrols[3].z=0;
-  for(i=0;i!=len+1;i++) {
+  for(i=0;i!=len;i++) {
+    if(flags[i%len]&SOF_CURVE)
+      to_render++;
+  }
+  for(i=0;rendered!=to_render;i++) {
+    if(rendered==to_render) {
+	c2=NULL;
+	control=NULL;
+    }
     cur=&points[i%len];
     if(!control&&!(flags[i%len]&SOF_CURVE))
       control=cur; 
@@ -228,8 +237,9 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
       st=cur;
     else if(!en&&flags[i%len]&SOF_CURVE) {
       en=cur;
-      if(!control) {
+      if(!control||1) {
         GrLine3(dc,st->x*scale,-st->y*scale,0,en->x*scale,-en->y*scale,0);
+        rendered++;
       } else if(control&&!c2) {
         bcontrols[0].x=st->x*scale;
         bcontrols[0].y=-st->y*scale;
@@ -239,6 +249,7 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
         bcontrols[2].y=-en->y*scale;
         Gr2Bezier3(dc,bcontrols);
         control=NULL;
+        rendered++;
       } else if(control&&c2) {
         bcontrols[0].x=st->x*scale;
         bcontrols[0].y=-st->y*scale;
@@ -251,6 +262,7 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
         Gr3Bezier3(dc,bcontrols);
         control=NULL;
 	c2=NULL;
+        rendered++;
       }
       st=en;
       en=NULL;
@@ -313,11 +325,11 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=1
   CD2 *opoints=MAllocIdent(points);
   if(trans)
     for(idx=0;idx<ilen;idx++) {
-      points[idx].x/=ppem;
-      points[idx].y/=ppem;
-      trans(&points[idx].x,&points[idx].y,td);
       points[idx].x*=ppem;
       points[idx].y*=ppem;
+      trans(&points[idx].x,&points[idx].y,td);
+      points[idx].x/=ppem;
+      points[idx].y/=ppem;
     }
   last=0;
   for(idx=0;idx!=cnt;idx++) {
@@ -404,12 +416,14 @@ U0 TTF_Compound(CDC *dc,I64 x,I64 y,U8 *fbase,U8 *file,I64 gc,F64 scale=16) {
     mr_ass[1]=b;
     mr_ass[2]=c;
     mr_ass[3]=d;
-    mr_ass[4]=0;
-    mr_ass[5]=0;
-    if(flags&COMPOUND_XY)
+    mr_ass[4]=e;
+    mr_ass[5]=f;
+    FramePtrAdd("recur",1);
+    if(flags&COMPOUND_XY) {
       TTF_RenderGl(dc,x,y,fbase,gi,scale,&TTF_Trans,mr_ass);
-    else
+    } else
       TTF_RenderGl(dc,x,y,fbase,gi,scale,NULL,NULL,0);
+    FramePtrDel("recur");
   } while(flags&COMPOUND_MORE);
 }
 U0 TTF_HMetrics(I64 g,U8* f,F64 *advance,F64 *left_bear) {
@@ -548,21 +562,32 @@ CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *tran
   F64 xmax=EndianI16(gh->x_max)/ppem*scale;
   F64 ymax=EndianI16(gh->y_max)/ppem*scale;
 
-  F64 left_bear,aw;
+  F64 left_bear,aw,xoff,yoff;
   TTF_HMetrics(g,file,&aw,&left_bear);
 
-  dumb=DCNew(xmax-xmin+100,ymax-ymin+100);
+  dumb=DCNew(xmax-xmin+100,Max(y,ymax)-ymin+100);
   DCFill(dumb,TRANSPARENT);
+  if(!FramePtr("recur")) {
+    yoff=dumb->height-100;
+    xoff=10;
+  } else {
+    xoff=10;
+    yoff=dumb->height-100;
+  }
   if(gc<=I16_MAX) {
 //21 Savage Simple
-    TTF_RenderChrSimple(dumb,left_bear/ppem*scale-xmin+50,ymax+50,gh+1,EndianU16(gh->cont_cnt),ppem,scale,trans,td);
+    TTF_RenderChrSimple(dumb,xoff,yoff,gh+1,EndianU16(gh->cont_cnt),ppem,scale,trans,td);
   } else {
 //Complex 
-    TTF_Compound(dumb,left_bear/ppem*scale-xmin+50,ymax+50,file,gh+1,-gc.i16[0],scale);
+    TTF_Compound(dumb,xoff,yoff,file,gh+1,-gc.i16[0],scale);
   }
-  if(fill)
+  if(fill&&!FramePtr("recur"))
     OddEven(dumb);
-  GrBlot(dc,x+xmin-50,y-ymax-50,dumb);
+  if(FramePtr("recur")&&0) {
+    GrBlot(dc,-xoff,y+ymax-yoff,dumb);
+  } else{
+     GrBlot(dc,left_bear*scale/ppem-xmin+x-xoff,y-yoff,dumb);
+  }
 
   DCDel(dumb);
   CGlAdvance ret;
@@ -580,7 +605,6 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
   U8 *head=TTF_GetTablePtr('head',file);
   F64 ppem=EndianU16((head+18)(U16*)[0]);
   while(*text) {
-"%x\n",text[0];
     ga=TTF_RenderChr(dc,x,y,file,*text,scale);
     x+=ga.x;
     x+=TTF_Kerning(file,text[0],text[1])/ppem*scale;
@@ -589,12 +613,21 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
   return x-ox;
 }
 #ifdef __CMD_LINE__
+#include "Utils.HC";
 Cd(__DIR__);;;;
 U8 *f=FileRead("mono.ttf");
 DCFill;
 WinMax;
-TTF_RenderChr(gr.dc,200,175,f,'a',150);
-TTF_RenderChr(gr.dc,400,175,f,'b',150);
-TTF_RenderChr(gr.dc,200,375,f,'w',25);
-TTF_RenderChr(gr.dc,400,375,f,'b',250);
+
+U32 text[5]={0x1f88,0x1f32,0x1fa6,0x3bd,0};
+TTF_RenderTextU32(gr.dc,100,200,f,text,64);
+DocClear;
+PressAKey;
+DCFill;
+
+
+/*TTF_RenderChr(gr.dc,200,175,f,'a',150);
+TTF_RenderChr(gr.dc,400,175,f,'b',250);
+TTF_RenderChr(gr.dc,200,375,f,'c',200);
+	TTF_RenderChr(gr.dc,400,375,f,'d',250);*/
 #endif
