@@ -309,6 +309,8 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=1
     accum+=got;
     points[idx].y=accum/ppem;
   }
+
+  CD2 *opoints=MAllocIdent(points);
   if(trans)
     for(idx=0;idx<ilen;idx++) {
       points[idx].x/=ppem;
@@ -323,6 +325,7 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=1
     RenderCon(dc,x,y,points+last,flags+last,next-last+1,scale);
     last=next+1;
   }
+  Free(opoints);
   Free(points);
   Free(flags);
 }
@@ -343,6 +346,7 @@ class CCompound {
 #define COMPOUND_XY_SCALE (1<<6)
 #define COMPOUND_MATRIX (1<<7)
 #define COMPOUND_U16 (1)
+#define COMPOUND_XY (1<<1)
 
 U0 TTF_Trans(F64 *x,F64 *y,F64 *mat6) {
   F64 X=*x;
@@ -395,14 +399,17 @@ U0 TTF_Compound(CDC *dc,I64 x,I64 y,U8 *fbase,U8 *file,I64 gc,F64 scale=16) {
       d=1.;
     }
 
-    F64 mr_ass[6];
+    F64 mr_ass[7];
     mr_ass[0]=a;
     mr_ass[1]=b;
     mr_ass[2]=c;
     mr_ass[3]=d;
     mr_ass[4]=0;
     mr_ass[5]=0;
-    TTF_RenderGl(dc,x,y,fbase,gi,scale,&TTF_Trans,mr_ass);;
+    if(flags&COMPOUND_XY)
+      TTF_RenderGl(dc,x,y,fbase,gi,scale,&TTF_Trans,mr_ass);
+    else
+      TTF_RenderGl(dc,x,y,fbase,gi,scale,NULL,NULL,0);
   } while(flags&COMPOUND_MORE);
 }
 U0 TTF_HMetrics(I64 g,U8* f,F64 *advance,F64 *left_bear) {
@@ -423,38 +430,50 @@ U0 TTF_HMetrics(I64 g,U8* f,F64 *advance,F64 *left_bear) {
     en=long_hmtx*4;
     if(en<4) return;
     if(advance) *advance=EndianI16((hmtx+en-4)(I16*)[0]);
-    if(left_bear) *left_bear=EndianI16((hmtx+en-2*(g-long_hmtx))(I16*)[1]);
+    if(left_bear) *left_bear=EndianI16((hmtx+en$IV,0$-2*(g-long_hmtx))(I16*)[1]);
   }
 }
 
 I64 class CGlAdvance {
   I32 x,y;
 };
-U0 OddEven(CDC *dc) {
+$IV,0$$IV,0$$IV,0$U0 OddEven(CDC *dc) {
   I64 w=dc->width;
   I64 h=dc->height;
-  I64 x,y;
+  I64 x,y,c;
   I64 d_on=FALSE,got;
   for(y=0;y!=h;y++) {
     d_on=FALSE;
-    for(x=0;x<w;x++) {
+    for(x=0;x<w;) {
+      c=GrPeek0(dc,x,y);
+      if(c==BLACK||c==LTCYAN) {
+        d_on=1;
+      } else if(c==YELLOW)
+	d_on=0;
       if(GrPeek0(dc,x,y)==RED) {
-	got=GrPeek0(dc,x,y);
-        //Skip the outline pixels
+        got=GrPeek0(dc,x,y);
+//Skip the outline pixels
         while(x<w&&GrPeek0(dc,x,y)==got) {
 	  x++;
-	}
+        }
         d_on^=1;
-	if(d_on) {
-          dc->color=BLACK;
+        if(GrPeek(dc,x,y)==TRANSPARENT) {
+	  if(d_on) {
+	    dc->color=LTCYAN;
+	  } else
+	    dc->color=YELLOW;
 	  GrFloodFill(dc,x,y);
-	}
-      }
+        }
+        goto skip;
+      } else
+        x++;
+skip:
     }
   }
-  dc->color=PURPLE;
+  dc->color=LTCYAN;
   GrFloodFill$IV,0$(dc,0,0);
-  DCColorChg(dc,PURPLE,TRANSPARENT);
+  DCColorChg(dc,YELLOW,BLACK);
+  DCColorChg(dc,LTCYAN,TRANSPARENT);
   DCColorChg(dc,RED,BLACK);
 }
 class CTTFKernTable {
@@ -532,22 +551,22 @@ CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *tran
   F64 left_bear,aw;
   TTF_HMetrics(g,file,&aw,&left_bear);
 
-  dumb=DCNew(xmax-xmin+16,ymax-ymin+16);
+  dumb=DCNew(xmax-xmin+100,ymax-ymin+100);
   DCFill(dumb,TRANSPARENT);
   if(gc<=I16_MAX) {
 //21 Savage Simple
-    TTF_RenderChrSimple(dumb,-xmin+8,ymax+8,gh+1,EndianU16(gh->cont_cnt),ppem,scale,trans,td);
+    TTF_RenderChrSimple(dumb,left_bear/ppem*scale-xmin+50,ymax+50,gh+1,EndianU16(gh->cont_cnt),ppem,scale,trans,td);
   } else {
 //Complex 
-    TTF_Compound(dumb,-xmin+8,ymax+8,file,gh+1,-gc.i16[0],scale);
+    TTF_Compound(dumb,left_bear/ppem*scale-xmin+50,ymax+50,file,gh+1,-gc.i16[0],scale);
   }
   if(fill)
     OddEven(dumb);
-  GrBlot(dc,x+xmin-8,y-ymax-8,dumb);
+  GrBlot(dc,x+xmin-50,y-ymax-50,dumb);
 
   DCDel(dumb);
   CGlAdvance ret;
-  ret.x=Max(aw/ppem*scale,xmax-xmin	);
+  ret.x=Max(aw/ppem*scale,xmax-xmin);
   ret.y=0;
   return ret;
 }
@@ -561,6 +580,7 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
   U8 *head=TTF_GetTablePtr('head',file);
   F64 ppem=EndianU16((head+18)(U16*)[0]);
   while(*text) {
+"%x\n",text[0];
     ga=TTF_RenderChr(dc,x,y,file,*text,scale);
     x+=ga.x;
     x+=TTF_Kerning(file,text[0],text[1])/ppem*scale;
@@ -573,15 +593,8 @@ Cd(__DIR__);;;;
 U8 *f=FileRead("mono.ttf");
 DCFill;
 WinMax;
-#if 1
-//U32 text[5]={'a','i','w','n',0};
-U32 watermelon[6]={0x5D0,0x5D1,0x5D8,0x5D9,0x5D7,0};
-U32 text[5]={0x391,0x399,0x1ff7,0x39d,0};
-TTF_RenderTextU32(gr.dc,100,200,f,text,100);
-#else
-TTF_RenderChr(gr.dc,200,175,f,0xe1,250);
-TTF_RenderChr(gr.dc,400,175,f,0xee,250);
-	TTF_RenderChr(gr.dc,200,375,f,'w',250);
-TTF_RenderChr(gr.dc,400,375,f,0xf1,250);
-#endif
+TTF_RenderChr(gr.dc,200,175,f,'a',150);
+TTF_RenderChr(gr.dc,400,175,f,'b',150);
+TTF_RenderChr(gr.dc,200,375,f,'w',25);
+TTF_RenderChr(gr.dc,400,375,f,'b',250);
 #endif
