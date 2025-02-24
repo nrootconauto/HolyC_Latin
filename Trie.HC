@@ -36,8 +36,7 @@ CTrie *TrieExists(U8 *name, I64 flags) {
 CTrie *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL) {
   I64 idx;
   CTrie *new = CAlloc(sizeof(CTrie), trie_task);
-  CTrie *to = &root;
-  CTrie **ins_at = &to->next;
+  CTrie *to = &root, **ins_at = &to->next;
   if (!new) return NULL;
   new->str = StrNew(name, trie_task);
   new->flags = flags;
@@ -48,20 +47,12 @@ CTrie *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL) {
       if (!to->branches[idx]) {
         to->branches[idx] = CAlloc(sizeof(CTrie), trie_task);
         if (!to->branches[idx]) {
-          Free(new->str);
-          if (new->translation) Free(new->translation);
-          Free(new);
-          throw('AllocFail');
+          Free(new->str); if (new->translation) Free(new->translation); Free(new); throw('AllocErr');
         }
       }
-      to = to->branches[idx];
-      ins_at = &to->next;
-      name++;
+      to = to->branches[idx]; ins_at = &to->next; name++;
     } else {
-      Free(new->str);
-      if (new->translation) Free(new->translation);
-      Free(new);
-      throw('InvChr');
+      Free(new->str); if (new->translation) Free(new->translation); Free(new); throw('InvChr');
     }
   }
   while (*ins_at) ins_at = &(*ins_at)->next;
