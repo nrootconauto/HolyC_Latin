@@ -237,7 +237,7 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
       st=cur;
     else if(!en&&flags[i%len]&SOF_CURVE) {
       en=cur;
-      if(!control||1) {
+      if(!control) {
         GrLine3(dc,st->x*scale,-st->y*scale,0,en->x*scale,-en->y*scale,0);
         rendered++;
       } else if(control&&!c2) {
@@ -416,13 +416,11 @@ U0 TTF_Compound(CDC *dc,I64 x,I64 y,U8 *fbase,U8 *file,I64 gc,F64 scale=16) {
     mr_ass[1]=b;
     mr_ass[2]=c;
     mr_ass[3]=d;
-    mr_ass[4]=e;
-    mr_ass[5]=f;
+    mr_ass[4]=0;
+    mr_ass[5]=0;
     FramePtrAdd("recur",1);
-    if(flags&COMPOUND_XY) {
-      TTF_RenderGl(dc,x,y,fbase,gi,scale,&TTF_Trans,mr_ass);
-    } else
-      TTF_RenderGl(dc,x,y,fbase,gi,scale,NULL,NULL,0);
+    if(flags&COMPOUND_XY)
+      TTF_RenderGl(dc,x+e/ppem*scale,y-f/ppem*scale,fbase,gi,scale,&TTF_Trans,mr_ass);
     FramePtrDel("recur");
   } while(flags&COMPOUND_MORE);
 }
@@ -569,9 +567,9 @@ CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *tran
   DCFill(dumb,TRANSPARENT);
   if(!FramePtr("recur")) {
     yoff=dumb->height-100;
-    xoff=10;
+    xoff=50;
   } else {
-    xoff=10;
+    xoff=50;
     yoff=dumb->height-100;
   }
   if(gc<=I16_MAX) {
@@ -581,13 +579,8 @@ CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *tran
 //Complex 
     TTF_Compound(dumb,xoff,yoff,file,gh+1,-gc.i16[0],scale);
   }
-  if(fill&&!FramePtr("recur"))
-    OddEven(dumb);
-  if(FramePtr("recur")&&0) {
-    GrBlot(dc,-xoff,y+ymax-yoff,dumb);
-  } else{
-     GrBlot(dc,left_bear*scale/ppem-xmin+x-xoff,y-yoff,dumb);
-  }
+  OddEven(dumb);
+  GrBlot(dc,left_bear*scale/ppem-xmin+x-xoff,y-yoff,dumb);
 
   DCDel(dumb);
   CGlAdvance ret;
@@ -604,12 +597,20 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
   I64 ox=x;
   U8 *head=TTF_GetTablePtr('head',file);
   F64 ppem=EndianU16((head+18)(U16*)[0]);
+  F64 aw;
+  CDC*dumb=DCNew(1,1);
   while(*text) {
-    ga=TTF_RenderChr(dc,x,y,file,*text,scale);
-    x+=ga.x;
-    x+=TTF_Kerning(file,text[0],text[1])/ppem*scale;
+    if(*text!=' ') {
+      ga=TTF_RenderChr(dc,x,y,file,*text,scale);
+      x+=ga.x;
+    } else  {
+      ga=TTF_RenderChr(dumb,x,y,file,*text,scale);
+      x+=ga.x;
+    }
+	    x+=TTF_Kerning(file,text[0],text[1])/ppem*scale;
     text++;
   }
+  DCDel(dumb);
   return x-ox;
 }
 #ifdef __CMD_LINE__
@@ -618,13 +619,10 @@ Cd(__DIR__);;;;
 U8 *f=FileRead("mono.ttf");
 DCFill;
 WinMax;
-
 U32 text[5]={0x1f88,0x1f32,0x1fa6,0x3bd,0};
 TTF_RenderTextU32(gr.dc,100,200,f,text,64);
 DocClear;
 PressAKey;
-DCFill;
-
 
 /*TTF_RenderChr(gr.dc,200,175,f,'a',150);
 TTF_RenderChr(gr.dc,400,175,f,'b',250);
