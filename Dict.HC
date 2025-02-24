@@ -138,10 +138,11 @@ U8 *word(U8 *ptr,U8 **en) {
   return buf;
 }
 class CIndexBlk {
-    I64 inst_cnt;
-    I64 inst_offsets[32];
-    U8 *body['z'-'a'+1];
-    I64 pad[(BLK_SIZE-8-8*('z'-'a'+1))/8];
+    I32 inst_cnt;
+    I32 inst_offsets[29];
+    I64 flags;
+    U32 tranlation_offset;
+    U32 body['z'-'a'+1];
 };
 CJson *ParseJson(U8 *st,U8 **en=NULL) {
   CJson *ret=NULL;
@@ -279,18 +280,38 @@ skip:;
     }  
    return j;
 } 
+
+
+U0 SubFBlkRead(CFile *file,CIndexBlk *out,I64 ptr)  {
+  U8 dummies[BLK_SIZE];
+  FBlkRead(file,&dummies,ptr>>1,1);
+  if(ptr&1)
+     MemCpy(out,&dummies[sizeof(CIndexBlk)],sizeof(CIndexBlk));
+  else
+     MemCpy(out,&dummies[0],sizeof(CIndexBlk));
+}
+U0 SubFBlkWrite(CFile *file,CIndexBlk *in,I64 ptr)  {
+  U8 dummies[BLK_SIZE];
+  MemSet(&dummies,0,BLK_SIZE);
+  FBlkRead(file,&dummies,ptr>>1,1);
+  if(ptr&1)
+     MemCpy(&dummies[sizeof(CIndexBlk)],in,sizeof(CIndexBlk));
+  else
+     MemCpy(&dummies[0],in,sizeof(CIndexBlk));
+  FBlkWrite(file,dummies,ptr>>1);
+}
+
 I64 GetWordPtr(I64 *max,CFile *file,U8*str,I64 ptr=0,Bool *new=NULL) {
   if(new) *new=FALSE;
   if(!*str) return ptr;
   I64 idx=ToUpper(*str)-'A';
   CIndexBlk dummy;
-  FBlkRead(file,&dummy,ptr,1);
-  if(new) *new=FALSE;
+  SubFBlkRead(file,&dummy,ptr);
   if(!dummy.body[idx]) {
     dummy.body[idx]=*max;
-    FBlkWrite(file,&dummy,ptr,1);
+    SubFBlkWrite(file,&dummy,ptr);
     MemSet(&dummy,0,sizeof CIndexBlk);
-    FBlkWrite(file,&dummy,ptr=(*max)++,1);
+    SubFBlkWrite(file,&dummy,ptr=(*max)++);
     if(new) *new=TRUE;
     return GetWordPtr(max,file,str+1,ptr);
   }
@@ -304,6 +325,7 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
   CFile *file;
   CHeapCtrl *oc=Fs->data_heap;
   CHashGeneric *g;
+  U8 dummies[BLK_SIZE];
   CJson *j,*str;
   Del(outname);
   file=FOpen(outname,"w");
@@ -334,15 +356,15 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
 	   goto skip;
         }
         blk=GetWordPtr(&sz,file,str->str,,&new);
-        FBlkRead(file,&dummy,blk,1);
+        SubFBlkRead(file,&dummy,blk);
 	if(new) {
 	  dummy.inst_cnt=1;
           dummy.inst_offsets[0]=off;
 	} else {
-	  if(dummy.inst_cnt<32)
+	  if(dummy.inst_cnt<29	)
             dummy.inst_offsets[dummy.inst_cnt++]=off;
 	}
-        FBlkWrite(file,&dummy,blk,1);
+        SubFBlkWrite(file,&dummy,blk);
 skip:;
       }
     }
@@ -350,7 +372,7 @@ skip:;
     HeapCtrlDel(Fs->data_heap);
     Fs->data_heap=oc;
   } while(TRUE);
-  file->de.size=sz<<BLK_SIZE_BITS;
+  file->de.size=(sz/2)<<BLK_SIZE_BITS;
   FClose(file); //Flush to disk to avoid long ram buffering
   Free(optr);
 }
@@ -369,14 +391,14 @@ PrintI(index_file,word);
   I64 blk=0,idx,off=-1;
   while(*word) {
     idx=ToUpper(*word)-'A';
-    FBlkRead(file,&dummy,blk,1);    
+    SubFBlkRead(file,&dummy,blk);    
     if(!dummy.body[idx]) 
       break;
     blk=dummy.body[idx];
     word++;
   }
   if(!*word)  {
-    FBlkRead(file,&dummy,blk,1);
+    SubFBlkRead(file,&dummy,blk);
     off=dummy.inst_offsets[inst];
     if(!off) off=-1;
   }

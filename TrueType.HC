@@ -620,7 +620,7 @@ U8 *f=FileRead("mono.ttf");
 DCFill;
 WinMax;
 U32 text[5]={0x1f88,0x1f32,0x1fa6,0x3bd,0};
-TTF_RenderTextU32(gr.dc,100,200,f,text,64);
+TTF_RenderTextU32(gr.dc,100,200,f,text,128);
 DocClear;
 PressAKey;
 
