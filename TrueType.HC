@@ -563,7 +563,7 @@ CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *tran
   F64 left_bear,aw,xoff,yoff;
   TTF_HMetrics(g,file,&aw,&left_bear);
 
-  dumb=DCNew(xmax-xmin+100,Max(y,ymax)-ymin+100);
+  dumb=DCNew(xmax-xmin+100,ymax-ymin+200);
   DCFill(dumb,TRANSPARENT);
   if(!FramePtr("recur")) {
     yoff=dumb->height-100;
@@ -607,25 +607,59 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
       ga=TTF_RenderChr(dumb,x,y,file,*text,scale);
       x+=ga.x;
     }
-	    x+=TTF_Kerning(file,text[0],text[1])/ppem*scale;
+    x+=TTF_Kerning(file,text[0],text[1])/ppem*scale;
     text++;
   }
   DCDel(dumb);
   return x-ox;
 }
-#ifdef __CMD_LINE__
 #include "Utils.HC";
+U0 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file) {
+  U32 *str=CAlloc((1+StrLen(text))*4),c,i=0;
+  CDC *ext=DCNew(I32_MAX,I32_MAX,Fs,TRUE);
+  CDC *upscaled;
+  F64 x,y,w,h;
+  DCExtentsInit(ext);
+  for(i=0;c=ReadUTF8(text,&text);i++) {
+    str[i]=c;
+  }
+  TTF_RenderTextU32(ext,I32_MAX/2,I32_MAX/2,ttf_file,str,100.);
+  if (ext->min_x<=ext->max_x) {
+    ext->min_x-=I32_MAX/2;
+    ext->max_x-=I32_MAX/2;
+  }
+  if (ext->min_y<=ext->max_y) {
+    ext->min_y-=I32_MAX/2;
+    ext->max_y-=I32_MAX/2;
+  }
+  upscaled=DCNew(w=ext->max_x-ext->min_x+1,h=ext->max_y-ext->min_y+1);
+  DCFill(upscaled,TRANSPARENT);
+  TTF_RenderTextU32(upscaled,-ext->min_x,-ext->min_y,ttf_file,str,100.);
+  w*=scale/100.;
+  h*=scale/100.;
+  for(x=0;x<w;x++)
+    for(y=0;y<h;y++) {
+      to->color=GrPeek(upscaled,x*100./scale,y*100./scale);
+      if(to->color!=TRANSPARENT)
+	GrPlot3(to,tx+x,ty+y,0);
+    }
+  DCDel(ext);
+  DCDel(upscaled);
+  Free(str);
+}
+#ifdef __CMD_LINE__
 Cd(__DIR__);;;;
 U8 *f=FileRead("mono.ttf");
 DCFill;
 WinMax;
 U32 text[5]={0x1f88,0x1f32,0x1fa6,0x3bd,0};
 TTF_RenderTextU32(gr.dc,100,200,f,text,128);
+TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21",16,f);
 DocClear;
 PressAKey;
 
 /*TTF_RenderChr(gr.dc,200,175,f,'a',150);
 TTF_RenderChr(gr.dc,400,175,f,'b',250);
 TTF_RenderChr(gr.dc,200,375,f,'c',200);
-	TTF_RenderChr(gr.dc,400,375,f,'d',250);*/
+0	TTF_RenderChr(gr.dc,400,375,f,'d',250);*/
 #endif

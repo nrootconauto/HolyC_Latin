@@ -1000,4 +1000,4 @@ DumpSentences("Res finitus sunt."
 );
 InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
 //InteractView("Res sunt [formamentis abditis].");
-//DumpSentences("res  creat e[ formamentis abditis ].");
+//DumpSentences("res  creat e[ formamentis abditis ].");
