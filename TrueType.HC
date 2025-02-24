@@ -424,14 +424,14 @@ U0 TTF_Compound(CDC *dc,I64 x,I64 y,U8 *fbase,U8 *file,I64 gc,F64 scale=16) {
     FramePtrDel("recur");
   } while(flags&COMPOUND_MORE);
 }
-U0 TTF_HMetrics(I64 g,U8* f,F64 *advance,F64 *left_bear) {
+U0 TTF_HMetrics(I64 g,U8* f,F64 *advance,F64 *left_bear,F64 *line_height) {
   U8 *hmtx=TTF_GetTablePtr('hmtx',f),*head=TTF_GetTablePtr('hhea',f);
   I64 en;
   if(advance) *advance=0;
   if(left_bear) *left_bear=0;
   if(!hmtx) return;
   if(!head) return;
-  I64 long_hmtx=(head+34)(U16*)[0];
+  I64 long_hmtx=EndianU16((head+34)(U16*)[0]);
   if (g<long_hmtx) {
 //Forward [1,2,3.........]
     hmtx+=4*g;
@@ -444,6 +444,34 @@ U0 TTF_HMetrics(I64 g,U8* f,F64 *advance,F64 *left_bear) {
     if(advance) *advance=EndianI16((hmtx+en-4)(I16*)[0]);
     if(left_bear) *left_bear=EndianI16((hmtx+en$IV,0$-2*(g-long_hmtx))(I16*)[1]);
   }
+  if(line_height) {
+    *line_height=EndianI16(head[2](U16))-EndianI16(head[4](U16))+EndianI16(head[6](U16));
+  }
+}
+class CTTF_Vmtx {
+  U16 advance;
+  I16 bear;
+};
+
+U0 TTF_VMetrics(I64 g,U8* f,F64 *advance,F64 *left_bear,F64 *line_height) {
+  U8 *vmtx=TTF_GetTablePtr('vmtx',f),*head=TTF_GetTablePtr('vhea',f);
+  I64 en;
+  if(advance) *advance=0;
+  if(left_bear) *left_bear=0;
+  if(line_height) *line_height=0;
+  if(!vmtx) return;
+  if(!head) return;
+  I64 long_vmtx=EndianU16((head+34)(U16*)[0]);
+  if (g<long_vmtx) {
+//Forward [1,2,3.........]
+    CTTF_Vmtx *p=vmtx+g;
+    if(advance) *advance=EndianI16(p->advance);
+    if(left_bear) *left_bear=EndianI16(p->bear);
+  }
+    if(line_height) {
+//vhea.vertTypoAscender - vhea.vertTypoDescender + vhea.vertTypoLineGap 
+      *line_height=EndianI16(head+2)-EndianI16(head+4)+EndianI16(head+6);
+    }
 }
 
 I64 class CGlAdvance {
@@ -561,8 +589,9 @@ CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *tran
   F64 ymax=EndianI16(gh->y_max)/ppem*scale;
 
   F64 left_bear,aw,xoff,yoff;
-  TTF_HMetrics(g,file,&aw,&left_bear);
-
+  F64 line_height,y_bear=0;
+  TTF_HMetrics(g,file,&aw,&left_bear,&line_height);
+//  TTF_VMetrics(g,file,NULL,&y_bear,&line_height);
   dumb=DCNew(xmax-xmin+100,ymax-ymin+200);
   DCFill(dumb,TRANSPARENT);
   if(!FramePtr("recur")) {
@@ -580,12 +609,12 @@ CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *tran
     TTF_Compound(dumb,xoff,yoff,file,gh+1,-gc.i16[0],scale);
   }
   OddEven(dumb);
-  GrBlot(dc,left_bear*scale/ppem-xmin+x-xoff,y-yoff,dumb);
+  GrBlot(dc,left_bear*scale/ppem-xmin+x-xoff,y_bear*scale/ppem+y-yoff,dumb);
 
   DCDel(dumb);
   CGlAdvance ret;
   ret.x=Max(aw/ppem*scale,xmax-xmin);
-  ret.y=0;
+  ret.y=-line_height/ppem*scale;
   return ret;
 }
 CGlAdvance TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc,F64 scale=16) {
@@ -599,8 +628,13 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
   F64 ppem=EndianU16((head+18)(U16*)[0]);
   F64 aw;
   CDC*dumb=DCNew(1,1);
+  F64 line_height;
   while(*text) {
-    if(*text!=' ') {
+    if(*text=='\n') {
+      TTF_HMetrics(0,file,NULL,NULL,&line_height);
+      x=ox;
+      y-=line_height/ppem*scale;
+    } else if(*text!=' ') {
       ga=TTF_RenderChr(dc,x,y,file,*text,scale);
       x+=ga.x;
     } else  {
@@ -654,10 +688,10 @@ DCFill;
 WinMax;
 U32 text[5]={0x1f88,0x1f32,0x1fa6,0x3bd,0};
 TTF_RenderTextU32(gr.dc,100,200,f,text,128);
-TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21",16,f);
+TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21\n     21 Savage",21,f);
 DocClear;
 PressAKey;
-
+DCFill;
 /*TTF_RenderChr(gr.dc,200,175,f,'a',150);
 TTF_RenderChr(gr.dc,400,175,f,'b',250);
 TTF_RenderChr(gr.dc,200,375,f,'c',200);
