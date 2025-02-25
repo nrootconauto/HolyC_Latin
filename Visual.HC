@@ -6,7 +6,7 @@ U0 CalcBezier(CD3I32 *point,CD3I32*l,CD3I32 *cent,CD3I32 *r) {
   point->x=2.*cent->x-l->x/2.-r->x/2.;
   point->y=2.*cent->y-l->y/2.-r->y/2.;
 }
-//Returns maximum y
+	//Returns maximum y
 F64 GrPreciseBezier(CDC *dc,CD3I32*ctrls,F64 *highest_x_pos=NULL) {
   F64 x=ctrls[2].x,y=ctrls[2].y,x2,y2,step;
   F64 max_y=y;

@@ -1,3 +1,6 @@
+#ifndef TrieAdd
+extern U8 *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL);
+#endif
 #include "Utils.HC";
 U8 Transliterate(U64 ch) {
 //https://en.wiktionary.org/wiki/Appendix:Unicode/Latin_Extended-A
@@ -57,7 +60,7 @@ U8 Transliterate(U64 ch) {
     if(!ch)
       return 0;
     if(!(31<=ch<=128))
-      ch='?';
+      ch='.';
   }
   return ch;
 }
@@ -139,8 +142,8 @@ U8 *word(U8 *ptr,U8 **en) {
 }
 class CIndexBlk {
     I32 inst_cnt;
-    I32 inst_offsets[29];
-    I64 flags;
+    I64 inst_offsets[9];
+    I64 inst_flags[9];
     U32 tranlation_offset;
     U32 body['z'-'a'+1];
 };
@@ -318,6 +321,110 @@ I64 GetWordPtr(I64 *max,CFile *file,U8*str,I64 ptr=0,Bool *new=NULL) {
   if(ptr>*max) throw('trie');
   return GetWordPtr(max,file,str+1,dummy.body[idx],new);
 }
+CJson *GetJsonMember(CJson *j,U8 *member,I64 type=-1) {
+  CHashGeneric *g;
+  if(j->type==J_ARRAY||j->type==J_NODE) {
+    g=HashFind(member,j->hash_table,-1);
+    if(g) {
+      j=g->user_data0;
+      if(type==-1) return j;
+      else if(type==j->type) return j;
+    }
+  }
+  return NULL;
+}
+I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
+  I64 flags=0,base_flags=0,idx3,idx2,idx;
+  U8 dummy[STR_LEN];
+  CJson *n,*f,*senses;
+  I64 added=0;
+  if(n=GetJsonMember(j,"pos",J_STR)) {
+    if(!StrICmp(n->str,"verb")) flags|=VERB;
+    else if(!StrICmp(n->str,"noun")) flags|=NOUN;
+    else if(!StrICmp(n->str,"adj")) flags|=ADJECTIVE;
+    else if(!StrICmp(n->str,"conj")) flags|=CONJUNCTION;
+    else if(!StrICmp(n->str,"prep")) flags|=PREPOSITION;
+    else if(!StrICmp(n->str,"adv")) flags|=ADVERB;
+    else if(!StrICmp(n->str,"pron")) flags|=PRONOUN;
+  }
+  base_flags=flags;
+  for(idx3=0;idx3!=2;idx3++) {
+    if(idx3==0)
+      senses=GetJsonMember(j,"senses",J_ARRAY);
+    else if(idx3==1)
+      senses=GetJsonMember(j,"forms",J_ARRAY);
+    if(senses) {
+      for(idx2=0;idx2!=senses->cnt;idx2++) {
+        StrPrint(dummy,"%d",idx2);
+        n=GetJsonMember(senses,dummy);;
+        flags=base_flags;
+        if(idx3==1) {
+	  if(f=GetJsonMember(n,"form",J_STR)) {
+	    if(StrICmp(f->str,word))
+	      goto skip;
+	  } else
+	    goto skip;
+        }
+        if(n&&(n=GetJsonMember(n,"tags",J_ARRAY))) {
+	  for(idx=0;idx!=n->cnt;idx++) {
+	    StrPrint(dummy,"%d",idx);
+	    if(f=GetJsonMember(n,dummy,J_STR)) {
+	      DbgPrint("%s for %s\n",f->str,word);
+	      if(!StrICmp(f->str,"masculine")) flags|=MASCULINE;
+	      if(!StrICmp(f->str,"feminine")) flags|=FEMININE;
+	      if(!StrICmp(f->str,"neuter")) flags|=NEUTER;
+	      if(!StrICmp(f->str,"singular")) flags|=SINGULAR;
+	      if(!StrICmp(f->str,"plural")) flags|=PLURAL;
+	      if(!StrICmp(f->str,"nominative")) flags|=NOMITIVE;
+	      if(!StrICmp(f->str,"accusative")) flags|=ACCUSATIVE;
+	      if(!StrICmp(f->str,"dative")) flags|=DATIVE;
+	      if(!StrICmp(f->str,"ablative")) flags|=ABLATIVE;
+	      if(!StrICmp(f->str,"genitive")) flags|=GENITIVE;
+	      if(!StrICmp(f->str,"infinitive")) flags|=INFINITIVE;
+	      if(!StrICmp(f->str,"imperfect")) flags|=IMPERFECT;
+	      if(!StrICmp(f->str,"future")) flags|=FUTURE;
+	      if(!StrICmp(f->str,"first-person")) flags|=_1P;
+	      if(!StrICmp(f->str,"second-person")) flags|=_2P;
+	      if(!StrICmp(f->str,"third-person")) flags|=_3P;
+	      if(!StrICmp(f->str,"perfect")) flags|=PERFECT;
+	      if(!StrICmp(f->str,"pluperfect")) flags|=PLUPERFECT;
+	      if(!StrICmp(f->str,"subjunctive")) flags|=SUBJUNCTIVE;
+	      if(!StrICmp(f->str,"passive")) flags|=PASSIVE;
+	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
+	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
+	      if(!StrICmp(f->str,"participle")){ flags|=PARTICIPLE;}
+	      if(!StrICmp(f->str,"determiner")) flags|=DETIRMINER;
+	      if(!StrICmp(f->str,"pronoun")) flags|=PRONOUN;
+	      if(!StrICmp(f->str,"declension-1")) flags|=DECLENSION1;
+	      if(!StrICmp(f->str,"declension-2")) flags|=DECLENSION2;
+	      if(!StrICmp(f->str,"declension-3")) flags|=DECLENSION3;
+	      if(!StrICmp(f->str,"declension-4")) flags|=DECLENSION4;
+	      if(!StrICmp(f->str,"declension-5")) flags|=DECLENSION5;
+	      if(!StrICmp(f->str,"conjugation-1")) flags|=CONJUGATION1;
+	      if(!StrICmp(f->str,"conjugation-2")) flags|=CONJUGATION2;
+	      if(!StrICmp(f->str,"conjugation-3")) flags|=CONJUGATION3;
+	      if(!StrICmp(f->str,"conjugation-4")) flags|=CONJUGATION4;
+	      if(!StrICmp(f->str,"active")) flags|=0; //ACTIVE is implicit
+	      if(!StrICmp(f->str,"intransitive")) flags|=INTRANSITIVE;
+	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
+	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
+	      DbgPrint("%s for %s\n",f->str,word);
+	    }
+	  }
+          if(add)
+	    if(!TrieExists(word,flags)) {
+	      added++;
+	      DeclensionForWord(flags,TrieAdd(word,flags,trans));
+	    }
+skip:;
+        }
+      }
+    }
+  }
+  if(add&&!added)
+    TrieAdd(word,base_flags,trans);
+  return flags;
+}
 U0 MakeIndex(U8 *outname,U8 *in_name) {
   CIndexBlk dummy;
   U8 *optr=FileRead(in_name),*fptr,*ostr;
@@ -339,16 +446,14 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
     if(!*fptr) break;
     Fs->data_heap=HeapCtrlInit(,NULL,0);
     j=ParseJson(fptr,&fptr);
-    j=TrimJson(j,"senses","glosses","forms","tags","pos","word");
     if(j&&j->type==J_NODE) {
-      g=HashFind("word",j->hash_table,-1);
-      str=g->user_data0;
-      ostr=str;
-      for(idx=0;ReadUTF8(str);idx++) {
-        ostr[idx]=Transliterate(ReadUTF8(str,&str));
+      g=str=GetJsonMember(j,"word");
+      ostr=str->str;
+      for(idx=0;ReadUTF8(ostr);idx++) {
+        str->str[idx]=Transliterate(ReadUTF8(ostr,&ostr));
       }
+      ostr=str->str;
       ostr[idx]=0;
-      str=ostr;
       if(str&&str->type=J_STR) {
 //Ensure all charactors are alpha
         for(blk=0;blk!=StrLen(str->str);blk++) {
@@ -360,9 +465,12 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
 	if(new) {
 	  dummy.inst_cnt=1;
           dummy.inst_offsets[0]=off;
+	  dummy.inst_flags[0]=GetWordFlags0(ostr,j,FALSE);
 	} else {
-	  if(dummy.inst_cnt<29	)
-            dummy.inst_offsets[dummy.inst_cnt++]=off;
+	  if(dummy.inst_cnt<9) {
+	    dummy.inst_offsets[dummy.inst_cnt]=off;
+            dummy.inst_flags[dummy.inst_cnt++]=GetWordFlags0(ostr,j,FALSE);
+	  }
 	}
         SubFBlkWrite(file,&dummy,blk);
 skip:;
@@ -385,7 +493,6 @@ if(!FileFind(__DIR__"/INDEX.TRIE",,0)) {
 }
 
 I64 GetWordOffset(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
-PrintI(index_file,word);
   CFile *file=FOpen(index_file,"r");
   CIndexBlk dummy;
   I64 blk=0,idx,off=-1;
@@ -448,18 +555,6 @@ U8 *GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__D
   return ret;
 }
 
-CJson *GetJsonMember(CJson *j,U8 *member,I64 type=-1) {
-  CHashGeneric *g;
-  if(j->type==J_ARRAY||j->type==J_NODE) {
-    g=HashFind(member,j->hash_table,-1);
-    if(g) {
-      j=g->user_data0;
-      if(type==-1) return j;
-      else if(type==j->type) return j;
-    }
-  }
-  return NULL;
-}
 U8 *GetBaseWord(U8 *word,I64 inst=0) {
   U8 *ws=GetWordString(word);
   if(!ws) return NULL;
@@ -662,91 +757,8 @@ loop:;
     return;
   }
   CJson *j=ParseJson(str,NULL),*n,*f,*senses;
-DbgPrint("%s,%s\n",word,str);
-  if(n=GetJsonMember(j,"pos",J_STR)) {
-    if(!StrICmp(n->str,"verb")) flags|=VERB;
-    else if(!StrICmp(n->str,"noun")) flags|=NOUN;
-    else if(!StrICmp(n->str,"adj")) flags|=ADJECTIVE;
-    else if(!StrICmp(n->str,"conj")) flags|=CONJUNCTION;
-    else if(!StrICmp(n->str,"prep")) flags|=PREPOSITION;
-    else if(!StrICmp(n->str,"adv")) flags|=ADVERB;
-    else if(!StrICmp(n->str,"pron")) flags|=PRONOUN;
-  }
-  base_flags=flags;
-  for(idx3=0;idx3!=2;idx3++) {
-    if(idx3==0)
-      senses=GetJsonMember(j,"senses",J_ARRAY);
-    else if(idx3==1)
-      senses=GetJsonMember(j,"forms",J_ARRAY);
-    if(senses) {
-      for(idx2=0;idx2!=senses->cnt;idx2++) {
-        StrPrint(dummy,"%d",idx2);
-        n=GetJsonMember(senses,dummy);;
-        flags=base_flags;
-        if(idx3==1) {
-	  if(f&&(f=GetJsonMember(n,"form",J_STR))) {
-	    if(StrICmp(f->str,word))
-	      goto skip;
-	  } else
-	    goto skip;
-        }
-        if(n&&(n=GetJsonMember(n,"tags",J_ARRAY))) {
-	  for(idx=0;idx!=n->cnt;idx++) {
-	    StrPrint(dummy,"%d",idx);
-	    if(f=GetJsonMember(n,dummy,J_STR)) {
-	      DbgPrint("%s for %s\n",f->str,word);
-	      if(!StrICmp(f->str,"masculine")) flags|=MASCULINE;
-	      if(!StrICmp(f->str,"feminine")) flags|=FEMININE;
-	      if(!StrICmp(f->str,"neuter")) flags|=NEUTER;
-	      if(!StrICmp(f->str,"singular")) flags|=SINGULAR;
-	      if(!StrICmp(f->str,"plural")) flags|=PLURAL;
-	      if(!StrICmp(f->str,"nominative")) flags|=NOMITIVE;
-	      if(!StrICmp(f->str,"accusative")) flags|=ACCUSATIVE;
-	      if(!StrICmp(f->str,"dative")) flags|=DATIVE;
-	      if(!StrICmp(f->str,"ablative")) flags|=ABLATIVE;
-	      if(!StrICmp(f->str,"genitive")) flags|=GENITIVE;
-	      if(!StrICmp(f->str,"infinitive")) flags|=INFINITIVE;
-	      if(!StrICmp(f->str,"imperfect")) flags|=IMPERFECT;
-	      if(!StrICmp(f->str,"future")) flags|=FUTURE;
-	      if(!StrICmp(f->str,"first-person")) flags|=_1P;
-	      if(!StrICmp(f->str,"second-person")) flags|=_2P;
-	      if(!StrICmp(f->str,"third-person")) flags|=_3P;
-	      if(!StrICmp(f->str,"perfect")) flags|=PERFECT;
-	      if(!StrICmp(f->str,"pluperfect")) flags|=PLUPERFECT;
-	      if(!StrICmp(f->str,"subjunctive")) flags|=SUBJUNCTIVE;
-	      if(!StrICmp(f->str,"passive")) flags|=PASSIVE;
-	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
-	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
-	      if(!StrICmp(f->str,"participle")){ flags|=PARTICIPLE;}
-	      if(!StrICmp(f->str,"determiner")) flags|=DETIRMINER;
-	      if(!StrICmp(f->str,"pronoun")) flags|=PRONOUN;
-	      if(!StrICmp(f->str,"declension-1")) flags|=DECLENSION1;
-	      if(!StrICmp(f->str,"declension-2")) flags|=DECLENSION2;
-	      if(!StrICmp(f->str,"declension-3")) flags|=DECLENSION3;
-	      if(!StrICmp(f->str,"declension-4")) flags|=DECLENSION4;
-	      if(!StrICmp(f->str,"declension-5")) flags|=DECLENSION5;
-	      if(!StrICmp(f->str,"conjugation-1")) flags|=CONJUGATION1;
-	      if(!StrICmp(f->str,"conjugation-2")) flags|=CONJUGATION2;
-	      if(!StrICmp(f->str,"conjugation-3")) flags|=CONJUGATION3;
-	      if(!StrICmp(f->str,"conjugation-4")) flags|=CONJUGATION4;
-	      if(!StrICmp(f->str,"active")) flags|=0; //ACTIVE is implicit
-	      if(!StrICmp(f->str,"intransitive")) flags|=INTRANSITIVE;
-	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
-	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
-	      DbgPrint("%s for %s\n",f->str,word);
-	    }
-	  }
-	  if(!TrieExists(word,flags)) {
-	    added++;
-	    DeclensionForWord(flags,TrieAdd(word,flags,trans));
-	  }
-skip:;
-        }
-      }
-    }
-  }
-  if(!added)
-    TrieAdd(word,base_flags,trans);
+  
+  GetWordFlags0(word,j,TRUE,trans);
   JsonDel(j);
   Free(str);
   goto loop;
