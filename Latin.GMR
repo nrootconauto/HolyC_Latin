@@ -128,7 +128,7 @@ Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION)
 //End
 
 
-Sent(Transitive) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun;
+Sent(Transitive) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun;
 Sent(NumberAgree) CLAUSE -> Noun@Noun !Verb@Verb;
 Sent(Transitive) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;
 Sent(Transitive) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;

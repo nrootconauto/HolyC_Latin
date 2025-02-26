@@ -77,6 +77,7 @@ class CJson {
     CHashTable *hash_table;
   }
   I64 cnt;
+  Bool used;
 };
 
 U8 *sqstring(U8 *ptr,U8 **en) {
@@ -243,8 +244,9 @@ U0 JsonDel(CJson *j) {
 }
 U0 DumpJson(U8 *d=NULL,CJson *j) {
   I64 bucket;
-  CHashGeneric *g;
   Bool first=TRUE;
+  U8 num[STR_LEN];
+  CHashGeneric *g;
   switch(j->type) {
     case J_STR:
       CatPrint(d,"\"%Q\"",j->str);
@@ -253,7 +255,6 @@ U0 DumpJson(U8 *d=NULL,CJson *j) {
       CatPrint(d,"%n",j->num);
       break;
     case J_NODE:
-    case J_ARRAY:
       CatPrint(d,"{");
       for(bucket=0;bucket<=j->hash_table->mask;bucket++)
         for(g=j->hash_table->body[bucket];g;g=g->next) {
@@ -263,27 +264,54 @@ U0 DumpJson(U8 *d=NULL,CJson *j) {
 	  first=FALSE;
         }
       CatPrint(d,"}");
+      break;
+    case J_ARRAY:
+      CatPrint(d,"[");
+      for(bucket=0;bucket<=j->hash_table->mask;bucket++)
+        for(g=j->hash_table->body[bucket];g;g=g->next) {
+	  if(!first) CatPrint(d,",");
+	  DumpJson(d,g->user_data0);
+	  first=FALSE;
+        }
+      CatPrint(d,"]");
   }
 }
-CJson *TrimJson(CJson *j,...) {
+Bool TrimJson0(CJson *j,I64 argc,U8 **argv) {
   I64 i;
   I64 bucket;
   CHashGeneric *g;
-  if(j->type!=J_NODE) return j;
+  Bool ret=FALSE;
+  if(j->type!=J_NODE&&j->type!=J_ARRAY) return FALSE;
+  CJson *sub;
+  for(bucket=0;bucket<=j->hash_table->mask;bucket++) {
 again:;
-  for(bucket=0;bucket<=j->hash_table->mask;bucket++)
     for(g=j->hash_table->body[bucket];g;g=g->next) {
       for(i=0;i!=argc;i++) {
-        if(!StrCmp(argv[i],g->str))
+        if(!StrCmp(g->str,argv[i])) {
+	  ret=TRUE;
 	  goto skip;
+	}
       }
-      HashRemDel(g,j->hash_table);
+      sub=g->user_data0;
+      if(sub->used) {
+	goto skip;
+      }
+      if(!TrimJson0(sub,argc,argv)) {
+        HashRemDel(g,j->hash_table);
+        JsonDel(sub);
+      } else {
+	ret=TRUE;
+	sub->used=TRUE;
+      }
       goto again;
 skip:;
-    }  
-   return j;
+    }
+  }
+  return ret;
 } 
-
+Bool TrimJson(CJson *j,...) {
+  return TrimJson0(j,argc,argv);
+}
 
 U0 SubFBlkRead(CFile *file,CIndexBlk *out,I64 ptr)  {
   U8 dummies[BLK_SIZE];
@@ -327,8 +355,12 @@ CJson *GetJsonMember(CJson *j,U8 *member,I64 type=-1) {
     g=HashFind(member,j->hash_table,-1);
     if(g) {
       j=g->user_data0;
-      if(type==-1) return j;
-      else if(type==j->type) return j;
+      if(type==-1) {
+	return j;
+      }
+      else if(type==j->type) {
+	return j;
+      }
     }
   }
   return NULL;
@@ -351,8 +383,9 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
   for(idx3=0;idx3!=2;idx3++) {
     if(idx3==0)
       senses=GetJsonMember(j,"senses",J_ARRAY);
-    else if(idx3==1)
+    else if(idx3==1) {
       senses=GetJsonMember(j,"forms",J_ARRAY);
+    }
     if(senses) {
       for(idx2=0;idx2!=senses->cnt;idx2++) {
         StrPrint(dummy,"%d",idx2);
@@ -369,7 +402,6 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	  for(idx=0;idx!=n->cnt;idx++) {
 	    StrPrint(dummy,"%d",idx);
 	    if(f=GetJsonMember(n,dummy,J_STR)) {
-	      DbgPrint("%s for %s\n",f->str,word);
 	      if(!StrICmp(f->str,"masculine")) flags|=MASCULINE;
 	      if(!StrICmp(f->str,"feminine")) flags|=FEMININE;
 	      if(!StrICmp(f->str,"neuter")) flags|=NEUTER;
@@ -408,7 +440,6 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	      if(!StrICmp(f->str,"intransitive")) flags|=INTRANSITIVE;
 	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
 	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
-	      DbgPrint("%s for %s\n",f->str,word);
 	    }
 	  }
           if(add)
@@ -427,7 +458,10 @@ skip:;
 }
 U0 MakeIndex(U8 *outname,U8 *in_name) {
   CIndexBlk dummy;
-  U8 *optr=FileRead(in_name),*fptr,*ostr;
+  I64 len;
+  U8 *optr=FileRead(in_name,&len),*fptr,*ostr;
+  U8 *small=CAlloc(len);
+  I64 small_ptr=0;
   Bool new;
   CFile *file;
   CHeapCtrl *oc=Fs->data_heap;
@@ -462,16 +496,23 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
         }
         blk=GetWordPtr(&sz,file,str->str,,&new);
         SubFBlkRead(file,&dummy,blk);
+
 	if(new) {
 	  dummy.inst_cnt=1;
-          dummy.inst_offsets[0]=off;
-	  dummy.inst_flags[0]=GetWordFlags0(ostr,j,FALSE);
+          dummy.inst_offsets[0]=small_ptr;
+//str->str is tranliterated
+	  dummy.inst_flags[0]=GetWordFlags0(str->str,j,FALSE);
 	} else {
 	  if(dummy.inst_cnt<9) {
-	    dummy.inst_offsets[dummy.inst_cnt]=off;
-            dummy.inst_flags[dummy.inst_cnt++]=GetWordFlags0(ostr,j,FALSE);
+	    dummy.inst_offsets[dummy.inst_cnt]=small_ptr;
+            dummy.inst_flags[dummy.inst_cnt++]=GetWordFlags0(str->str,j,FALSE);
 	  }
 	}
+	TrimJson(j,"form_of", "word","expansion","glosses","tags","pos","form");
+	DumpJson(small+small_ptr,j);
+	
+	small_ptr+=StrLen(small_ptr+small);
+        small[small_ptr++]='\n';
         SubFBlkWrite(file,&dummy,blk);
 skip:;
       }
@@ -482,6 +523,11 @@ skip:;
   } while(TRUE);
   file->de.size=(sz/2)<<BLK_SIZE_BITS;
   FClose(file); //Flush to disk to avoid long ram buffering
+  Free(optr);
+  optr=ExtChg(outname,"DEFS");
+  small[small_ptr++]=0;
+  FileWrite(optr,small,small_ptr);
+  Free(small);
   Free(optr);
 }
 if(!FileFind(__DIR__"/INDEX.TRIE",,0)) {
@@ -494,6 +540,7 @@ if(!FileFind(__DIR__"/INDEX.TRIE",,0)) {
 
 I64 GetWordOffset(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
   CFile *file=FOpen(index_file,"r");
+  U8 *ow=word;
   CIndexBlk dummy;
   I64 blk=0,idx,off=-1;
   while(*word) {
@@ -512,14 +559,15 @@ I64 GetWordOffset(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
   FClose(file);
   return off;
 }
+
 U8 *_GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
   I64 off=GetWordOffset(word,index_file,inst),off2;
   if(off==-1) return NULL;
-  U8 buffer[0x10000],fbuf[BLK_SIZE],*ret,*tmp;
+  U8 *buffer=CAlloc(0x100000),fbuf[BLK_SIZE],*ret,*tmp;
   I64 bo=0;
   CFile *file=FOpen(json_file,"r");
   buffer[bo]=0;
-loop:
+loop:;
   FBlkRead(file,fbuf,off2=off>>BLK_SIZE_BITS);
   off2<<=BLK_SIZE_BITS;
   if(off!=off2) {
@@ -537,7 +585,9 @@ loop:
     goto loop;
   } else *StrFirstOcc(buffer,"\n")=0;
   FClose(file);
-  return StrNew(buffer);
+  tmp=StrNew(buffer);
+  Free(buffer);
+  return tmp;
 }
 U8 *GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0)  {
   U8 *tmp=_GetWordString(word,json_file,index_file,inst);
@@ -554,7 +604,6 @@ U8 *GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__D
   Free(otmp);
   return ret;
 }
-
 U8 *GetBaseWord(U8 *word,I64 inst=0) {
   U8 *ws=GetWordString(word);
   if(!ws) return NULL;
@@ -646,7 +695,8 @@ U8 *GetTranslation(U8 *word,Bool recurse=TRUE) {
   CJson *j,*t,*s0,*g,*s,*f;
   U8 *trans=NULL,*tmp;
   for(inst=0;str=GetWordString(word,,,inst);inst++) {
-    j=ParseJson(str,NULL);
+   j=ParseJson(str,NULL);
+   if(j)
    if(s0=GetJsonMember(j,"senses",J_ARRAY)) {
       if(s=GetJsonMember(s0,"0",J_NODE)) { //Use first (most common ?) sense of the word
         f=GetJsonMember(s,"form_of",J_ARRAY);
@@ -748,18 +798,19 @@ U0 LookUpWord(U8 *word) {
   U8 *json_file=__DIR__"/Latin.json",*index_file=__DIR__"/INDEX.TRIE";
   U8 *str,*trans;
   I64 inst=0;
+  CJson *j;
   trans=GetTranslation(word);
 loop:;
   I64 flags=0,idx,idx2,base_flags=0,idx3,added=0;
-  str=GetWordString(word,json_file,index_file,inst++);
+  str=GetWordString(word,json_file,index_file,inst);
+
   if(!str) {
     Free(trans);
     return;
   }
-  CJson *j=ParseJson(str,NULL),*n,*f,*senses;
-  
-  GetWordFlags0(word,j,TRUE,trans);
+  GetWordFlags0(word,j=ParseJson(str),TRUE /* Add to trie*/ ,GetTranslation(word,TRUE));
   JsonDel(j);
+  inst++;
   Free(str);
   goto loop;
 }
@@ -768,7 +819,6 @@ U32 *GetNativeWord(U8 *have) {
   U8 buf[STR_LEN];
   U32 *ret=NULL,c,idx,off;
   CJson *j=ParseJson(raw,NULL),*m,*head_templates;
-  "%s\n",raw;
   if(j&&(head_templates=GetJsonMember(j,"head_templates"))) {
     if(head_templates->type==J_ARRAY) {
       idx=0;

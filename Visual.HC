@@ -962,7 +962,7 @@ DumpSentences(
 "animos sunt mutationes [formamentorum].");*/
 // Nroot's Doctrine 1
 DocClear;
-/*DumpSentences("Res finitus sunt."
+/*DumpSentences("Res finitus sunt ."
 	"Formamentum sunt haut."
 	"Res creat e [formamentis abditis]."
 	"Animi est abditi."
@@ -972,8 +972,8 @@ DocClear;
 	"sed fila existat juxta alius fila."
 	"[[unus corpus] teneat haut [alius positum]]."
 	"[corpus tenet diversum animos] quando [diversum positum existit]."
-	"[animus est juxta [diversum animos]] hac [tela tenet [diversum fila]."
-	"[idem animi ] sunt [[omnia animos] in [diversum positum]]."
+//	"[animus est juxta [diversum animos]] hac [tela tenet [diversum fila]."
+//	"[idem animi ] sunt [[omnia animos] in [diversum positum]]."
 );*/
 //InteractView("decorum est pro patria mori");
 //
@@ -987,17 +987,6 @@ DocClear;
 //DumpSentences("[Formamentum sunt haut] et [res sunt]");
 //InteractView("tenebrae [super faciem] abyssi");
 //InteractView("[res sunt haut]");
-DumpSentences("Res finitus sunt."
-	"Formamentum sunt haut."
-	"Res creat e [formamentis abditis]."
-	"Animi sunt abditi."
-	"animos sunt  [formamentorum mutationes]."
-	"tela tenet unus  fila ilico."
-        "[duo fila existit haut]  ubi [unus existat]."
-	"sed fila existat juxta alius fila."
-	"[[unus corpus] teneat haut [alius positum]]."
-	"[corpus tenet diversum animos] quando [diversum positum existit]."
-);
 InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
-//InteractView("Res sunt [formamentis abditis].");
+//InteractView("Res sunt formamentis abditis.");
 //DumpSentences("res  creat e[ formamentis abditis ].");

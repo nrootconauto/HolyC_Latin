@@ -688,7 +688,7 @@ DCFill;
 WinMax;
 U32 text[5]={0x1f88,0x1f32,0x1fa6,0x3bd,0};
 TTF_RenderTextU32(gr.dc,100,200,f,text,128);
-TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21\n     21 Savage",21,f);
+TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21\n     21 Savage",16,f);
 DocClear;
 PressAKey;
 DCFill;
