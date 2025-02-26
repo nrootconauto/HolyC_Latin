@@ -625,7 +625,6 @@ public Bool WordTextBox(CDC *dc=0,I64 x1,I64 y1,U8 *s,I64 bg_color=YELLOW)
 }
 
 
-
 U0 InteractViewDrawIt(CTask *t,CDC *dc) {
   U8 *st;
   U8 *tran;
@@ -644,13 +643,14 @@ U0 InteractViewDrawIt(CTask *t,CDC *dc) {
       tcnt++;
     ast=ASTClone(ast);
     dc2=DrawSentence(ast,tcnt,toks,,,,x=ms.pos.x-t->pix_left-t->scroll_x,y=ms.pos.y-t->pix_top-t->scroll_y,&word);
+    FramePtrSet("InteractCurWord",word,t);
     GrBlot(dc,0,0,dc2);
     dc->color=RED;
     if(word&&word->str) {
       DocPrint(d,"Word %s:\n",word->str);
       tran=GetTranslations(word->str,TRUE);
       if(tran) {
-	DocPrint(d,"Defs:%s\n",tran);
+	DocPrint(d,"Defs:\n%s\n",tran);
 	Free(tran);
       }
 
@@ -748,9 +748,13 @@ U0 InteractViewDrawIt(CTask *t,CDC *dc) {
 U0 InteractView(U8 *st) {
   U8 **toks;
   I64 tcnt;
+  CTrie *word;
   AST *ast;
+  U8 *trans;
+  CDoc *doc;
   SettingsPush;
   DocClear;
+  FramePtrAdd("InteractCurWord",NULL);
   FramePtrAdd("InteractText",st);
   toks=TokenizeSentence(st,&st);
   tcnt=0;
@@ -762,17 +766,49 @@ U0 InteractView(U8 *st) {
 "
 
 
-";
+  ";
 //DumpAST(ast);
   FramePtrAdd("InteractAst",ast);
-  while(ast&&GetKey!=CH_ESC)
+  I64 msg,a,b;
+  Bts(&Fs->win_inhibit,WIf_SELF_GRAB_SCROLL);
+  Bts(&Fs->win_inhibit,WIf_FOCUS_TASK_GRAB_SCROLL);
+  I64 sx=0,sy=0;
+  while(ast) {
+    msg=ScanMsg(&a,&b);
+    if(ms.lb&&Bt(kbd.down_bitmap,SC_CTRL)) {
+      sx+=(ms.pos.x-ms_last.pos.x)*8;
+      sy+=(ms.pos.y-ms_last.pos.y)*8;
+    }
+    if(msg==MSG_MS_L_DOWN) {
+      if(word=FramePtr("InteractCurWord")) {
+        doc=DocNew;
+        DocPrint(doc,"$$PURPLE$$$$TX+CX,\"Pick a default translation\"$$\n\n");
+        for(tcnt=0;trans=GetTranslation(word->str,TRUE,FALSE,tcnt);tcnt++) {
+	  DocPrint(doc,"$$MU,\"%d:%Q\",LE=%d$$\n",tcnt,trans,tcnt);
+        }
+        I64 want=PopUpMenu(doc);
+        if(0<=want<tcnt) {
+	  SetWordDftTranslationIdx(word->str,want);
+        }
+        DocDel(doc);
+      }
+    } else if(msg==MSG_KEY_DOWN) {
+      if(a==CH_ESC)
+        break;
+    }
+
+    Fs->scroll_x=sx;
+    Fs->scroll_y=sy;
     Refresh;
-  
-fin:
+  }
+  Btr(&Fs->win_inhibit,WIf_FOCUS_TASK_GRAB_SCROLL);
+
+  fin:
   tcnt=0;
   while(toks[tcnt])
     Free(toks[tcnt++]);
   Free(toks);
+  FramePtrDel("InteractCurWord");
   FramePtrDel("InteractText");
   FramePtrDel("InteractAst");
   ASTDel(ast);
@@ -1011,4 +1047,7 @@ DocClear;
 //InteractView("Res sunt formamentis abditis.");
 //DumpSentences("res  creat e[ formamentis abditis ].");
 //DumpSentences("[in principio creavit Deus [terram et caelum]]");
-InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
+//InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
+
+//John 9:1
+DumpSentences("et [praeteriens [vidit hominem caecum a nativitate]].");

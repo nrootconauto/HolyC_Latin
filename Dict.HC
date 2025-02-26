@@ -145,7 +145,7 @@ class CIndexBlk {
     I32 inst_cnt;
     I64 inst_offsets[9];
     I64 inst_flags[9];
-    U32 tranlation_offset;
+    U32 translation_idx;
     U32 body['z'-'a'+1];
 };
 CJson *ParseJson(U8 *st,U8 **en=NULL) {
@@ -560,6 +560,28 @@ I64 GetWordOffset(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
   return off;
 }
 
+I64 GetWordDftTranslationIdx(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE") {
+  CFile *file=FOpen(index_file,"r");
+  U8 *ow=word;
+  CIndexBlk dummy;
+  I64 blk=0,idx,off=0;
+  while(*word) {
+    idx=ToUpper(*word)-'A';
+    SubFBlkRead(file,&dummy,blk);    
+    if(!dummy.body[idx]) 
+      break;
+    blk=dummy.body[idx];
+    word++;
+  }
+  if(!*word)  {
+    SubFBlkRead(file,&dummy,blk);
+    off=dummy.translation_idx;
+  }
+  FClose(file);
+  return off;
+}
+
+
 U8 *_GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
   I64 off=GetWordOffset(word,index_file,inst),off2;
   if(off==-1) return NULL;
@@ -644,7 +666,7 @@ Bool IsFormOf(U8 *who,U8 *who2) {
   }
   return ret;
 }
-extern U8 *GetTranslation(U8*,Bool recurse=FALSE);
+extern U8 *GetTranslation(U8*,Bool recurse=FALSE,Bool small=FALSE,I64 inst=-1);
 U8 *SmallDefinition(U8 *def) {
   if(!def) return def;
   U8 buf[STR_LEN],*bptr=buf,*want;
@@ -685,66 +707,6 @@ U8 *SmallDefinition(U8 *def) {
   }
   return StrUtil(def,SUF_REM_TRAILING|SUF_REM_LEADING);
 } 
-//Your on your own
-U8 *GetTranslation(U8 *word,Bool recurse=TRUE,Bool small=TRUE) {
-  I64 inst;
-  U8 *str;
-  if(!word) return NULL;
-  U8 buf[STR_LEN],*best=NULL,buf2[STR_LEN];
-  I64 idx,idx2;
-  CJson *j,*t,*s0,*g,*s,*f;
-  U8 *trans=NULL,*tmp;
-  for(inst=0;str=GetWordString(word,,,inst);inst++) {
-    j=ParseJson(str,NULL);
-    if(j)
-      if(s0=GetJsonMember(j,"senses",J_ARRAY)) {
-        if(s=GetJsonMember(s0,"0",J_NODE)) { //Use first (most common ?) sense of the word
-	  f=GetJsonMember(s,"form_of",J_ARRAY);
-	  if(f) {
-	    for(idx=0;t=GetJsonMember(f,StrPrint(buf,"%d",idx),J_NODE);idx++) {
-	      if(t) t=GetJsonMember(t,"word",J_STR);
-	      if(!t) goto defacto;
-	      if(tmp=GetTranslation(t->str,FALSE)) {
-	        if(!trans) trans=tmp;
-	        else if(StrLen(trans)>StrLen(tmp)) {
-		  Free(trans);
-		  trans=tmp;
-	        } else
-		  Free(tmp);
-	      }
-	    }
-//Only use definition of root word
-	    goto fin;
-	  } else {
-defacto:;
-	    g=GetJsonMember(s,"glosses",J_ARRAY);
-//Pick shortest translation
-	    if(g) {
-//Use 1st (Most common?) defintion
-	      if(t=GetJsonMember(g,"0",J_STR)) {
-	        if(small)
-		  tmp=SmallDefinition(t->str);
-	        else
-		  tmp=StrNew(t->str);
-	        if(!trans) trans=tmp;
-	        else if(StrLen(trans)>StrLen(tmp)) {
-		  Free(trans);
-		  trans=tmp;
-	        } else
-		  Free(tmp);
-	      }
-	    }
-	  }
-        }
-      }
-fin:;
-    if(j) JsonDel(j);
-    Free(str);
-  }
-  if(!trans)
-    return trans;
-  return StrUtil(trans,SUF_REM_CTRL_CHARS);
-}
 //Returns a long list of translations
 U8 *GetTranslations(U8 *word,Bool recurse=TRUE,I64 *_which=NULL) {
   I64 inst;
@@ -791,6 +753,22 @@ defacto:
   DocDel(trans);
   return StrUtil(best,SUF_REM_CTRL_CHARS);
 }
+//Your on your own(inst==-1 if to use default from CIndexBlk->translation_idx)
+U8 *GetTranslation(U8 *word,Bool recurse=TRUE,Bool small=TRUE,I64 t_inst=-1) {
+  if(t_inst<0)
+    t_inst=GetWordDftTranslationIdx(word);
+  U8 *trans=GetTranslations(word,recurse),*ret;
+  I64 cnt=StrOcc(trans,'\n');
+  while(ret=StrLastOcc(trans,"\n"))
+    *ret=0;
+  if(0<=t_inst<cnt)
+    ret=StrNew(LstSub(t_inst,trans));
+  else 
+    ret=NULL;
+  Free(trans);
+  return ret;
+}
+
 CTask *p=Fs;
 U0 LookUpWord(U8 *word) {
   if(FramePtr(word,trie_task))
@@ -811,7 +789,7 @@ loop:;
     Free(trans);
     return;
   }
-  GetWordFlags0(word,j=ParseJson(str),TRUE /* Add to trie*/ ,GetTranslation(word,TRUE));
+  GetWordFlags0(word,j=ParseJson(str),TRUE /* Add to trie*/ ,GetTranslation(word,FALSE));
   JsonDel(j);
   inst++;
   Free(str);
@@ -854,3 +832,35 @@ fin:;
   Free(raw);
   return ret;
 }
+I64 SetWordDftTranslationIdx(U8 *word,I64 dft;U8 *index_file=__DIR__"/INDEX.TRIE") {
+  CFile *file=FOpen(index_file,"w+");
+  U8 *ow=word,*trans;
+  CTrie *trie;
+  CIndexBlk dummy;
+  I64 blk=0,idx,off=0;
+  while(*word) {
+    idx=ToUpper(*word)-'A';
+    SubFBlkRead(file,&dummy,blk);    
+    if(!dummy.body[idx]) 
+      break;
+    blk=dummy.body[idx];
+    word++;
+  }
+  if(!*word)  {
+    SubFBlkRead(file,&dummy,blk);
+    dummy.translation_idx=dft;
+    SubFBlkWrite(file,&dummy,blk);
+  }
+  FClose(file);
+  trans=GetTranslation(ow,TRUE,FALSE,dft);
+  if(trie=TrieGet(ow)) {
+    while(trie&&trans) {
+      Free(trie->translation);
+      trie->translation=StrNew(trans,trie_task);
+      trie=trie->next;
+    }
+  }
+  Free(trans);
+  return off;
+}
+
