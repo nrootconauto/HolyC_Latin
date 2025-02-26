@@ -32,6 +32,9 @@ Partic@Partic NOUN = PARTICIPLE;
 Adj@Adj ADJECTIVE = PARTICIPLE; (.3) //The "boiled" water
 Noun@Noun NOUN -> !Partic@Partic;
 Adj@Adj ADJECTIVE -> !Partic@Partic; (.3) //The "boiled" water
+Partic@Partic NOUN -> !Partic@Partic Noun@Noun; //TODO what case
+
+
 
 Noun@Nom NOUN -> !Pron@Nom;
 Noun@Acc NOUN -> !Pron@Acc;
@@ -65,13 +68,12 @@ Noun@Noun(CaseAcc) NOUN -> !Infin@Infin Noun@Noun(NOUN); (.5) //Less common
 Noun@Noun(CaseAcc) NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.) //more commons
 
 
-Prep@PrepNoun WHERE -> !Prep@Prep Noun@Noun;
 
-Noun@Noun NOUN -> !Noun@Noun Prep@PrepNoun;
-Noun@Noun NOUN -> Adj@Adj !Noun@Noun Prep@PrepNoun(WHERE); //sometimes adjective comes befoe preposition(with great care)
+Noun@Noun NOUN -> Noun@Noun !Prep@Prep Noun@Noun(WHERE);
+Noun@Noun NOUN -> !Adj@Adj Prep@Prep Noun@Noun(WHERE); //sometimes adjective comes befoe preposition(with great care)
 Noun@Noun NOUN -> !Noun@Noun Adj@Adj;
 
-Verb@Verb VERB -> !Verb@Verb Prep@PrepNoun;
+Verb@Verb VERB -> !Verb@Verb Prep@Prep(WHERE) Noun@Noun;
 //Think [of him]
 Verb@Verb VERB -> !Verb@Verb Noun@Gen;  (.1) //Favor "I ate the food of life" over "I (ate of food) for life")
 Verb@Verb VERB -> Noun@Gen !Verb@Verb;
@@ -86,7 +88,12 @@ Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;
 //
 // "In the begining",God created....
 //
-Sent CLAUSE -> Prep@PrepNoun !Sent;
+Prep@Noun@Sent WHERE -> Prep@Prep Noun@Noun(WHERE);
+Sent CLAUSE -> Prep@Noun@Sent(WHERE)  !Sent(NOUN);
+//
+//  "((Walking by))...[he] saw a blind man"
+//  
+Sent CLAUSE -> !Partic@Partic Sent(WHERE);
 //End
 
 
@@ -101,6 +108,7 @@ Sent CLAUSE -> Sent(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.55) //Favor les
 // The fact is "i ate potatoes"
 Verb@Is VERB = VERB,IS;
 Sent CLAUSE -> Noun@Noun !Verb@Is Sent;
+Sent CLAUSE -> Noun@Noun Noun@Noun; (.1) //Cats like dogs,and [dogs parrots]
 
 // Predicate nouns are nouns of same case connected by "IS"
 Sent (CaseAgree) CLAUSE -> Noun@Noun !Verb@Is Noun@Noun;
@@ -126,6 +134,9 @@ Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> Noun@Noun(COMPARE) !"quam" Noun@Noun(COMPA
 Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION); //et ea means "and too XXXX"
 
 //End
+
+
+Sent CLAUSE -> Noun@Noun !Verb@Verb Prep@Prep Noun@Noun(WHERE);
 
 
 Sent(Transitive) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun;

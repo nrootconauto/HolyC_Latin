@@ -231,24 +231,27 @@ I64 ASTGetTrieWords(AST *a,CTrie **words) {
   I64 run,max=0,i;
   ASTSet *s;
   if(words) words[a->word_idx]=a->word;
-  max=a->word_idx;
+  if(a->base_expression)
+    max=ASTGetTrieWords(a->base_expression,words);
+  else 
+    max=a->word_idx;
   for(run=0;run<=10;run++) {
     switch(run) {
-      break;case 0: s=a->nomitive;
-      break;case: s=a->accusative;
-      break;case: s=a->dative;
-      break;case: s=a->ablative;
-      break;case: s=a->genitive;
-      break;case: s=a->adjective;
-      break;case: s=a->preposition;
-      break;case: s=a->conjunction;
-      break;case: s=a->measurement;
-      break;case: s=a->adverb;
-      break;case: s=a->question;
+        break;case 0: s=a->nomitive;
+        break;case: s=a->accusative;
+        break;case: s=a->dative;
+        break;case: s=a->ablative;
+        break;case: s=a->genitive;
+        break;case: s=a->adjective;
+        break;case: s=a->preposition;
+        break;case: s=a->conjunction;
+        break;case: s=a->measurement;
+        break;case: s=a->adverb;
+        break;case: s=a->question;
     }
     if(s)
       for(i=0;i!=s->cnt;i++)
-	max=MaxI64(max,ASTGetTrieWords(s->body[i],words));
+        max=MaxI64(max,ASTGetTrieWords(s->body[i],words));
   }
   return max;
 }

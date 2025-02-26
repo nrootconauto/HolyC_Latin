@@ -107,7 +107,8 @@ CTrie *DisplayNodeGetHoverWord(CDisplayNode *n,I64 ms_x,I64 ms_y) {
   I64 i;
  AST *ret;
   if(n->ast&&Sqrt(Sqr(ms_x-n->hover_node_pos.x)+Sqr(ms_y-n->hover_node_pos.y))<16) {
-    return n->ast->word;
+    if(n->ast->word)
+      return n->ast->word;
   }
   if(n->connects) {
     i=n->connects->cnt;
@@ -325,6 +326,8 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
     ret->handle_y=y2;
     ret->bound_l=x2;
     ret->bound_r=x2;
+    ret->hover_node_pos.x=I64_MAX;
+    ret->hover_node_pos.y=I64_MAX;
     ret->max_y=y2;
   } else
 	Break;
@@ -473,7 +476,7 @@ CDC *SplitImageIntoColumn(CDC *img,I64 width=GR_WIDTH) {
 CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *w=NULL,I64 *h=NULL,I64 ms_x=0,I64 ms_y=0,CTrie **hover_over=NULL) { 
   I64 off,idx,inf_d,wc,cw;
   CDC *dc,*wrapped;
-//  F64 ww=;
+  F64 ww=0;
   I64 last_wrap=0,diff;
   U8 *closest;
   CDisplayTmp t;
@@ -485,24 +488,26 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
   t.xoff=0,t.yoff=0;
   t.word_offsets=MAlloc(word_cnt*8);
   t.max_y=0.;
-  for(off=WORD_MARGIN,idx=0;idx!=word_cnt;idx++) {
+  for(off=100,idx=0;idx!=word_cnt;idx++) {
     cw=0;
     if(forms[idx]) {
       cw=StrLen(forms[idx]->str);
       if(forms[idx]->translation)
-	cw=MaxI64(StrLen(forms[idx]->translation),cw);
+        cw=MaxI64(StrLen(forms[idx]->translation),cw);
     }
     t.word_offsets[idx]=off;
-//    off+=FONT_WIDTH*cw;
-    off+=100;
+    if(!StrCmp(words[idx],"[")||!StrCmp(words[idx],"]"))
+	;
+      else
+        off+=100+cw*8;
 //Make "image-wrap" points
-    if(idx) {
+    if(idx&&0) {
       if(t.word_offsets[idx]-last_wrap+WORD_MARGIN>=dwidth) {
-	diff=t.word_offsets[idx]-t.word_offsets[idx-1];
-	t.word_offsets[idx-1]=(last_wrap=CeilI64(t.word_offsets[idx-1],dwidth))+WORD_MARGIN;
-	off=t.word_offsets[idx]=diff+t.word_offsets[idx-1];
-	off+=FONT_WIDTH*cw;
-	off+=WORD_MARGIN;
+        diff=t.word_offsets[idx]-t.word_offsets[idx-1];
+        t.word_offsets[idx-1]=(last_wrap=CeilI64(t.word_offsets[idx-1],dwidth))+WORD_MARGIN;
+        off=t.word_offsets[idx]=diff+t.word_offsets[idx-1];
+        off+=FONT_WIDTH*cw;
+        off+=WORD_MARGIN;
       }
     }
   }
@@ -513,8 +518,14 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
   DCFill(dc,TRANSPARENT);
 //DisplayNode will set ->display_node of the ast,so use the one without the ->	display_node's
  CDisplayNode*dn=DisplayNode(&t,dc,untainted);
-  if(hover_over){ 
-    hover_over[0]=DisplayNodeGetHoverWord(dn,ms_x,ms_y);
+  if(hover_over) *hover_over=NULL;
+  for(idx=0;idx!=word_cnt;idx++) {
+   if(SqrI64(t.word_offsets[idx]-ms_x)+SqrI64(32-ms_y)<32*32) {
+     if(hover_over) {
+	*hover_over=forms[idx];
+     }
+   }
+
   }
   DisplayNodeDel(dn);
   if(dwidth!=I64_MAX&&off+8>dwidth) {
@@ -637,8 +648,9 @@ U0 InteractViewDrawIt(CTask *t,CDC *dc) {
     dc->color=RED;
     if(word&&word->str) {
       DocPrint(d,"Word %s:\n",word->str);
-      if(tran=GetTranslation(word->str,TRUE)) {
-	DocPrint(d,"Defs:\n%s\n",tran);
+      tran=GetTranslations(word->str,TRUE);
+      if(tran) {
+	DocPrint(d,"Defs:%s\n",tran);
 	Free(tran);
       }
 
@@ -761,6 +773,8 @@ fin:
   while(toks[tcnt])
     Free(toks[tcnt++]);
   Free(toks);
+  FramePtrDel("InteractText");
+  FramePtrDel("InteractAst");
   ASTDel(ast);
   SettingsPop;
 }
@@ -782,6 +796,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL) {
     }
     ast=ParseSentenceJoin(tcnt,toks);
     if(ast) {
+     DumpAST(ast);
       dc=DrawSentence(ast,tcnt,toks);
 "
 
@@ -989,6 +1004,11 @@ DocClear;
 //DumpSentences("[Formamentum sunt haut] et [res sunt]");
 //InteractView("tenebrae [super faciem] abyssi");
 //InteractView("[res sunt haut]");
-InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur [super aquas]]");
+//DumpSentences("tenebrae super faciem");
+//DumpSentences("[tenebrae super faciem] abyssi");
+//InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur super aquas]");
+//InteractView("[[spiritus Dei] ferebatur  super aquas]");
 //InteractView("Res sunt formamentis abditis.");
 //DumpSentences("res  creat e[ formamentis abditis ].");
+//DumpSentences("[in principio creavit Deus [terram et caelum]]");
+InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");

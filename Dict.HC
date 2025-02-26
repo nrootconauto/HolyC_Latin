@@ -686,7 +686,7 @@ U8 *SmallDefinition(U8 *def) {
   return StrUtil(def,SUF_REM_TRAILING|SUF_REM_LEADING);
 } 
 //Your on your own
-U8 *GetTranslation(U8 *word,Bool recurse=TRUE) {
+U8 *GetTranslation(U8 *word,Bool recurse=TRUE,Bool small=TRUE) {
   I64 inst;
   U8 *str;
   if(!word) return NULL;
@@ -695,47 +695,50 @@ U8 *GetTranslation(U8 *word,Bool recurse=TRUE) {
   CJson *j,*t,*s0,*g,*s,*f;
   U8 *trans=NULL,*tmp;
   for(inst=0;str=GetWordString(word,,,inst);inst++) {
-   j=ParseJson(str,NULL);
-   if(j)
-   if(s0=GetJsonMember(j,"senses",J_ARRAY)) {
-      if(s=GetJsonMember(s0,"0",J_NODE)) { //Use first (most common ?) sense of the word
-        f=GetJsonMember(s,"form_of",J_ARRAY);
-        if(f) {
-	  for(idx=0;t=GetJsonMember(f,StrPrint(buf,"%d",idx),J_NODE);idx++) {
-	    if(t) t=GetJsonMember(t,"word",J_STR);
-	    if(!t) goto defacto;
-	    if(tmp=GetTranslation(t->str,FALSE)) {
-	      if(!trans) trans=tmp;
-	      else if(StrLen(trans)>StrLen(tmp)) {
-	        Free(trans);
-		trans=tmp;
-	      } else
-	        Free(tmp);
+    j=ParseJson(str,NULL);
+    if(j)
+      if(s0=GetJsonMember(j,"senses",J_ARRAY)) {
+        if(s=GetJsonMember(s0,"0",J_NODE)) { //Use first (most common ?) sense of the word
+	  f=GetJsonMember(s,"form_of",J_ARRAY);
+	  if(f) {
+	    for(idx=0;t=GetJsonMember(f,StrPrint(buf,"%d",idx),J_NODE);idx++) {
+	      if(t) t=GetJsonMember(t,"word",J_STR);
+	      if(!t) goto defacto;
+	      if(tmp=GetTranslation(t->str,FALSE)) {
+	        if(!trans) trans=tmp;
+	        else if(StrLen(trans)>StrLen(tmp)) {
+		  Free(trans);
+		  trans=tmp;
+	        } else
+		  Free(tmp);
+	      }
 	    }
-	  }
 //Only use definition of root word
-	  goto fin;
-        } else {
+	    goto fin;
+	  } else {
 defacto:;
-	  g=GetJsonMember(s,"glosses",J_ARRAY);
+	    g=GetJsonMember(s,"glosses",J_ARRAY);
 //Pick shortest translation
-	  if(g) {
+	    if(g) {
 //Use 1st (Most common?) defintion
-	    if(t=GetJsonMember(g,"0",J_STR)) {
-	      tmp=SmallDefinition(t->str);
-	      if(!trans) trans=tmp;
-	      else if(StrLen(trans)>StrLen(tmp)) {
-	        Free(trans);
-		trans=tmp;
-	      } else
-	        Free(tmp);
+	      if(t=GetJsonMember(g,"0",J_STR)) {
+	        if(small)
+		  tmp=SmallDefinition(t->str);
+	        else
+		  tmp=StrNew(t->str);
+	        if(!trans) trans=tmp;
+	        else if(StrLen(trans)>StrLen(tmp)) {
+		  Free(trans);
+		  trans=tmp;
+	        } else
+		  Free(tmp);
+	      }
 	    }
 	  }
         }
       }
-    }
 fin:;
-    JsonDel(j);
+    if(j) JsonDel(j);
     Free(str);
   }
   if(!trans)

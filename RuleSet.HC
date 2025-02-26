@@ -620,7 +620,7 @@ fail:;
 	  add_to=Scan(words,add_to,r,matrix,y,cnt,tmp->end,ra+1,tmp2);
 	  Free(tmp2);
 	  if(old!=add_to) {
-	    if(++repeat_cnt>=8) {
+	    if(++repeat_cnt>=32) {
 	      ASTDel(tmp);
 	      break;
 	    }
@@ -659,9 +659,9 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
     *ptr=DoTerminals(words[x],x);
   }
 
-  //tries is set to 2 o handle recursion,but not forever
+  //tries is set to 2 to handle recursion,but not forever
   y=cnt-2;
-  for(tries=0;tries!=1;tries++) {
+  for(tries=0;tries!=2;tries++) {
     for(x=cnt-1;x>=0;x--) {
       for(ri=0;ri!=rc;ri++) {
         rule=rules_list->body[ri];
