@@ -6,7 +6,7 @@ U0 CalcBezier(CD3I32 *point,CD3I32*l,CD3I32 *cent,CD3I32 *r) {
   point->x=2.*cent->x-l->x/2.-r->x/2.;
   point->y=2.*cent->y-l->y/2.-r->y/2.;
 }
-	//Returns maximum y
+//Returns maximum y
 F64 GrPreciseBezier(CDC *dc,CD3I32*ctrls,F64 *highest_x_pos=NULL) {
   F64 x=ctrls[2].x,y=ctrls[2].y,x2,y2,step;
   F64 max_y=y;
@@ -136,7 +136,7 @@ F64 DrawConnect(CDC*dc,I64 level=0,F64 x,F64 y,F64 x2,F64 y2,F64 mdl,F64 mdr,F6
   ctrls[0].y=y;
   ctrls[2].x=x2;
   ctrls[2].y=y2;
-  QuessCenter(&ctrls[1],&ctrls[0],&ctrls[1],Center(x2,x),Max(y2,y)+CURVE_MARGIN*level,mdl,mdr);
+  QuessCenter(&ctrls[1],&ctrls[0],&ctrls[2],Center(x2,x),Max(y2,y)+CURVE_MARGIN*level,mdl,mdr);
   dc->thick=3;
   highest=GrPreciseBezier(dc,ctrls,zenith_x);
   if(vx) *vx=ctrls[0].x*.5`2+ctrls[1].x*2*.5*(1-.5)+ctrls[2].x*.5`2;
@@ -273,11 +273,6 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
     y=8;
     x=world->word_offsets[ast->word_idx];
     dc->color=color;
-    if(ast->word->translation)
-      ww=FONT_WIDTH*MaxI64(StrLen(ast->word->str),StrLen(ast->word->translation));
-    else
-      ww=FONT_WIDTH*StrLen(ast->word->str);
-    x+=ww/2;
     if(ast->word->front_declension||ast->word->back_declension) {
       base_word=optr=StrNew(ast->word->str);
       if(ast->word->back_declension)
@@ -323,8 +318,14 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
     ret->bound_r=x2;
     ret->max_y=y2;
   } else if(ast->base_expression) {
-    ret=DisplayNode(world,dc,ast->base_expression,,&y);
-    y2=y;
+    tmp=DisplayNode(world,dc,ast->base_expression,,&y);
+    x2=tmp->handle_x;
+    y2=tmp->handle_y;
+    ret->handle_x=x2;
+    ret->handle_y=y2;
+    ret->bound_l=x2;
+    ret->bound_r=x2;
+    ret->max_y=y2;
   } else
 	Break;
 //I will sort the left and right sides by distance
@@ -418,7 +419,7 @@ ent:
       }
       max_level=MaxI64(max_level,level2);
       tmp=DisplayNode(world,dc,set->body[idx],level2+1);
-      set->body[idx](AST*)->disp_node=tmp;
+//      set->body[idx](AST*)->disp_node=tmp;
       ret->connects=I64SetAdd(ret->connects,tmp);
 //ret->handle_y set here
       if(is_left_side) {
@@ -470,9 +471,9 @@ CDC *SplitImageIntoColumn(CDC *img,I64 width=GR_WIDTH) {
 }
 
 CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *w=NULL,I64 *h=NULL,I64 ms_x=0,I64 ms_y=0,CTrie **hover_over=NULL) { 
-//DumpAST(sentence);
   I64 off,idx,inf_d,wc,cw;
   CDC *dc,*wrapped;
+//  F64 ww=;
   I64 last_wrap=0,diff;
   U8 *closest;
   CDisplayTmp t;
@@ -492,8 +493,8 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
 	cw=MaxI64(StrLen(forms[idx]->translation),cw);
     }
     t.word_offsets[idx]=off;
-    off+=FONT_WIDTH*cw;
-    off+=WORD_MARGIN;
+//    off+=FONT_WIDTH*cw;
+    off+=100;
 //Make "image-wrap" points
     if(idx) {
       if(t.word_offsets[idx]-last_wrap+WORD_MARGIN>=dwidth) {
@@ -510,7 +511,7 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
   DCDel(dc);
   dc=DCNew(off+WORD_MARGIN,t.max_y+8+10+FONT_HEIGHT*4); //See DisplayNode
   DCFill(dc,TRANSPARENT);
-//DisplayNode will set ->display_node of the ast,so use the one without the ->display_node's
+//DisplayNode will set ->display_node of the ast,so use the one without the ->	display_node's
  CDisplayNode*dn=DisplayNode(&t,dc,untainted);
   if(hover_over){ 
     hover_over[0]=DisplayNodeGetHoverWord(dn,ms_x,ms_y);
@@ -721,6 +722,7 @@ U0 InteractViewDrawIt(CTask *t,CDC *dc) {
       WordTextBox(dc,x,y,StrUtil(tran,SUF_REM_CTRL_CHARS));
       Free(tran);
     }
+//    DisplayNodeDel(ast->disp_node);
     ASTDel(ast);
     DCDel(dc2);
     tcnt=0;
@@ -962,8 +964,8 @@ DumpSentences(
 "animos sunt mutationes [formamentorum].");*/
 // Nroot's Doctrine 1
 DocClear;
-/*DumpSentences("Res finitus sunt ."
-	"Formamentum sunt haut."
+//DumpSentences(//"Res  finitus sunt ."
+/*	"Formamentum sunt haut."
 	"Res creat e [formamentis abditis]."
 	"Animi est abditi."
 	"animos sunt mutationes formamentorum."
@@ -971,10 +973,10 @@ DocClear;
 	"tela tenet unus  fila ilico. [duo fila existit haut]  ubi [unus existat]."
 	"sed fila existat juxta alius fila."
 	"[[unus corpus] teneat haut [alius positum]]."
-	"[corpus tenet diversum animos] quando [diversum positum existit]."
+	"[corpus tenet diversum animos] quando [diversum positum existit]."*/
 //	"[animus est juxta [diversum animos]] hac [tela tenet [diversum fila]."
 //	"[idem animi ] sunt [[omnia animos] in [diversum positum]]."
-);*/
+//);
 //InteractView("decorum est pro patria mori");
 //
 //InteractView("in principio creavit Deus [caelum et  terram]");

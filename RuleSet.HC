@@ -520,12 +520,21 @@ ASTSet *Scan(U8 **words,ASTSet *add_to,CRule *r,U8 **matrix,I64 y,I64 cnt,I64 x=
 pass:
     if(r->main_item_idx>=0) {
       tmp=args->body[r->main_item_idx];
-      ret=ASTClone(tmp);
-    }
+      if(args->cnt>1) {
+	ret=CAlloc(sizeof(AST),mem_task);
+	ret->flags=tmp->flags;
+	ret->base_expression=ASTClone(tmp);
+	ret->args=NULL;
+      } else
+        ret=ASTClone(tmp);
+    } else
+	Break;
     ret->prob=1.;
     ret->rule=r;
-    ret->raw_type=ret->	act_as_type=r->raw_type;
-//DONT make an item have a single child,just "overshadow" it.
+    ret->raw_type=ret->act_as_type=r->raw_type;
+    ret->start=tmp->start;
+    ret->end=tmp->end;
+//DONT make an item have a single child,just "overshadow" it
     if(args->cnt==1) {
     } else {
       tmp=args->body[0];
@@ -534,7 +543,7 @@ pass:
 MAKE SURE ARGUMNENTS DONT OVERLAP,use boundary.
 ************************************************/
       boundary=tmp->end;
-      for(idx=1;idx!=args->cnt;idx++) {
+      for(idx=1;idx<args->cnt;idx++) {
         tmp=args->body[idx];
         if(boundary!=tmp->start) {
 	  goto fail;
@@ -556,6 +565,7 @@ MAKE SURE ARGUMNENTS DONT OVERLAP,use boundary.
 fail:;
       ret->args=NULL;
       ASTDel(ret);
+      ret=NULL;
     }
     return add_to;
   }	

@@ -59,6 +59,7 @@ AST *ASTClone(AST *orig) {
   static I64 cnt=0;
   AST *ret=CAlloc(sizeof(AST),mem_task);
   MemCpy(ret,orig,sizeof AST);
+  ret->disp_node=NULL;
   ret->nomitive=ASTSetClone(ret->nomitive);
   ret->accusative=ASTSetClone(ret->accusative);
   ret->dative=ASTSetClone(ret->dative);
