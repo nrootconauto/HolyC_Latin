@@ -3,6 +3,7 @@
 #define CNT_FP "GenCnt"
 #define RESULTS_FP "Results"
 CTask *grammar_task=Fs;
+I64 tmp_rule_idx=0;
 class CRule {
   U8 name[STR_LEN]; //Rule name or word name
   I64 raw_type;
@@ -239,9 +240,69 @@ Bool CaseGen(I64 argc,AST **argv) {
   return CaseX(GENITIVE,argc,argv);
 }
 I64Set *rules_list=NULL;
+CRule *ParseFormula(CCmpCtrl *cc,CRule *rule) {
+  I64 member_type;
+  CRule *r2;
+  rule->weight=.5;
+  while(cc->token==TK_IDENT||cc->token=='!'||cc->token==TK_STR||cc->token=='[') {
+    member_type=-1;
+    if(cc->token=='[') {
+      Lex(cc);
+      r2=CAlloc(sizeof CRule);
+      ParseFormula(cc,r2);
+      StrPrint(r2->name,"!TMP.%d",tmp_rule_idx++);
+      if(!r2)
+        throw('RuleSet');
+      if(cc->token!=']') {
+        LexExcept(cc,"Expcted a '[' at ");
+      }
+      Lex(cc);
+      if(cc->token=='(') {
+        if(Lex(cc)!=TK_IDENT)
+	  LexExcept(cc,"Expected a valid member type at ");
+        member_type=MemberNameToI64(cc->cur_str);;
+        if(member_type==-1)
+	  LexExcept(cc,"Expected a valid member type at ");
+        if(Lex(cc)!=')')
+	  LexExcept(cc,"Expected a ')' at ");
+        Lex(cc);
+      } else 
+	LexExcept(cc,"Expected a '(NOUN/VERB/WHERE...)'");
+
+      rule->made_from=I64SetAdd(rule->made_from,StrNew(r2->name),TRUE);
+      rule->raw_type=member_type;
+      rules_list=I64SetAdd(rules_list,r2);
+      goto pass;
+    }
+    if(cc->token=='!') {
+      Lex(cc);
+      if(!rule->made_from)
+        rule->main_item_idx=0;
+      else
+        rule->main_item_idx=rule->made_from->cnt;
+      if(cc->token!=TK_IDENT&&cc->token!=TK_STR)
+        LexExcept(cc,"Expected a rule name at ");
+    }
+    rule->made_from=I64SetAdd(rule->made_from,StrNew(cc->cur_str),TRUE);
+pass:;
+    Lex(cc);
+    if(cc->token=='(') {
+      if(Lex(cc)!=TK_IDENT)
+        LexExcept(cc,"Expected a valid member type at ");
+      member_type=MemberNameToI64(cc->cur_str);;
+      if(member_type==-1)
+        LexExcept(cc,"Expected a valid member type at ");
+      if(Lex(cc)!=')')
+        LexExcept(cc,"Expected a ')' at ");
+      Lex(cc);
+    }
+    rule->member_types=I64SetAdd(rule->member_types,member_type,TRUE);
+  }
+  return rule;
+}
 U0 ParseRules(U8 *text) {
   CCmpCtrl *cc=CmpCtrlNew(text,CCF_DONT_FREE_BUF|CCF_NO_DEFINES);
-  CRule *rule;
+  CRule *rule,*r2;
   I64 s,member_type;
   Lex(cc);
   while(cc->token) {
@@ -285,31 +346,7 @@ U0 ParseRules(U8 *text) {
     if(cc->token==TK_DEREFERENCE) { //->
       rule->main_item_idx=0;
       Lex(cc);
-      while(cc->token==TK_IDENT||cc->token=='!'||cc->token==TK_STR) {
-        member_type=-1;
-        if(cc->token=='!') {
-	  Lex(cc);
-	  if(!rule->made_from)
-	    rule->main_item_idx=0;
-	  else
-	    rule->main_item_idx=rule->made_from->cnt;
-	  if(cc->token!=TK_IDENT&&cc->token!=TK_STR)
-	    LexExcept(cc,"Expected a rule name at ");
-        }
-	rule->made_from=I64SetAdd(rule->made_from,StrNew(cc->cur_str),TRUE);
-        Lex(cc);
-        if(cc->token=='(') {
-	  if(Lex(cc)!=TK_IDENT)
-	    LexExcept(cc,"Expected a valid member type at ");
-	  member_type=MemberNameToI64(cc->cur_str);;
-	  if(member_type==-1)
-	    LexExcept(cc,"Expected a valid member type at ");
-	  if(Lex(cc)!=')')
-	    LexExcept(cc,"Expected a ')' at ");
-	  Lex(cc);
-        }
-        rule->member_types=I64SetAdd(rule->member_types,member_type,TRUE);
-      }
+      ParseFormula(cc,rule);
       if(cc->token!=';')
         LexExcept(cc,"Expected a ',' or a ';' at ");
     } else if(cc->token=='=') {

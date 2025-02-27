@@ -88,12 +88,11 @@ Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;
 //
 // "In the begining",God created....
 //
-Prep@Noun@Sent WHERE -> Prep@Prep Noun@Noun(WHERE);
-Sent CLAUSE -> Prep@Noun@Sent(WHERE)  !Sent(NOUN);
+Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;
 //
 //  "((Walking by))...[he] saw a blind man"
 //  
-Sent CLAUSE -> !Partic@Partic Sent(WHERE);
+Sent CLAUSE -> !Partic@Partic Sent(WHERE);
 //End
 
 

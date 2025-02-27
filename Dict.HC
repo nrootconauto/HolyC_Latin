@@ -666,7 +666,7 @@ Bool IsFormOf(U8 *who,U8 *who2) {
   }
   return ret;
 }
-extern U8 *GetTranslation(U8*,Bool recurse=FALSE,Bool small=FALSE,I64 inst=-1);
+extern U8 *GetTranslation(U8*,Bool recurse=TRUE,Bool small=FALSE,I64 inst=-1);
 U8 *SmallDefinition(U8 *def) {
   if(!def) return def;
   U8 buf[STR_LEN],*bptr=buf,*want;
@@ -790,7 +790,7 @@ loop:;
     Free(trans);
     return;
   }
-  GetWordFlags0(word,j=ParseJson(str),TRUE /* Add to trie*/ ,GetTranslation(word,FALSE));
+  GetWordFlags0(word,j=ParseJson(str),TRUE /* Add to trie*/ ,GetTranslation(word,TRUE));
   JsonDel(j);
   inst++;
   Free(str);

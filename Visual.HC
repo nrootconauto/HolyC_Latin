@@ -489,20 +489,20 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
   t.xoff=0,t.yoff=0;
   t.word_offsets=MAlloc(word_cnt*8);
   t.max_y=0.;
-  for(off=100,idx=0;idx!=word_cnt;idx++) {
+  for(off=40,idx=0;idx!=word_cnt;idx++) {
     cw=0;
     if(forms[idx]) {
       cw=StrLen(forms[idx]->str);
-      if(forms[idx]->translation)
+      if(forms[idx]->translation) 
         cw=MaxI64(StrLen(forms[idx]->translation),cw);
     }
-    t.word_offsets[idx]=off;
+    t.word_offsets[idx]=off+cw*4;
     if(!StrCmp(words[idx],"[")||!StrCmp(words[idx],"]"))
-	;
-      else
-        off+=100+cw*8;
+      ;
+    else
+      off+=40+cw*8;
 //Make "image-wrap" points
-    if(idx&&0) {
+    if(idx) {
       if(t.word_offsets[idx]-last_wrap+WORD_MARGIN>=dwidth) {
         diff=t.word_offsets[idx]-t.word_offsets[idx-1];
         t.word_offsets[idx-1]=(last_wrap=CeilI64(t.word_offsets[idx-1],dwidth))+WORD_MARGIN;
@@ -518,14 +518,14 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
   dc=DCNew(off+WORD_MARGIN,t.max_y+8+10+FONT_HEIGHT*4); //See DisplayNode
   DCFill(dc,TRANSPARENT);
 //DisplayNode will set ->display_node of the ast,so use the one without the ->	display_node's
- CDisplayNode*dn=DisplayNode(&t,dc,untainted);
+  CDisplayNode*dn=DisplayNode(&t,dc,untainted);
   if(hover_over) *hover_over=NULL;
   for(idx=0;idx!=word_cnt;idx++) {
-   if(SqrI64(t.word_offsets[idx]-ms_x)+SqrI64(32-ms_y)<32*32) {
-     if(hover_over) {
-	*hover_over=forms[idx];
-     }
-   }
+    if(SqrI64(t.word_offsets[idx]-ms_x)+SqrI64(32-ms_y)<32*32) {
+      if(hover_over) {
+        *hover_over=forms[idx];
+      }
+    }
 
   }
   DisplayNodeDel(dn);
@@ -773,12 +773,12 @@ U0 InteractView(U8 *st) {
   I64 msg,a,b;
   Bts(&Fs->win_inhibit,WIf_SELF_GRAB_SCROLL);
   Bts(&Fs->win_inhibit,WIf_FOCUS_TASK_GRAB_SCROLL);
-  I64 sx=0,sy=0;
+  I64 sx=0,sy=0,ox=ms.pos.x,oy=ms.pos.y;
   while(ast) {
     msg=ScanMsg(&a,&b);
     if(ms.lb&&Bt(kbd.down_bitmap,SC_CTRL)) {
-      sx+=(ms.pos.x-ms_last.pos.x)*8;
-      sy+=(ms.pos.y-ms_last.pos.y)*8;
+      sx+=(ms.pos.x-ox)*4;
+      sy+=(ms.pos.y-oy)*4;
     }
     if(msg==MSG_MS_L_DOWN) {
       if(word=FramePtr("InteractCurWord")) {
@@ -800,6 +800,8 @@ U0 InteractView(U8 *st) {
 
     Fs->scroll_x=sx;
     Fs->scroll_y=sy;
+    ox=ms.pos.x;
+    oy=ms.pos.y;
     Refresh;
   }
   Btr(&Fs->win_inhibit,WIf_FOCUS_TASK_GRAB_SCROLL);
@@ -1015,7 +1017,7 @@ DumpSentences(
 "Animi sunt abditi."
 "animos sunt mutationes [formamentorum].");*/
 // Nroot's Doctrine 1
-DocClear;
+//DocClear;
 //DumpSentences(//"Res  finitus sunt ."
 /*	"Formamentum sunt haut."
 	"Res creat e [formamentis abditis]."
@@ -1031,7 +1033,8 @@ DocClear;
 //);
 //InteractView("decorum est pro patria mori");
 //
-//InteractView("in principio creavit Deus [caelum et  terram]");
+InteractView("in principio [creavit Deus [caelum et  terram]]");
+DumpSentences("in principio [creavit Deus [caelum et  terram]]");
 //InteractView("Notitia est peior quam melior");
 //DumpSentences("Notitia est peior quam melior");
 //TrieAdd("Herodes",NOUN|NOMITIVE,"Herod");
@@ -1051,4 +1054,4 @@ DocClear;
 //InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
 
 //John 9:1
-InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
+//InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");

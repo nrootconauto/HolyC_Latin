@@ -7,7 +7,7 @@
 
 # Getting the Latin.json
 
-  Visit https://kaikki.org/dictionary/Latin/
+  Visit 
 
    Download it here: https://kaikki.org/dictionary/Latin/kaikki.org-dictionary-Latin.jsonl and rename it to Latin.json in your repo
 
@@ -17,7 +17,9 @@
   There are 2 Juicy componets of the Latin Grammar,
    - Terminal Symbols(Indiviudal words).
    - Compound Symbols(made of multiple symbols) 
+
 ## Terminal Symbols
+
 These are the words.
 
 ```
@@ -49,3 +51,40 @@ Sent(NumberAgree) CLAUSE -> Noun@Noun !Verb@Verb;
 ```
  Noun@Noun (CaseAgree)[FlagsPlural] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;
 ```
+
+
+## Grammar Sub-Expressions.
+
+  Take this passage for example from the Vulgate:
+```
+	in principio creavit Deus caelum et  terram
+```
+
+  A good parsing would like this: ![Genesis 1:1](Gen11.BMP)
+  
+  It ia possible to do sub expressions in the `Latin.GMR` file,this is the juicy rule
+  
+```
+Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent; /*[In the begining],God made the earth and sky*/
+``` 
+
+**MAKE SURE YOU DEFINED A RULE TYPE AFTER A SUB-EXPRESSION**(Use the parenthesis)
+
+## Rule types
+ - NOUN
+ - VERB
+ - CONJUNCTION
+ - OF
+ - WHERE
+ - ADJECTIVE
+ - INFINITIVE
+ - MEASURE
+ - ADVERB
+ - CLAUSE(like a sentence)
+ - COMPARE
+ - QUESTION 
+
+# Credits
+
+![Mr Jerome](https://vulgate.org/ot/genesis_1.htm)
+![Latin dictionary dump form Wiktionary](https://kaikki.org/dictionary/Latin/).

@@ -230,11 +230,12 @@ U0 DumpAST(AST *a) {
 I64 ASTGetTrieWords(AST *a,CTrie **words) {
   I64 run,max=0,i;
   ASTSet *s;
-  if(words) words[a->word_idx]=a->word;
   if(a->base_expression)
     max=ASTGetTrieWords(a->base_expression,words);
-  else 
+  else  {
     max=a->word_idx;
+    if(words) words[a->word_idx]=a->word;
+  }
   for(run=0;run<=10;run++) {
     switch(run) {
         break;case 0: s=a->nomitive;
