@@ -305,6 +305,7 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
     x2=x-x2*8/2;
     DrawWordInfo(dc,x2,y+1+FONT_HEIGHT,ast->word);
     if(ast->word->translation) {
+      dc->color=BLACK;
       x2=x-StrLen(ast->word->translation)*8/2;
       GrPrint(dc,x2,y+2+FONT_HEIGHT*2,"%s",ast->word->translation);
     }
@@ -1050,4 +1051,4 @@ DocClear;
 //InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
 
 //John 9:1
-DumpSentences("et [praeteriens [vidit hominem caecum a nativitate]].");
+InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");

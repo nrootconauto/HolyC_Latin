@@ -728,6 +728,7 @@ U8 *GetTranslations(U8 *word,Bool recurse=TRUE,I64 *_which=NULL) {
 	  for(idx=0;t=GetJsonMember(f,StrPrint(buf,"%d",idx),J_NODE);idx++) {
 	    if(t) t=GetJsonMember(t,"word",J_STR);
 	    if(!t) goto defacto;
+	    if(recurse)
 	    if(best=GetTranslations(t->str,FALSE,_which)) {
 	      DocPrint(trans,"%s",best);
 	      Free(best);
