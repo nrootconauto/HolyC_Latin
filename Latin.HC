@@ -2,6 +2,7 @@
 #include"Utils.HC";
 //-ne after the first word means question
 //-que means and
+#define ACTIVE 0 //Impliciti
 #defineNOMITIVE (1)
 #defineGENITIVE (1<<1)
 #defineDATIVE (1<<2)
@@ -153,7 +154,7 @@ Bool MatchesFlags(I64 a,I64 b) {
       return FALSE;
 //Gender
   mask=MASCULINE|FEMININE|NEUTER;
-  if(a&mask&&b&mask) {
+  if(a&mask&&b&mask) {
     if(!(a&mask&b))
       return FALSE;
   }

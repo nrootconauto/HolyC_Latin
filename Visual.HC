@@ -1070,4 +1070,4 @@ DumpSentences("hominem.homines.homine.hominibus.homines");
 //4th Declension
 DumpSentences("manus.manuum.manui.manibus.manu");
 //5th Declension
-DumpSentences("res.res.re.rerum.rebus");
+DumpSentences("res.res.re.rerum.rebus");

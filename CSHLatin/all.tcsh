@@ -20,3 +20,7 @@ tcsh d2parts.tcsh d2 d2.txt ''
 tcsh d3parts.tcsh d3 d3.txt ''
 tcsh d4parts.tcsh d4 d4.txt ''
 tcsh d5parts.tcsh d5 d5.txt ''
+tcsh miscparts.tcsh extra1v.txt am
+tcsh miscparts.tcsh extra2v.txt mon
+tcsh miscparts.tcsh extra3v.txt tex
+tcsh miscparts.tcsh extra4v.txt aud
