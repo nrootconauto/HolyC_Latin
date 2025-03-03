@@ -1,0 +1,4 @@
+VERB|IMPERFECT
+1st 	amābam 	I was loving 	amābāmus 	We were loving
+2nd 	amābās 	You were loving 	amābātis 	You (pl.) were loving
+3rd 	amābat 	He/she/it was loving 	amābant 	They were loving 

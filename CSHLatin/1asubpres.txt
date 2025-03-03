@@ -1,0 +1,4 @@
+VERB|PRESENT|SUBJUNCTIVE
+1st 	amem 	I may love 	amēmus 	We may love
+2nd 	amēs 	You may love 	amētis 	You (pl.) may love
+3rd 	amet 	He/she/it may love 	ament 	They may love

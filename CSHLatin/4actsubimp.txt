@@ -1,0 +1,4 @@
+SUBJUNCTIVE|IMPERFECT|VERB
+1st 	audirem 	I should hear 	audirēmus 	We should hear
+2nd 	audirēs 	You would hear 	audirētis 	You (pl.) would hear
+3rd 	audiret 	He/she/it would hear 	audirent 	They would hear 

@@ -1,0 +1,4 @@
+VERB|FUTURE
+1st 	amābō 	I will love 	amābimus 	We will love
+2nd 	amābis 	You will love 	amābitis 	You (pl.) will love
+3rd 	amābit 	He/she/it will love 	amābunt 	They will love 

@@ -1,0 +1,4 @@
+FUTURE|VERB
+1st 	monuerō 	I shall have warned 	monuerimus 	We shall have warned
+2nd 	monueris 	You will have warned 	monueritis 	You (pl.) will have warned
+3rd 	monuerit 	He/she/it will have warned 	monuerint 	They will have warned 

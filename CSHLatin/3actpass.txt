@@ -1,0 +1,4 @@
+PRESENT|VERB
+1st 	tegō 	I cover 	tegimus 	We cover
+2nd 	tegis 	You cover 	tegitis 	You (pl.) cover
+3rd 	tegit 	He/she/it covers 	tegunt 	They cover 

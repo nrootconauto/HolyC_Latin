@@ -84,6 +84,14 @@ Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent; /*[In the begining],G
  - COMPARE
  - QUESTION 
 
+# Declensions and Conjugations
+
+  Declensions x conjugations are copy and pasted mostly from  wiktionary.
+  
+  The (c)shell scripts are put in `CSHLatin`,run `tcsh all.tcsh` to generate the `Latin.INFLECTS`,or just use the one provided in this repo. This is opensource software so why not include sources.
+  
+  I still need inflections of infinitives and greek-latin stuff. Look at all the `*.tcsh` scripts for inspiration
+
 # Credits
 
 ![Mr Jerome](https://vulgate.org/ot/genesis_1.htm)

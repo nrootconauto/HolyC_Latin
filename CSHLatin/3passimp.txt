@@ -1,0 +1,4 @@
+IMPERFECT|VERB|PASSIVE
+1st 	tegēbar 	I was covered 	tegēbāmur 	We were covered
+2nd 	tegēbāris 	You were covered 	tegēbāminī 	You (pl.) were covered
+3rd 	tegēbātur 	It was covered 	tegēbantur 	They were covered 

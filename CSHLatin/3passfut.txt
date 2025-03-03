@@ -1,0 +1,4 @@
+FUTURE|PASSIVE|VERB
+1st 	tegar 	I will be covered 	tegēmur 	We will be covered
+2nd 	tegēris 	You will be covered 	tegēminī 	You (pl.) will be covered
+3rd 	tegētur 	He/she/it will be covered 	tegentur 	They will be covered 

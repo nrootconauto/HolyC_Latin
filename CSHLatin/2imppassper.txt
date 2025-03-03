@@ -1,0 +1,4 @@
+PERFECT|SUBJUNCTIVE|VERB
+1st 	monuerim 	I may have warned 	monuerīmus 	We may have warned
+2nd 	monuerīs 	You may have warned 	monuerītis 	You (pl.) may have warned
+3rd 	monuerit 	He/she/it may have warned 	monuerint 	They may have warned

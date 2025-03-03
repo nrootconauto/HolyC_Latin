@@ -1,0 +1,4 @@
+VERB|PLUPERFECT
+1st 	amāveram 	I had loved 	amāverāmus 	We had loved
+2nd 	amāverās 	You had loved 	amāverātis 	You (pl.) had loved
+3rd 	amāverat 	He/she/it had loved 	amāverant 	They had loved 

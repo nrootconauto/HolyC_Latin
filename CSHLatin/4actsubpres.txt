@@ -1,0 +1,4 @@
+PRESENT|VERB|SUBJUNCTIVE
+1st 	audiam 	I may hear 	audiāmus 	We may hear
+2nd 	audiās 	You may hear 	audiātis 	You (pl.) may hear
+3rd 	audiat 	He/she/it may hear 	audiant 	They may hear 

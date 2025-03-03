@@ -1,0 +1,4 @@
+VERB|FUTURE|PERFECT
+1st 	amāverō 	I will have loved 	amāverīmus 	We will have loved
+2nd 	amāverīs 	You will have loved 	amāverītis 	You (pl.) will have loved
+3rd 	amāverit 	He/she/it will have loved 	amāverint 	They will have loved 

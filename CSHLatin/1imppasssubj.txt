@@ -1,0 +1,4 @@
+VERB|IMPERFECT|SUBJUNCTIVE|PASSIVE
+1st 	amārer 	I should be loved 	amārēmur 	We should be loved
+2nd 	amārēris 	You would be loved 	amārēminī 	You (pl.) would be loved
+3rd 	amārētur 	He/she/it would be loved 	amārentur 	They would be loved 

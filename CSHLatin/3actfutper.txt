@@ -1,0 +1,4 @@
+FUTURE|PERFECT|VERB
+1st 	texerō 	I will have covered 	texerimus 	We will have covered
+2nd 	texeris 	You will have covered 	texeritis 	You (pl.) will have covered
+3rd 	texerit 	He/she/it will have covered 	texerint 	They will have covered 

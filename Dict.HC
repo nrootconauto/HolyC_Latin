@@ -2,68 +2,9 @@
 extern U8 *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL);
 #endif
 #include "Utils.HC";
-U8 Transliterate(U64 ch) {
-//https://en.wiktionary.org/wiki/Appendix:Unicode/Latin_Extended-A
-  switch(ch) {
-    case 0x100...0x105:
-      ch='a';
-      break;
-    case 0x106...0x10D:
-      ch='c';
-      break;
-    case 0x10e...0x11b:
-      ch='e';
-      break;
-    case 0x11f...0x123:
-      ch='e';
-      break;
-    case 0x124...0x127:
-      ch='e';
-      break;
-    case 0x128...0x135:
-      ch='i';
-      break;
-    case 0x136...0x138:
-      ch='k';
-      break;
-    case 0x139...0x142:
-      ch='l';
-      break;
-    case 0x143...0x14b:
-      ch='n';
-      break;
-    case 0x14c...0x151:
-      ch='o';
-      break;
-    case 0x154...0x159:
-      ch='e';
-      break;
-    case 0x15a...0x161:
-      ch='s';
-      break;
-    case 0x162...0x167:
-      ch='t';
-      break;
-    case 0x168...0x173:
-      ch='u';
-      break;
-    case 0x174...0x175:
-      ch='w';
-      break;
-    case 0x176...0x178:
-      ch='y';
-      break;
-    case 0x179...0x17e:
-      ch='z';
-      break;
-    default:
-    if(!ch)
-      return 0;
-    if(!(31<=ch<=128))
-      ch='.';
-  }
-  return ch;
-}
+extern U8 *GetBaseWord(U8 *word,I64 inst=0);
+extern U8 *GetWordString(U8 *word,I64 inst=0);
+U8 *json_file=__DIR__"/Latin.json",*index_file=__DIR__"/INDEX.TRIE";
 
 #define J_STR 1
 #define J_NUM 2
@@ -368,7 +309,8 @@ CJson *GetJsonMember(CJson *j,U8 *member,I64 type=-1) {
 I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
   I64 flags=0,base_flags=0,idx3,idx2,idx;
   U8 dummy[STR_LEN];
-  CJson *n,*f,*senses;
+  U8 *tmp,*wstr;
+  CJson *n,*f,*senses,*formof;
   I64 added=0;
   if(n=GetJsonMember(j,"pos",J_STR)) {
     if(!StrICmp(n->str,"verb")) flags|=VERB;
@@ -390,18 +332,34 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
       for(idx2=0;idx2!=senses->cnt;idx2++) {
         StrPrint(dummy,"%d",idx2);
         n=GetJsonMember(senses,dummy);;
-        flags=base_flags;
-        if(idx3==1) {
-	  if(f=GetJsonMember(n,"form",J_STR)) {
-	    if(StrICmp(f->str,word))
-	      goto skip;
-	  } else
-	    goto skip;
+        I64 inflect_mask=DECLENSION1|DECLENSION2|DECLENSION3|DECLENSION4|DECLENSION5|
+	      CONJUGATION1|
+	      CONJUGATION2|
+	      CONJUGATION3|
+	      CONJUGATION4;
+//Can be forms of multiple things,just use 1st one?
+        if(formof=GetJsonMember(n,"form_of",J_ARRAY)) {
+	  if(formof=GetJsonMember(formof,"0",J_NODE))
+	    if(formof=GetJsonMember(formof,"word",J_STR)) {
+	      if(StrCmp(word,tmp=formof->str)) {
+	        wstr=GetWordString(tmp);
+	        inflect_mask&=GetWordFlags0(tmp,formof=ParseJson(wstr),FALSE);
+	        JsonDel(formof);
+	        Free(wstr);
+	        goto got_inflect;
+	      } 
+	    }
         }
+        inflect_mask=0;
+got_inflect:;
+// If we arent adding,just grab all the flags
+        if(add) flags=base_flags;
+        
         if(n&&(n=GetJsonMember(n,"tags",J_ARRAY))) {
 	  for(idx=0;idx!=n->cnt;idx++) {
 	    StrPrint(dummy,"%d",idx);
 	    if(f=GetJsonMember(n,dummy,J_STR)) {
+	      I64 old=flags;
 	      if(!StrICmp(f->str,"masculine")) flags|=MASCULINE;
 	      if(!StrICmp(f->str,"feminine")) flags|=FEMININE;
 	      if(!StrICmp(f->str,"neuter")) flags|=NEUTER;
@@ -409,6 +367,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	      if(!StrICmp(f->str,"plural")) flags|=PLURAL;
 	      if(!StrICmp(f->str,"nominative")) flags|=NOMITIVE;
 	      if(!StrICmp(f->str,"accusative")) flags|=ACCUSATIVE;
+	      if(!StrICmp(f->str,"vocative")) flags|=VOCATIVE;
 	      if(!StrICmp(f->str,"dative")) flags|=DATIVE;
 	      if(!StrICmp(f->str,"ablative")) flags|=ABLATIVE;
 	      if(!StrICmp(f->str,"genitive")) flags|=GENITIVE;
@@ -440,21 +399,29 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	      if(!StrICmp(f->str,"intransitive")) flags|=INTRANSITIVE;
 	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
 	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
+	      if(!StrICmp(f->str,"present")) flags|=PRESENT;
+	      DbgPrint("UNIMP:%s,%s,%x(%x)\n",f->str,word,flags|inflect_mask,old);
 	    }
 	  }
-          if(add)
-	    if(!TrieExists(word,flags)) {
+	  if(flags&VERB&&flags&INFINITIVE)
+	    //Nroot doesnt like this
+	    flags&=~VERB;
+	  if(flags&VERB&&flags&PARTICIPLE)
+	    //Nroot doesnt like this either
+	    flags&=~VERB;
+	  if(add) {
+DbgPrint("ADD:%X\n",flags|inflect_mask);
+	    if(!TrieExists(word,flags|inflect_mask)) {
 	      added++;
-	      DeclensionForWord(flags,TrieAdd(word,flags,trans));
+	      DeclensionForWord(flags,TrieAdd(word,flags|inflect_mask,trans));
 	    }
+	  }
 skip:;
         }
       }
     }
   }
-  if(add&&!added)
-    TrieAdd(word,base_flags,trans);
-  return flags;
+  return flags|inflect_mask;
 }
 U0 MakeIndex(U8 *outname,U8 *in_name) {
   CIndexBlk dummy;
@@ -538,7 +505,7 @@ if(!FileFind(__DIR__"/INDEX.TRIE",,0)) {
   }
 }
 
-I64 GetWordOffset(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
+I64 GetWordOffset(U8 *word,I64 inst=0) {
   CFile *file=FOpen(index_file,"r");
   U8 *ow=word;
   CIndexBlk dummy;
@@ -560,7 +527,7 @@ I64 GetWordOffset(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
   return off;
 }
 
-I64 GetWordDftTranslationIdx(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE") {
+I64 GetWordDftTranslationIdx(U8 *word) {
   CFile *file=FOpen(index_file,"r");
   U8 *ow=word;
   CIndexBlk dummy;
@@ -582,8 +549,8 @@ I64 GetWordDftTranslationIdx(U8 *word,U8 *index_file=__DIR__"/INDEX.TRIE") {
 }
 
 
-U8 *_GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0) {
-  I64 off=GetWordOffset(word,index_file,inst),off2;
+U8 *_GetWordString(U8 *word,I64 inst=0) {
+  I64 off=GetWordOffset(word,inst),off2;
   if(off==-1) return NULL;
   U8 *buffer=CAlloc(0x100000),fbuf[BLK_SIZE],*ret,*tmp;
   I64 bo=0;
@@ -611,8 +578,8 @@ loop:;
   Free(buffer);
   return tmp;
 }
-U8 *GetWordString(U8 *word,U8 *json_file=__DIR__"/Latin.json",U8 *index_file=__DIR__"/INDEX.TRIE",I64 inst=0)  {
-  U8 *tmp=_GetWordString(word,json_file,index_file,inst);
+U8 *GetWordString(U8 *word,I64 inst=0)  {
+  U8 *tmp=_GetWordString(word,inst);
   if(!tmp) {
     return NULL;
   }
@@ -719,7 +686,7 @@ U8 *GetTranslations(U8 *word,Bool recurse=TRUE,I64 *_which=NULL) {
   if(!_which)
     _which=&which;
   CDoc *trans=DocNew;
-  for(inst=0;str=GetWordString(word,,,inst);inst++) {
+  for(inst=0;str=GetWordString(word,inst);inst++) {
     j=ParseJson(str,NULL);
     if(s0=GetJsonMember(j,"senses",J_ARRAY)) {
       for(idx2=0;s=GetJsonMember(s0,StrPrint(buf,"%d",idx2),J_NODE);idx2++) {
@@ -777,14 +744,13 @@ U0 LookUpWord(U8 *word) {
 //avoid renundant
   FramePtrAdd(word,1,trie_task);
   U8 dummy[STR_LEN];
-  U8 *json_file=__DIR__"/Latin.json",*index_file=__DIR__"/INDEX.TRIE";
   U8 *str,*trans;
   I64 inst=0;
   CJson *j;
   trans=GetTranslation(word);
 loop:;
   I64 flags=0,idx,idx2,base_flags=0,idx3,added=0;
-  str=GetWordString(word,json_file,index_file,inst);
+  str=GetWordString(word,inst);
 
   if(!str) {
     Free(trans);
@@ -833,7 +799,7 @@ fin:;
   Free(raw);
   return ret;
 }
-I64 SetWordDftTranslationIdx(U8 *word,I64 dft;U8 *index_file=__DIR__"/INDEX.TRIE") {
+I64 SetWordDftTranslationIdx(U8 *word,I64 dft) {
   CFile *file=FOpen(index_file,"w+");
   U8 *ow=word,*trans;
   CTrie *trie;

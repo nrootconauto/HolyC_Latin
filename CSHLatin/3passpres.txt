@@ -1,0 +1,4 @@
+VERB|PASSIVE|PRESENT
+1st 	tegor 	I am covered 	tegimur 	We are covered
+2nd 	tegeris 	You are covered 	tegiminī 	You (pl.) are covered
+3rd 	tegitur 	It is covered 	teguntur 	They are covered 

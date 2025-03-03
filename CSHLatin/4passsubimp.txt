@@ -1,0 +1,4 @@
+IMPERFECT|VERB|SUBJUNCTIVE|PASSIVE
+1st 	audirer 	I should be heard 	audirēmur 	We should be heard
+2nd 	audirēris 	You would be heard 	audirēminī 	You (pl.) would be heard
+3rd 	audirētur 	He/she/it would be heard 	audirentur 	They would be heard 

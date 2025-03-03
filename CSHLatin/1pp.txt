@@ -1,0 +1,4 @@
+VERB|PERFECT
+1st	amāvī 	I (have) loved 	amāvimus 	We (have) loved
+2nd 	amāvistī 	You (have) loved 	amāvistis 	You (pl.) (have) loved
+3rd 	amāvit 	He/she/it/there (has) loved 	amāvērunt 	They (have) loved 

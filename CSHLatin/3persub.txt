@@ -1,0 +1,4 @@
+PERFECT|SUBJUNCTIVE|VERB
+1st 	texerim 	I may have covered 	texerīmus 	We may have covered
+2nd 	texerīs 	You may have covered 	texerītis 	You (pl.) may have covered
+3rd 	texerit 	He/she/it may have covered 	texerint 	They may have covered 

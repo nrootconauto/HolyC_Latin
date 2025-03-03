@@ -1,0 +1,4 @@
+VERB|PLUPERFECT
+1st 	texeram 	I had covered 	texerāmus 	We had covered
+2nd 	texerās 	You had covered 	texerātis 	You (pl.) had covered
+3rd 	texerat 	He/she/it had covered 	texerant 	They had covered 

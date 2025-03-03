@@ -1,0 +1,7 @@
+NOUN
+a	a	ae
+a	a	ārum
+ae	ae	īs
+am	am	ās
+ā	ā	īs
+a	a	ae

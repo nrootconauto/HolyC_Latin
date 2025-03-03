@@ -1,0 +1,4 @@
+VERB|PLUPERFECT|SUBJUNCTIVE
+1st 	amāvissem 	I should have loved 	amāvissēmus 	We should have loved
+2nd 	amāvissēs 	You would have loved 	amāvissētis 	You (pl.) would have loved
+3rd 	amāvisset 	He/she/it would have loved 	amāvissent 	They would have loved

@@ -1,0 +1,4 @@
+SUBJUNCTIVE|PRESENT|VERB
+1st 	tegam 	I may cover 	tegāmus 	We may cover
+2nd 	tegās 	You may cover 	tegātis 	You (pl.) may cover
+3rd 	tegat 	He/she/it may cover 	tegant 	They may cover 

@@ -1,0 +1,4 @@
+PRESENT|SUBJUNCTIVE|VERB
+1st 	moneam 	I may warn 	moneāmus 	We may warn
+2nd 	moneās 	You may warn 	moneātis 	You (pl.) may warn
+3rd 	moneat 	He/she/it may warn 	moneant 	They may warn 

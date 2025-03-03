@@ -1,0 +1,4 @@
+PASSIVE|VERB|SUBJUNCTIVE|IMPERFECT
+1st 	monērer 	I should be warned 	monērēmur 	We should be warned
+2nd 	monērēris 	You would be warned 	monērēminī 	You (pl.) would be warned
+3rd 	monērētur 	He/she/it would be warned 	monērentur 	They would be warned 

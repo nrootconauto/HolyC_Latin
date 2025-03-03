@@ -1,0 +1,4 @@
+IMPERFECT|PASSIVE|VERB
+1st 	audiēbar 	I was heard 	audiēbāmur 	We were heard
+2nd 	audiēbāris 	You were heard 	audiēbāmini 	You (pl.) were heard
+3rd 	audiēbātur 	He/she/it was heard 	audiēbantur 	They were heard 

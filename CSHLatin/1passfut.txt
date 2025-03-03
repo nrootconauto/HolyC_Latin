@@ -1,0 +1,4 @@
+VERB|PASSIVE|FUTURE
+1st 	amābor 	I will be loved 	amābimur 	We will be loved
+2nd 	amāberis 	You will be loved 	amābiminī 	You (pl.) will be loved
+3rd 	amābitur 	He/she/it will be loved 	amābuntur 	They will be loved 

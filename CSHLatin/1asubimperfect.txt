@@ -1,0 +1,4 @@
+VERB|IMPERFECT|SUBJUNCTIVE
+1st 	amārem 	I should love 	amārēmus 	We should love
+2nd 	amārēs 	You would love 	amārētis 	You (pl.) would love
+3rd 	amāret 	He/she/it would love 	amārent 	They would love

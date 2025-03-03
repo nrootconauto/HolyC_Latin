@@ -1,0 +1,4 @@
+VERB|PASSIVE|PRESENT
+1st 	amor 	I am being loved 	amāmur 	We are being loved
+2nd 	amāris 	You are being loved 	amāminī 	You (pl.) are being loved
+3rd 	amātur 	He/she/it is being loved 	amantur 	They are being loved 

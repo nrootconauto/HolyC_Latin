@@ -1,0 +1,7 @@
+ADJECTIVE
+a	a	ae
+ae	ae	ārum
+ae	ae	īs
+am	a	ās
+ā	ā	īs
+a	a	ae

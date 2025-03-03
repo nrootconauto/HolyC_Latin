@@ -1,0 +1,4 @@
+VERB|FUTURE
+1st 	tegam 	I will cover 	tegēmus 	We will cover
+2nd 	tegēs 	You will cover 	tegētis 	You (pl.) will cover
+3rd 	teget 	He/she/it will cover 	tegent 	They will cover 

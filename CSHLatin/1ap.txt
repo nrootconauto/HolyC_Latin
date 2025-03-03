@@ -1,0 +1,4 @@
+VERB|PRESENT
+1st 	amō 	I love 	amāmus 	We love
+2nd 	amās 	You love 	amātis 	You (pl.) love
+3rd 	amat 	He/she/it loves 	amant 	They love 

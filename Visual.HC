@@ -1,4 +1,4 @@
-#exe {Cd(__DIR__);};;
+1#exe {Cd(__DIR__);};;
 #include "Utils.HC";
 #include "RuleSet.HC";
 #include "FileBMP.HC";
@@ -278,7 +278,7 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
       base_word=optr=StrNew(ast->word->str);
       if(ast->word->back_declension)
         base_word+=StrLen(ast->word->back_declension);
-      if(ast->word->front_declension)
+       if(ast->word->front_declension)
         base_word[StrLen(base_word)-StrLen(ast->word->front_declension)]=0;
       x2=x-StrLen(ast->word->str)*8/2;
       idx2=0;
@@ -1033,7 +1033,7 @@ DumpSentences(
 //);
 //InteractView("decorum est pro patria mori");
 //
-InteractView("in principio [creavit Deus [caelum et  terram]]");
+//InteractView("in principio [creavit Deus [caelum et  terram]]");
 DumpSentences("in principio [creavit Deus [caelum et  terram]]");
 //InteractView("Notitia est peior quam melior");
 //DumpSentences("Notitia est peior quam melior");
@@ -1055,3 +1055,19 @@ DumpSentences("in principio [creavit Deus [caelum et  terram]]");
 
 //John 9:1
 //InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
+//1st conjugation
+DumpSentences("voco.vocabam.vocabo.vocavi.vocaveram.vocavero.vocor.vocabar.vocabor.vocas.vocemus.vocaremus.vocemur");
+DumpSentences("vocantis");
+//1st declension
+DumpSentences("rosa.rosae.rosae.rosarum.rosis.rosam.rosas");
+DumpSentences("bellum.bella.belli.bellorum.bellis");
+//2nd declension	
+DumpSentences("murus.muri.murorum.muro.murum.muris");
+DumpSentences("murus.muri.murorum.muro.murum.muris");
+//3rd declension
+DumpSentences("homo.homines.hominis.hominum.homini.hominibus");
+DumpSentences("hominem.homines.homine.hominibus.homines");
+//4th Declension
+DumpSentences("manus.manuum.manui.manibus.manu");
+//5th Declension
+DumpSentences("res.res.re.rerum.rebus");

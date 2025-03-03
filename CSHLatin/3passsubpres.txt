@@ -1,0 +1,4 @@
+VERB|SUBJUNCTIVE|PRESENT|PASSIVE
+1st 	tegar 	I may be covered 	tegāmur 	We may be covered
+2nd 	tegāris 	You may be covered 	tegāminī 	You (pl.) may be covered
+3rd 	tegātur 	He/she/it may be covered 	tegantur 	They may be covered 

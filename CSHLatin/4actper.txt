@@ -1,0 +1,4 @@
+VERB|PERFECT
+1st 	audivī 	I have heard 	audivimus 	We have heard
+2nd 	audivistī 	You have heard 	audivistis 	You (pl.) have heard
+3rd 	audivit 	He/she/it has heard 	audivērunt 	They have heard 

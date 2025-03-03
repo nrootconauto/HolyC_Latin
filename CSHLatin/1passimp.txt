@@ -1,0 +1,4 @@
+VERB|PASSIVE|IMPERFECT
+1st 	amābar 	I was loved 	amābāmur 	We were loved
+2nd 	amābāris 	You were loved 	amābāminī 	You (pl.) were loved
+3rd 	amābātur 	He/she/it was loved 	amābantur 	They were loved 

@@ -1,0 +1,4 @@
+VERB|SUBJUNCTIVE|PRESENT|PASSIVE
+1st 	amer 	I may be loved 	amēmur 	We may be loved
+2nd 	amēris 	You may be loved 	amēminī 	You (pl.) may be loved
+3rd 	amētur 	He/she/it may be loved 	amentur 	They may be loved 

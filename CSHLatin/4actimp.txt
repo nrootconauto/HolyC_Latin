@@ -1,0 +1,4 @@
+VERB|IMPERFECT
+1st 	audiēbam 	I was hearing 	audiēbāmus 	We were hearing
+2nd 	audiēbās 	You were hearing 	audiēbātis 	You (pl.) were hearing
+3rd 	audiēbat 	He/she/it was hearing 	audiēbant 	They were hearing 

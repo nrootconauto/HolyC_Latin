@@ -1,0 +1,4 @@
+PASSIVE|PRESENT|VERB
+1st 	moneor 	I am warned 	monēmur 	We are warned
+2nd 	monēris 	You are warned 	monēminī 	You (pl.) are warned
+3rd 	monētur 	He/she/it is warned 	monentur 	They are warned 

@@ -1,0 +1,4 @@
+VERB|FUTURE
+1st 	audiam 	I will hear 	audiēmus 	We will hear
+2nd 	audiēs 	You will hear 	audiētis 	You (pl.) will hear
+3rd 	audiet 	He/she/it will hear 	audient 	They will hear 

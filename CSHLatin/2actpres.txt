@@ -1,0 +1,4 @@
+PRESENT|VERB
+1st 	moneō 	I warn 	monēmus 	We warn
+2nd 	monēs 	You warn 	monētis 	You (pl.) warn
+3rd 	monet 	He/she/it warns 	monent 	They warn 

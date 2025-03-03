@@ -1,0 +1,4 @@
+VERB|SUBJUNCTIVE|PERFECT
+1st 	audiverim 	I may have heard 	audiverīmus 	We may have heard
+2nd 	audiverīs 	You may have heard 	audiverītis 	You (pl.) may have heard
+3rd 	audiverit 	He/she/it may have heard 	audiverint 	They may have heard 

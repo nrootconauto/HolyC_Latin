@@ -1,0 +1,4 @@
+PASSIVE|SUBJUNCTIVE|VERB|PRESENT
+1st 	audiar 	I may be heard 	audiāmur 	We may be heard
+2nd 	audiāris 	You may be heard 	audiāminī 	You (pl.) may be heard
+3rd 	audiātur 	He/she/it may be heard 	audiantur 	They may be heard 

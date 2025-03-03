@@ -1,0 +1,4 @@
+PLUPERFECT|VERB
+1st 	audiveram 	I had heard 	audiverāmus 	We had heard
+2nd 	audiverās 	You had heard 	audiverātis 	You (pl.) had heard
+3rd 	audiverat 	He/she/it had heard 	audiverant 	They had heard 

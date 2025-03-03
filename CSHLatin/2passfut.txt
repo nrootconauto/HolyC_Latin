@@ -1,0 +1,4 @@
+VERB|PASSIVE|FUTURE
+1st 	monēbor 	I will be warned 	monēbimur 	We will be warned
+2nd 	monēberis 	You will be warned 	monēbiminī 	You (pl.) will be warned
+3rd 	monēbitur 	He/she/it will be warned 	monēbuntur 	They will be warned 

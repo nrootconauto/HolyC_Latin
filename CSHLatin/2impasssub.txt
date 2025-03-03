@@ -1,0 +1,4 @@
+SUBJUNCTIVE|VERB|IMPERFECT
+1st 	monērem 	I should warn 	monērēmus 	We should warn
+2nd 	monērēs 	You would warn 	monērētis 	You (pl.) would warn
+3rd 	monēret 	He/she/it would warn 	monērent 	They would warn 

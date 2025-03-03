@@ -1,0 +1,4 @@
+FUTURE|PASSIVE|VERB
+1st 	audiar 	I will be heard 	audiēmur 	We will be heard
+2nd 	audiēris 	You will be heard 	audiēminī 	You (pl.) will be heard
+3rd 	audiētur 	He/she/it will be heard 	audientur 	They will be heard 

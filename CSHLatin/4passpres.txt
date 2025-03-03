@@ -1,0 +1,4 @@
+PASSIVE|VERB|PRESENT
+1st 	audior 	I am heard 	audimur 	We are heard
+2nd 	audiris 	You are heard 	audiminī 	You (pl.) are heard
+3rd 	auditur 	He/she/it is heard 	audiuntur 	They are heard 

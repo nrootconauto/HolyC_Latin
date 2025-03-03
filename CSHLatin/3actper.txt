@@ -1,0 +1,4 @@
+VERB|PERFECT
+1st 	texī 	I have covered 	teximus 	We have covered
+2nd 	texistī 	You have covered 	texistis 	You (pl.) have covered
+3rd 	texit 	He/she/it has covered 	texērunt 	They have covered 

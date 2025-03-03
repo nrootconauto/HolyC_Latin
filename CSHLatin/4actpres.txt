@@ -1,0 +1,4 @@
+VERB|PRESENT
+1st 	audiō 	I hear 	audimus 	We hear
+2nd 	audis 	You hear 	auditis 	You (pl.) hear
+3rd 	audit 	He/she/it hears 	audiunt 	They hear 

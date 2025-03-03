@@ -1,0 +1,4 @@
+IMPERFECT|PASSIVE|VERB
+1st 	monēbar 	I was warned 	monēbāmur 	We were warned
+2nd 	monēbāris 	You were warned 	monēbāminī 	You (pl.) were warned
+3rd 	monēbātur 	He/she/it was warned 	monēbantur 	They were warned 

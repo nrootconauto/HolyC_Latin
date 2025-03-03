@@ -1,0 +1,4 @@
+PERFECT|SUBJUNCTIVE
+1st 	amāverim 	I may have loved 	amāverīmus 	We may have loved
+2nd 	amāverīs 	You may have loved 	amāverītis 	You (pl.) may have loved
+3rd 	amāverit 	He/she/it may have loved 	amāverint 	They may have loved 

@@ -1,0 +1,4 @@
+VERB|IMPERFECT
+1st 	tegēbam 	I was covering 	tegēbāmus 	We were covering
+2nd 	tegēbās 	You were covering 	tegēbātis 	You (pl.) were covering
+3rd 	tegēbat 	He/she/it was covering 	tegēbant 	They were covering 

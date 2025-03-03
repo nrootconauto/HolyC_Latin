@@ -1,0 +1,4 @@
+SUBJUNCTIVE|PLUPERFECT|VERB
+1st 	texissem 	I should have covered 	texissēmus 	We should have covered
+2nd 	texissēs 	You would have covered 	texissētis 	You (pl.) would have covered
+3rd 	texisset 	He/she/it would have covered 	texissent 	They would have covered 

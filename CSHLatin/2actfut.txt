@@ -1,0 +1,4 @@
+FUTURE|VERB
+1st 	monēbō 	I will warn 	monēbimus 	We will warn
+2nd 	monēbis 	You will warn 	monēbitis 	You (pl.) will warn
+3rd 	monēbit 	He/she/it will warn 	monēbunt 	They will warn 

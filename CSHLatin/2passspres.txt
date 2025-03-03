@@ -1,0 +1,4 @@
+PRESENT|PASSIVE|VERB
+1st 	monear 	I may be warned 	moneāmur 	We may be warned
+2nd 	moneāris 	You may be warned 	moneāminī 	You (pl.) may be warned
+3rd 	moneātur 	He/she/it may be warned 	moneantur 	They may be warned 

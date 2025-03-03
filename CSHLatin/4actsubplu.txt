@@ -1,0 +1,4 @@
+VERB|SUBJUNCTIVE|PLUPERFECT
+1st 	audivissem 	I should have heard 	audivissēmus 	We should have heard
+2nd 	audivissēs 	You would have heard 	audivissētis 	You (pl.) would have heard
+3rd 	audivisset 	He/she/it would have heard 	audivissent 	They would have heard 

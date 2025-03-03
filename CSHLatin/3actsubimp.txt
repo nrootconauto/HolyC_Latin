@@ -1,0 +1,4 @@
+SUBJUNCTIVE|VERB|IMPERFECT
+1st 	tegerem 	I should cover 	tegerēmus 	We should cover
+2nd 	tegerēs 	You would cover 	tegerētis 	You (pl.) would cover
+3rd 	tegeret 	He/she/it would cover 	tegerent 	They would cover 
