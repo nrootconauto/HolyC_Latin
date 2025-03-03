@@ -18,7 +18,7 @@ CTrie *TrieGet(U8 *name, CTrie *of = &root) {
       while (of && !of->str) of = of->next;
       return of;
     }
-    if ('A' <= ToUpper(*name) && ToUpper(*name) <= 'Z') {
+    if ('A'<=ToUpper(*name)<='Z') {
       of = of->branches[ToUpper(*name) - 'A'];
       name++;
     } else return NULL;
@@ -42,7 +42,7 @@ CTrie *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL) {
   new->flags = flags;
   if (translation) new->translation = StrNew(translation, trie_task);
   while (*name) {
-    if ('A' <= (idx = ToUpper(*name)) && idx <= 'Z') {
+    if ('A'<=(idx=ToUpper(*name))<='Z') {
       idx -= 'A';
       if (!to->branches[idx]) {
         to->branches[idx] = CAlloc(sizeof(CTrie), trie_task);
