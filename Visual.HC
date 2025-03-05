@@ -124,6 +124,9 @@ CTrie *DisplayNodeGetHoverWord(CDisplayNode *n,I64 ms_x,I64 ms_y) {
 #define CURVE_MARGIN 40
 class CDisplayTmp {
   I64 *word_offsets;
+  U8 **words;
+  F64 word_font_size;
+  F64 definition_font_size;
   F64 xoff,yoff,max_y;
 };
 F64 Center(F64 a,F64 b) {
@@ -156,90 +159,144 @@ I64 SideSortRev(AST *a,AST *b) {
 I64 DistSort(AST *a,AST *b) {
   return AbsI64(a->word_idx-Fs->user_data)-AbsI64(b->word_idx-Fs->user_data);
 }
-
-I64 DrawWordInfo(CDC *dc,I64 x,I64 y,CTrie *word,Bool dummy=FALSE) {
+#include "TrueType";
+I64 SexyGrPrintSize(CDC *dc,I64 size,I64 x,I64 y,U8 *fmt,...) {
+  Bool del=FALSE;
+  if(dc==NULL)
+   del=TRUE,dc=DCNew(1,1);
+  fmt=StrPrintJoin(NULL,fmt,argc,argv);
+  I64 w=TTF_RenderText(dc,x,y,fmt,size);
+  Free(fmt);
+  if(del) DCDel(dc);
+  return w;
+}
+I64 StrLenUTF8(U8 *s) {
+  I64 l=0;
+  while(ReadUTF8(s,&s))
+    ++l;
+  return l;
+}
+I64 SliceUTF8(U8 *to,U8 *str,I64 len) {
+  I64 ptr=0;
+  U8 *old;
+  while(--len>=0) {
+    old=str;
+    ReadUTF8(str,&str);
+    if(to) {
+      MemCpy(to,old,str-old);
+      to+=str-old;
+    }
+    ptr+=str-old;
+  }
+  *to=0;
+  return ptr;
+}
+I64 DrawSexyWord(CDC *dc,F64 fsize,I64 x,I64 y,CTrie *word,U8 *text) {
+  CDC *odc=dc;
+  if(!dc) dc=DCNew(1,1);
   I64 ox=x;
+  I64 inflect_color=dc->color^7;
+  I64 old_color=dc->color;
+  if(!word) return x;
+  U8 *tmp;
+  U8 buf[STR_LEN];
+  I64 badv=0,fadv=0;
+  I64 ptr=0;
+  if(tmp=word->back_declension)
+    badv=StrLen(tmp);
+  if(tmp=word->front_declension)
+    fadv=StrLen(tmp);
+  if(badv) {
+    dc->color=inflect_color;
+    ptr=SliceUTF8(buf,text,badv);
+    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    text+=ptr;
+  }
+  if(fadv) {
+    dc->color=old_color;
+    ptr=StrLenUTF8(text)-fadv;
+    ptr=SliceUTF8(buf,text,ptr);
+    text+=ptr;
+    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    dc->color=inflect_color;
+    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",text);
+  } else{
+    dc->color=old_color;
+    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",text);
+  }
+  dc->color=old_color;
+  if(!odc) DCDel(dc);
+  return x-ox;
+}
+
+
+I64 DrawWordInfo(CDC *dc,I64 x,I64 y,CTrie *word,Bool dummy=FALSE,U8 *text) {
+  I64 ox=x;
+  F64 sub=14.;
   if(dummy) dc=DCNew(1,1);
   if(word->flags&(NOUN|PRONOUN|ADJECTIVE)) {
     dc->color=GREEN;
     if(word->flags&MASCULINE) {
-      GrPrint(dc,x,y,"M");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"M");
     } else if(word->flags&FEMININE) {
-      GrPrint(dc,x,y,"F");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"F");
     } else if(word->flags&NEUTER) {
-      GrPrint(dc,x,y,"N");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"N");
     }
 
     dc->color=PURPLE;
     if(word->flags&COMPARATIVE) {
-      GrPrint(dc,x,y,"Comp");
-      x+=8*4;
+      x+=SexyGrPrintSize(dc,sub,x,y,"Comp");
     } else if(word->flags&COMPARATIVE) {
-      GrPrint(dc,x,y,"Sup");
-      x+=8*3;
+      x+=SexyGrPrintSize(dc,sub,x,y,"Sup");
     }
     if(word->flags&NOMITIVE) {
       dc->color=LTGREEN;
-      GrPrint(dc,x,y,"N");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"N");
     } else if(word->flags&ACCUSATIVE) {
       dc->color=LTRED;
-      GrPrint(dc,x,y,"A");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"A");
     } else if(word->flags&GENITIVE) {
       dc->color=LTCYAN;
-      GrPrint(dc,x,y,"G");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"G");
     } else if(word->flags&ABLATIVE) {
       dc->color=LTBLUE;
-      GrPrint(dc,x,y,"Ab");
-      x+=8*2;
+      x+=SexyGrPrintSize(dc,sub,x,y,"Ab");
     }
 
 _p_cnt:
     dc->color=RED;
     if(word->flags&_3P) {
-      GrPrint(dc,x,y,"3");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"3");
     } else if(word->flags&_2P) {
-      GrPrint(dc,x,y,"2");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"2");
     } else if(word->flags&_1P) {
-      GrPrint(dc,x,y,"1");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"1");
     }
 
     dc->color=BLACK;
     if(word->flags&PLURAL) {
-      GrPrint(dc,x,y,"P");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"P");
     } else {
-      GrPrint(dc,x,y,"S");
-      x+=8;
+      x+=SexyGrPrintSize(dc,sub,x,y,"S");
     }
   } else if(word->flags&VERB) {
     dc->color=BLUE;
     if(word->flags&IMPERFECT) {
-      GrPrint(dc,x,y,"Imp");
-      x+=8*3;
+      x+=SexyGrPrintSize(dc,sub,x,y,"Imp");
     } else if(word->flags&FUTURE) {
-      GrPrint(dc,x,y,"Fut");
-      x+=8*3;
+      x+=SexyGrPrintSize(dc,sub,x,y,"Fut");
     } else if(word->flags&PERFECT) {
-      GrPrint(dc,x,y,"Per");
-      x+=8*3;
+      x+=SexyGrPrintSize(dc,sub,x,y,"Per");
     } else if(word->flags&PLUPERFECT) {
-      GrPrint(dc,x,y,"Plu");
-      x+=8*3;
+      x+=SexyGrPrintSize(dc,sub,x,y,"Plu");
     }
     goto _p_cnt;
   }
   if(dummy) DCDel(dc);
-  return (x-ox)/8;
+  return x-ox;
 }
+
 
 
 CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *max_h=NULL) {
@@ -274,46 +331,24 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
     y=8;
     x=world->word_offsets[ast->word_idx];
     dc->color=color;
-    if(ast->word->front_declension||ast->word->back_declension) {
-      base_word=optr=StrNew(ast->word->str);
-      if(ast->word->back_declension)
-        base_word+=StrLen(ast->word->back_declension);
-       if(ast->word->front_declension)
-        base_word[StrLen(base_word)-StrLen(ast->word->front_declension)]=0;
-      x2=x-StrLen(ast->word->str)*8/2;
-      idx2=0;
-      if(ast->word->back_declension) {
-        dc->color=color^0x7;
-        GrPrint(dc,x2,y,"%s",ast->word->back_declension);
-        idx2+=StrLen(ast->word->back_declension);
-      }
-      dc->color=color;
-      GrPrint(dc,x2+8*idx2,y,"%s",base_word);
-      idx2+=StrLen(base_word);
-      if(ast->word->front_declension) {
-        dc->color=color^0x7;
-        GrPrint(dc,x2+8*idx2,y,"%s",ast->word->front_declension);
-        idx2+=StrLen(ast->word->front_declension);
-      }
-      dc->color=color;
-      Free(optr);
-    } else {
-      x2=x-StrLen(ast->word->str)*8/2;
-      GrPrint(dc,x2,y,"%s",ast->word->str);
-    }
-    x2=DrawWordInfo(NULL,x,y,ast->word,TRUE);//number of chars
-    x2=x-x2*8/2;
-    DrawWordInfo(dc,x2,y+1+FONT_HEIGHT,ast->word);
-    if(ast->word->translation) {
+
+    x2=DrawSexyWord(NULL,17,x+1,y,ast->word,world->words[ast->word_idx]);
+    x2=x-x2/2;
+    DrawSexyWord(dc,17.,x2,y,ast->word,world->words[ast->word_idx]);
+
+    x2=DrawWordInfo(NULL,x,y+20,ast->word,TRUE,world->words[ast->word_idx]);
+    x2=x-x2/2;
+    DrawWordInfo(dc,x2,y+20,ast->word,,world->words[ast->word_idx]);
+    if(optr=ast->word->translation) {
+      x2=x-SexyGrPrintSize(NULL,14.,x,y+2*20,"%s",optr)/2;
       dc->color=BLACK;
-      x2=x-StrLen(ast->word->translation)*8/2;
-      GrPrint(dc,x2,y+2+FONT_HEIGHT*2,"%s",ast->word->translation);
+      SexyGrPrintSize(dc,14.,x2,2*20,"%s",optr);
     }
     ret->hover_node_pos.x=x;
-    ret->hover_node_pos.y=y+3+FONT_HEIGHT*3+2.5;
-    GrFillCircle(dc,x,y+3+FONT_HEIGHT*3+2.5,0,5);
+    ret->hover_node_pos.y=y+3+20*3+2.5;
+    GrFillCircle(dc,x,y+3+3*20+2.5,0,5);
     x2=x;
-    y2=y+3+FONT_HEIGHT*3+7;
+    y2=y+3*20;
     ret->handle_x=x2;
     ret->handle_y=y2;
     ret->bound_l=x2;
@@ -485,6 +520,9 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
   AST *untainted=ASTClone(sentence);
   wc=ASTGetTrieWords(sentence,NULL);
   forms=CAlloc(word_cnt*8);
+  t.words=words;
+  t.word_font_size=17;
+  t.definition_font_size=14;
   ASTGetTrieWords(sentence,forms);
   t.xoff=0,t.yoff=0;
   t.word_offsets=MAlloc(word_cnt*8);
@@ -969,8 +1007,7 @@ DumpSentences(
 
 //DumpSentences("Benedicere te. Spero potioris pacem aeternam et laetitiam.");
 /*DumpSentences(
-	"namque [  Grinch sum cupere [coleum huius]].",
-	"Truly,The Grinch's sack Is what I want"
+	"namque [sum ego [ cupere nigrum coleum]]."
 );*/
 /*DumpSentences(
 "*[ omnis sancti entia in decem regiones] es.",
@@ -1034,7 +1071,7 @@ DumpSentences(
 //InteractView("decorum est pro patria mori");
 //
 //InteractView("in principio [creavit Deus [caelum et  terram]]");
-DumpSentences("in principio [creavit Deus [caelum et  terram]]");
+//DumpSentences("in principio [creavit Deus [caelum et  terram]]");
 //InteractView("Notitia est peior quam melior");
 //DumpSentences("Notitia est peior quam melior");
 //TrieAdd("Herodes",NOUN|NOMITIVE,"Herod");
@@ -1046,16 +1083,16 @@ DumpSentences("in principio [creavit Deus [caelum et  terram]]");
 //InteractView("[res sunt haut]");
 //DumpSentences("tenebrae super faciem");
 //DumpSentences("[tenebrae super faciem] abyssi");
-//InteractView("[terra erat [inanis et vacua]] et [[tenebrae super faciem] abyssi] et [[spiritus Dei] ferebatur super aquas]");
 //InteractView("[[spiritus Dei] ferebatur  super aquas]");
 //InteractView("Res sunt formamentis abditis.");
-//DumpSentences("res  creat e[ formamentis abditis ].");
-//DumpSentences("[in principio creavit Deus [terram et caelum]]");
 //InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
 
+//Genesis 1
+//DumpSentences("in principio [creavit Deus [terram et caelum]]");
 //John 9:1
-//InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
+DumpSentences("et [praeteriens [vidit hominem caecum a nativitate]].");
 //1st conjugation
+#if 0
 DumpSentences("voco.vocabam.vocabo.vocavi.vocaveram.vocavero.vocor.vocabar.vocabor.vocas.vocemus.vocaremus.vocemur");
 DumpSentences("vocantis");
 //1st declension
@@ -1070,4 +1107,5 @@ DumpSentences("hominem.homines.homine.hominibus.homines");
 //4th Declension
 DumpSentences("manus.manuum.manui.manibus.manu");
 //5th Declension
-DumpSentences("res.res.re.rerum.rebus");
+DumpSentences("res.res.re.rerum.rebus");
+#endf 

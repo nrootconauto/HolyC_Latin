@@ -400,7 +400,7 @@ got_inflect:;
 	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
 	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
 	      if(!StrICmp(f->str,"present")) flags|=PRESENT;
-	      DbgPrint("UNIMP:%s,%s,%x(%x)\n",f->str,word,flags|inflect_mask,old);
+	      DbgPrint("UNIMP:%s,%s,%x(%x)\n",f->str,word,flags|inflect_mask,old);
 	    }
 	  }
 	  if(flags&VERB&&flags&INFINITIVE)

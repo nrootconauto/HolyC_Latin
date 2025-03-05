@@ -64,8 +64,8 @@ Noun@Noun NOUN -> Adj@Adj !Noun@Noun;
 
 Noun@Noun NOUN = INFINITIVE;
 Infin@Infin NOUN = INFINITIVE;
-Noun@Noun(CaseAcc) NOUN -> !Infin@Infin Noun@Noun(NOUN); (.5) //Less common
-Noun@Noun(CaseAcc) NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.) //more commons
+Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.5) //Less common
+Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.) //more commons
 
 
 
@@ -138,7 +138,7 @@ Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION)
 Sent CLAUSE -> Noun@Noun !Verb@Verb Prep@Prep Noun@Noun(WHERE);
 
 
-Sent(Transitive) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun;
+Sent CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun;
 Sent(NumberAgree) CLAUSE -> Noun@Noun !Verb@Verb;
 Sent(Transitive) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;
 Sent(Transitive) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;

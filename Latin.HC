@@ -2,7 +2,7 @@
 #include"Utils.HC";
 //-ne after the first word means question
 //-que means and
-#define ACTIVE 0 //Impliciti
+#define ACTIVE 0 //Impliciti
 #defineNOMITIVE (1)
 #defineGENITIVE (1<<1)
 #defineDATIVE (1<<2)
@@ -273,7 +273,7 @@ CTrie *GetWord(U8 *word) {
     }
     Free(copy);
   }
-  if(EndsWith(word,"que")) {
+/*  if(EndsWith(word,"que")) {
     copy=StrNew(word);
     copy[StrLen(word)-3]=0;
     if(base=TrieGet(copy)) {
@@ -281,7 +281,13 @@ CTrie *GetWord(U8 *word) {
       return TrieAdd(word,base->flags|CONJUNCTION2|CONJUNCTION,base->translation);
     }
     Free(copy);
-  }
-//  DbgPrint("Unknonw word %s\n",word);
+  }*/
+  DbgPrint("Unknonw word %s\n",word);
   return NULL;
 }
+
+U0 InitDict0() {
+  TrieAdd("nam",CONJUNCTION,"thus");
+  TrieAdd("namque",CONJUNCTION,"thus");
+}
+InitDict0;

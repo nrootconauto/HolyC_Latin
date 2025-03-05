@@ -210,7 +210,6 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
   CD2 *c2=NULL;
   CD3I32 bcontrols[4];
   I64 rendered=0,to_render=0;
-  dc=DCAlias(dc);
   dc->flags|=DCF_TRANSFORMATION;
   dc->color=RED;
   dc->thick=1;
@@ -237,7 +236,7 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
       st=cur;
     else if(!en&&flags[i%len]&SOF_CURVE) {
       en=cur;
-      if(!control) {
+      if(!control||1) {
         GrLine3(dc,st->x*scale,-st->y*scale,0,en->x*scale,-en->y*scale,0);
         rendered++;
       } else if(control&&!c2) {
@@ -268,7 +267,6 @@ U0 RenderCon(CDC *dc,I64 x,I64 y,CD2 *points,U8 *flags,I64 len,F64 scale=16) {
       en=NULL;
     }
   }
-  DCDel(dc);
 }
 
 U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=100,U0 (*trans)(F64 *x,F64 *y,U8 *d)=NULL,U8 *td=NULL) {
@@ -567,11 +565,11 @@ I64 TTF_Kerning(U8 *file,I64 a,I64 b) {
 CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *trans,U8 *td,Bool fill=TRUE) {
 //  g=68+'y'-'a';
   //g=68+1;
-  CDC *dumb;
   if(g<0) return;
   U8 *head=TTF_GetTablePtr('head',file);
   U8 *loca=TTF_GetTablePtr('loca',file);
   F64 ppem=EndianU16((head+18)(U16*)[0]);
+  F64 _xoff,_yoff;
   if(!head) return;
   I64 loca_format=(head+50)(I16*)[0],width,goff;
   if(!loca_format) {
@@ -592,26 +590,16 @@ CGlAdvance TTF_RenderGl(CDC *dc,I64 x,I64 y,U8 *file,I64 g,F64 scale=16,U8 *tran
   F64 line_height,y_bear=0;
   TTF_HMetrics(g,file,&aw,&left_bear,&line_height);
 //  TTF_VMetrics(g,file,NULL,&y_bear,&line_height);
-  dumb=DCNew(xmax-xmin+100,ymax-ymin+200);
-  DCFill(dumb,TRANSPARENT);
-  if(!FramePtr("recur")) {
-    yoff=dumb->height-100;
-    xoff=50;
-  } else {
-    xoff=50;
-    yoff=dumb->height-100;
-  }
+  _xoff=left_bear*scale/ppem+x-xmin;
+  _yoff=y_bear*scale/ppem+y;
+
   if(gc<=I16_MAX) {
 //21 Savage Simple
-    TTF_RenderChrSimple(dumb,xoff,yoff,gh+1,EndianU16(gh->cont_cnt),ppem,scale,trans,td);
+    TTF_RenderChrSimple(dc,_xoff,_yoff,gh+1,EndianU16(gh->cont_cnt),ppem,scale,trans,td);
   } else {
 //Complex 
-    TTF_Compound(dumb,xoff,yoff,file,gh+1,-gc.i16[0],scale);
+    TTF_Compound(dc,_xoff,_yoff,file,gh+1,-gc.i16[0],scale);
   }
-  OddEven(dumb);
-  GrBlot(dc,left_bear*scale/ppem-xmin+x-xoff,y_bear*scale/ppem+y-yoff,dumb);
-
-  DCDel(dumb);
   CGlAdvance ret;
   ret.x=Max(aw/ppem*scale,xmax-xmin);
   ret.y=-line_height/ppem*scale;
@@ -648,16 +636,66 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
   return x-ox;
 }
 #include "Utils.HC";
-U0 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file) {
+F64 ColorDist(I64 c,CBGR48 want) {
+  CBGR48 colors[COLORS_NUM];
+  GrPaletteGet(colors);
+  return Sqrt(Sqr(colors[c].r-want.r)+
+	Sqr(colors[c].g-want.g)+
+	Sqr(colors[c].b-want.b)
+	);
+}
+I64 HintColor(CDC *from,F64 x,F64 y,F64 avg_hits,F64 width=1.,I64 color=BLACK) {
+  F64 hits=0;
+  width=Ceil(width);
+  CBGR48 colors[COLORS_NUM];
+  GrPaletteGet(colors);
+  I64 c;
+  I64 _x,_y;
+  x=Floor(x);
+  y=Floor(y);
+  width=width;
+  for(_x=0;_x<width;_x++)
+    for(_y=0;_y<width;_y++) {
+      c=GrPeek(from,x+_x,y+_y);
+      if(c!=TRANSPARENT&&c>=0)
+        ++hits;
+    }
+  F64 percent=hits/Sqr(width);
+  CBGR48 want;
+  want.r=colors[color].r*percent+colors[WHITE].r*(1.-percent);
+  want.g=colors[color].g*percent+colors[WHITE].g*(1.-percent);
+  want.b=colors[color].b*percent+colors[WHITE].b*(1.-percent);
+  F64 dist,tmp;
+  c=color;
+  dist=ColorDist(color,want);
+  for(_x=0;_x!=COLORS_NUM;_x++) {
+    tmp=ColorDist(_x,want);
+    if(dist>tmp) {
+      dist=tmp;
+      c=_x;
+    }
+  }
+  if(c==WHITE)
+    return TRANSPARENT;
+  return c;
+    
+}
+U8 *font=FileRead(__DIR__"/FiraFont/FiraSans-Regular.ttf");
+I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=font) {
   U32 *str=CAlloc((1+StrLen(text))*4),c,i=0;
   CDC *ext=DCNew(I32_MAX,I32_MAX,Fs,TRUE);
   CDC *upscaled;
+  F64 avg_hits=0;
   F64 x,y,w,h;
+  F64 scale_ratio=78.;
+  F64 lh;
+  U8 *head=TTF_GetTablePtr('head',ttf_file);
+  F64 ppem=EndianU16((head+18)(U16*)[0]);
   DCExtentsInit(ext);
   for(i=0;c=ReadUTF8(text,&text);i++) {
     str[i]=c;
   }
-  TTF_RenderTextU32(ext,I32_MAX/2,I32_MAX/2,ttf_file,str,100.);
+  TTF_RenderTextU32(ext,I32_MAX/2,I32_MAX/2,ttf_file,str,scale_ratio);
   if (ext->min_x<=ext->max_x) {
     ext->min_x-=I32_MAX/2;
     ext->max_x-=I32_MAX/2;
@@ -666,30 +704,38 @@ U0 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file) {
     ext->min_y-=I32_MAX/2;
     ext->max_y-=I32_MAX/2;
   }
-  upscaled=DCNew(w=ext->max_x-ext->min_x+1,h=ext->max_y-ext->min_y+1);
+  upscaled=DCNew(6+(w=ext->max_x-ext->min_x+2),6+(h=ext->max_y-ext->min_y+2));
   DCFill(upscaled,TRANSPARENT);
-  TTF_RenderTextU32(upscaled,-ext->min_x,-ext->min_y,ttf_file,str,100.);
-  w*=scale/100.;
-  h*=scale/100.;
+  F64 rw=TTF_RenderTextU32(upscaled,3-ext->min_x,3-ext->min_y,ttf_file,str,scale_ratio);
+  OddEven(upscaled);
+  TTF_HMetrics(0,ttf_file,NULL,NULL,&lh);
+  tx-=-ext->min_x*scale/scale_ratio;
+  ty=ty+ext->min_y*scale/scale_ratio-lh/ppem*scale;
+  w*=scale/scale_ratio;
+  h*=scale/scale_ratio;
+  rw*=scale/scale_ratio;
+  avg_hits=Sqr(scale_ratio/scale);
+  I64 old=to->color;
   for(x=0;x<w;x++)
     for(y=0;y<h;y++) {
-      to->color=GrPeek(upscaled,x*100./scale,y*100./scale);
+      to->color=HintColor(upscaled,x*scale_ratio/scale,y*scale_ratio/scale,avg_hits,scale_ratio/scale,old);
       if(to->color!=TRANSPARENT)
-	GrPlot3(to,tx+x,ty+y,0);
-    }
+ 	GrPlot(to,tx+x,ty+y);
+   }
+  to->color=old;
   DCDel(ext);
   DCDel(upscaled);
   Free(str);
+  return Ceil(rw);
 }
-#ifdef __CMD_LINE__
-Cd(__DIR__);;;;
-U8 *f=FileRead("mono.ttf");
+#if __CMD_LINE__
+Cd(__DIR__);;;
 DCFill;
 WinMax;
-U32 text[5]={0x1f88,0x1f32,0x1fa6,0x3bd,0};
-TTF_RenderTextU32(gr.dc,100,200,f,text,128);
-TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21\n     21 Savage",16,f);
 DocClear;
+gr.dc->color=BLACK;
+TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21\n     21 Savage\n   Ἇῗῷν",15,font);
+
 PressAKey;
 DCFill;
 /*TTF_RenderChr(gr.dc,200,175,f,'a',150);

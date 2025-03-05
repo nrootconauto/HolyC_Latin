@@ -657,9 +657,9 @@ fail:;
 	  add_to=Scan(words,add_to,r,matrix,y,cnt,tmp->end,ra+1,tmp2);
 	  Free(tmp2);
 	  if(old!=add_to) {
-	    if(++repeat_cnt>=32) {
+	    if(++repeat_cnt>=16) {
 	      ASTDel(tmp);
-	      break;
+	      goto fin;
 	    }
 	  }
         }
