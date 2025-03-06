@@ -873,7 +873,6 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL) {
     }
     ast=ParseSentenceJoin(tcnt,toks);
     if(ast) {
-     DumpAST(ast);
       dc=DrawSentence(ast,tcnt,toks);
 "
 
@@ -1092,6 +1091,17 @@ DumpSentences("in principio [creavit Deus [terram et caelum]]");
 //John 9:1
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
+//[ita ego ingeniculo]
+InteractView(	"[ita ego ingeniculo] [[dominor  exonerandi] qui [fui [ nexionis vastatorem] et [sciendum omnia]]] ."
+	"ita  habeamus ego [virtutem suum]"
+);
+DumpSentences(
+	"[ita ego ingeniculo] [[dominor  exonerandi] qui [fui [ nexionis vastatorem] et [sciendum omnia]]] ."
+	"ita  habeamus [virtutem suum]"
+	,
+	"I bow to the Lord of Liberator who is the destroyer of bondage and knower of all.\0"
+        "So that I may have their Virtuees.\0"
+);
 #if 0
 DumpSentences("voco.vocabam.vocabo.vocavi.vocaveram.vocavero.vocor.vocabar.vocabor.vocas.vocemus.vocaremus.vocemur");
 DumpSentences("vocantis");

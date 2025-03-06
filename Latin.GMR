@@ -8,8 +8,8 @@ Adj@Adj ADJECTIVE -> Adj@Adj Adj@Adj;
 //End
 
 
-Noun@Noun(FlagsTransfer) NOUN -> Adj@Adj; (.1) //Substanive adjective is rarley used
-Adverb@Adverb(FlagsTransfer) NOUN -> Adj@Adj; (.2) // Adjectives are like adverbs sometimes
+Noun@Noun[FlagsTransfer] NOUN -> Adj@Adj; (.1) //Substanive adjective is rarley used
+Adverb@Adverb[FlagsTransfer] NOUN -> Adj@Adj; (.2) // Adjectives are like adverbs sometimes
 
 Pron@Inter QUESTION = INTEROGITIVE;
 Pron@Pron NOUN = PRONOUN;
@@ -65,7 +65,7 @@ Noun@Noun NOUN -> Adj@Adj !Noun@Noun;
 Noun@Noun NOUN = INFINITIVE;
 Infin@Infin NOUN = INFINITIVE;
 Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.5) //Less common
-Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.) //more commons
+Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.) //more commons
 
 
 
@@ -98,7 +98,7 @@ Sent CLAUSE -> !Partic@Partic Sent(WHERE);
 
 // This is for "those [who] eat" and
 // "watching all [who]..."
-Sent CLAUSE -> Noun@Noun(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.6) //Favor above default
+Noun@Noun[FlagsTransfer] CLAUSE -> Noun@Noun(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.6) //Favor above default
 Sent CLAUSE -> Sent(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.55) //Favor lesser than top one
 //End
 

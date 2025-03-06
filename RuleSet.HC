@@ -553,6 +553,9 @@ ASTSet *Scan(U8 **words,ASTSet *add_to,CRule *r,U8 **matrix,I64 y,I64 cnt,I64 x=
   I64 boundary,attempt;
   U8 *desired,*tmp2;
   I64 repeat_cnt=0;
+  //Short circuit logic,if wanted input is longer than available items,just quit
+  if(rcnt-ra>cnt-AbsI64(x))
+    return add_to;
   if(ra>=rcnt) {
 pass:
     if(r->main_item_idx>=0) {
@@ -626,7 +629,7 @@ fail:;
 	  if(!ra&&!StrCmp(r->name,desired)) {
 //All is good
 	  } else
-;//	    goto skip2;
+	    goto skip2;
         }
       }
 
@@ -657,7 +660,9 @@ fail:;
 	  add_to=Scan(words,add_to,r,matrix,y,cnt,tmp->end,ra+1,tmp2);
 	  Free(tmp2);
 	  if(old!=add_to) {
-	    if(++repeat_cnt>=16) {
+	    repeat_cnt=FramePtr("RS.Added");
+	    FramePtrSet("RS.Added",repeat_cnt+1);
+	    if(1+repeat_cnt>=15) {
 	      ASTDel(tmp);
 	      goto fin;
 	    }
@@ -704,7 +709,9 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
         rule=rules_list->body[ri];
         if(rule->made_from) {
 	  ptr=MatrixPtr(matrix,x,y+1,cnt);
+	  FramePtrAdd("RS.Added",0);
 	  new=Scan(words,MAllocIdent(*ptr),rule,matrix,y+1,cnt,-x);
+	  FramePtrDel("RS.Added");
 	  Free(*ptr);
 	  *ptr=new;
         }
