@@ -293,12 +293,12 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=1
         got=-got;
       xcords++;
     } else if(!(flag&SOF_XSAME)) {
-      got=EndianU16(xcords(U16*)[0]);
-      got=got.i16[0];
+      got=EndianI16(xcords(U16*)[0]);
       xcords+=2;
     }
     accum+=got;
     points[idx].x=accum/ppem;
+//"X:%n\n",accum/ppem;
   }
   ends=oends;
   data=xcords;
@@ -312,12 +312,12 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=1
         got=-got;
       xcords++;
     } else if(!(flag&SOF_YSAME)) {
-      got=EndianU16((xcords)(U16*)[0]);
-      got=got.i16[0];
+      got=EndianI16((xcords)(U16*)[0]);
       xcords+=2;
     }
     accum+=got;
     points[idx].y=accum/ppem;
+//"Y:%n\n",accum/ppem;
   }
 
   CD2 *opoints=MAllocIdent(points);
@@ -732,7 +732,7 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
 Cd(__DIR__);;;
 DCFill;
 WinMax;
-DocClear;
+//DocClear;
 gr.dc->color=BLACK;
 TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21\n     21 Savage\n   Ἇῗῷν",15,font);
 

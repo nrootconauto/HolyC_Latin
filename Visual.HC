@@ -1088,9 +1088,9 @@ DumpSentences(
 //InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
 
 //Genesis 1
-//DumpSentences("in principio [creavit Deus [terram et caelum]]");
+DumpSentences("in principio [creavit Deus [terram et caelum]]");
 //John 9:1
-DumpSentences("et [praeteriens [vidit hominem caecum a nativitate]].");
+//DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 #if 0
 DumpSentences("voco.vocabam.vocabo.vocavi.vocaveram.vocavero.vocor.vocabar.vocabor.vocas.vocemus.vocaremus.vocemur");

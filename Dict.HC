@@ -343,9 +343,11 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	    if(formof=GetJsonMember(formof,"word",J_STR)) {
 	      if(StrCmp(word,tmp=formof->str)) {
 	        wstr=GetWordString(tmp);
-	        inflect_mask&=GetWordFlags0(tmp,formof=ParseJson(wstr),FALSE);
-	        JsonDel(formof);
-	        Free(wstr);
+		if(wstr) {
+	          inflect_mask&=GetWordFlags0(tmp,formof=ParseJson(wstr),FALSE);
+	          JsonDel(formof);
+	          Free(wstr);
+		}
 	        goto got_inflect;
 	      } 
 	    }
@@ -468,11 +470,11 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
 	  dummy.inst_cnt=1;
           dummy.inst_offsets[0]=small_ptr;
 //str->str is tranliterated
-	  dummy.inst_flags[0]=GetWordFlags0(str->str,j,FALSE);
+//	  dummy.inst_flags[0]=GetWordFlags0(str->str,j,FALSE);
 	} else {
 	  if(dummy.inst_cnt<9) {
 	    dummy.inst_offsets[dummy.inst_cnt]=small_ptr;
-            dummy.inst_flags[dummy.inst_cnt++]=GetWordFlags0(str->str,j,FALSE);
+//            dummy.inst_flags[dummy.inst_cnt++]=GetWordFlags0(str->str,j,FALSE);
 	  }
 	}
 	TrimJson(j,"form_of", "word","expansion","glosses","tags","pos","form");
@@ -496,13 +498,6 @@ skip:;
   FileWrite(optr,small,small_ptr);
   Free(small);
   Free(optr);
-}
-if(!FileFind(__DIR__"/INDEX.TRIE",,0)) {
-  if(FileFind(__DIR__"/Latin.json.Z")) {
-    PopUpOk("I will generate the HolyC dictionary files(Grab a beer).\n  This may take a few minutess\n");
-    Copy(__DIR__"/Latin.json.Z",__DIR__"/Latin.json");
-    MakeIndex(__DIR__"/INDEX.TRIE",__DIR__"/Latin.json");
-  }
 }
 
 I64 GetWordOffset(U8 *word,I64 inst=0) {
@@ -831,3 +826,10 @@ I64 SetWordDftTranslationIdx(U8 *word,I64 dft) {
   return off;
 }
 
+if(!FileFind(__DIR__"/INDEX.TRIE",,0)) {
+  if(FileFind(__DIR__"/Latin.json.Z")) {
+    PopUpOk("I will generate the HolyC dictionary files(Grab a beer).\n  This may take a few minutess\n");
+    Copy(__DIR__"/Latin.json.Z",__DIR__"/Latin.json");
+    MakeIndex(__DIR__"/INDEX.TRIE",__DIR__"/Latin.json");
+  }
+}

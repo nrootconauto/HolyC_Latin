@@ -290,4 +290,4 @@ U0 InitDict0() {
   TrieAdd("nam",CONJUNCTION,"thus");
   TrieAdd("namque",CONJUNCTION,"thus");
 }
-InitDict0;
+InitDict0;
