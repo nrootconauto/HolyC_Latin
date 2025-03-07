@@ -289,5 +289,7 @@ CTrie *GetWord(U8 *word) {
 U0 InitDict0() {
   TrieAdd("nam",CONJUNCTION,"thus");
   TrieAdd("namque",CONJUNCTION,"thus");
+  TrieAdd("ego",PRONOUN|NOMITIVE|SINGULAR,"I");
+  TrieAdd("qui",PRONOUN|NOMITIVE|SINGULAR|INTEROGITIVE,"who");
 }
 InitDict0;

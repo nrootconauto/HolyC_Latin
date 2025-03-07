@@ -242,8 +242,9 @@ Bool CaseGen(I64 argc,AST **argv) {
 I64Set *rules_list=NULL;
 CRule *ParseFormula(CCmpCtrl *cc,CRule *rule) {
   I64 member_type;
+  U8 buf[STR_LEN+8];
   CRule *r2;
-  rule->weight=.5;
+  rule->weight=1;
   while(cc->token==TK_IDENT||cc->token=='!'||cc->token==TK_STR||cc->token=='[') {
     member_type=-1;
     if(cc->token=='[') {
@@ -284,6 +285,17 @@ CRule *ParseFormula(CCmpCtrl *cc,CRule *rule) {
         LexExcept(cc,"Expected a rule name at ");
     }
     rule->made_from=I64SetAdd(rule->made_from,StrNew(cc->cur_str),TRUE);
+    if(cc->token==TK_STR) {
+      StrPrint(buf,"WR.%s",cc->cur_str);
+      if(!FramePtr(buf)) {
+        r2=CAlloc(sizeof CRule);
+	r2->weight=1;
+	r2->is_word=1;
+	StrCpy(r2->name,cc->cur_str);
+	FramePtrAdd(buf,1);
+	rules_list=I64SetAdd(rules_list,r2);
+      }
+    }
 pass:;
     Lex(cc);
     if(cc->token=='(') {
@@ -307,7 +319,7 @@ U0 ParseRules(U8 *text) {
   Lex(cc);
   while(cc->token) {
     rule=CAlloc(sizeof CRule);
-    rule->weight=.5;
+    rule->weight=1;
 //Name
     if(cc->token!=TK_IDENT) 
       LexExcept(cc,"Expected a rule name at ");
@@ -367,6 +379,8 @@ U0 ParseRules(U8 *text) {
       Lex(cc);
       if(cc->token==TK_F64) {
         rule->weight=cc->cur_f64;
+      } else if(cc->token==TK_I64) {
+        rule->weight=cc->cur_i64;
       } else
         LexExcept(cc,"Expected a rule weight at ");
       Lex(cc);
@@ -444,6 +458,8 @@ U0 AddThingToAST(AST *have,AST *to,I64 where=-1) {
       to->question=ASTSetAdd(to->question,have);
       break;
 default:
+DumpAST(have);
+DumpAST(to);
 "FUCK,%d\n",where;
 Break;
   }
@@ -479,10 +495,12 @@ ASTSet *DoTerminals(U8 *_word,I64 idx) {
     if(rule->is_word)
      if(word=GetWord(_word)) {
       while(word) {
-        if(word->flags&rule->word_flags==rule->word_flags) {
+        if((word->flags&rule->word_flags==rule->word_flags)||!StrICmp(_word,rule->name)) {
 	  ret=CAlloc(sizeof(AST),mem_task);
-	  ret->prob=1.;
+	  ret->prob=rule->weight;
 	  ret->word_idx=idx;
+	  ret->act_as_type=AST_NOUN;
+	  ret->raw_type=AST_NOUN;
 	  if(rule->raw_type) { 
 	    ret->act_as_type=ret->raw_type=rule->raw_type;
 	  } else if(word->flags&NOUN) {
@@ -502,7 +520,6 @@ ASTSet *DoTerminals(U8 *_word,I64 idx) {
 	  ret->flags=word->flags;
 	  ret->end=idx+1;
 	  ret->start=idx;
-	  ret->prob=rule->weight;
 	  ret->args=I64SetAdd(ret->args,ret);
 	  ret->rule=rule;
 
@@ -569,7 +586,7 @@ pass:
         ret=ASTClone(tmp);
     } else
 	Break;
-    ret->prob=1.;
+    ret->prob=r->weight;
     ret->rule=r;
     ret->raw_type=ret->act_as_type=r->raw_type;
     ret->start=tmp->start;
@@ -593,8 +610,10 @@ MAKE SURE ARGUMNENTS DONT OVERLAP,use boundary.
       ret->end=boundary;
       for(idx=0;idx!=args->cnt;idx++) {
         tmp=args->body[idx];
-        if(r->main_item_idx!=idx)
+        if(r->main_item_idx!=idx) {
 	  AddThingToAST(ASTClone(tmp),ret);
+	  ret->prob*=tmp->prob;
+	}
       }
     }
     if(!args) {
@@ -629,7 +648,7 @@ fail:;
 	  if(!ra&&!StrCmp(r->name,desired)) {
 //All is good
 	  } else
-	    goto skip2;
+;//	    goto skip2;
         }
       }
 
@@ -651,8 +670,8 @@ fail:;
 	  tmp=ASTClone(tmp);
 
 
-        if(!StrCmp(desired,tmp->rule->name)) {
-	  if(args)
+       if(!StrCmp(desired,tmp->rule->name)) {
+    	  if(args)
 	    tmp2=I64SetAdd(MAllocIdent(args,mem_task),tmp);
 	  else
 	    tmp2=I64SetAdd(NULL,tmp);
@@ -703,7 +722,7 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
 
   //tries is set to 2 to handle recursion,but not forever
   y=cnt-2;
-  for(tries=0;tries!=2;tries++) {
+  for(tries=0;tries!=3;tries++) {
     for(x=cnt-1;x>=0;x--) {
       for(ri=0;ri!=rc;ri++) {
         rule=rules_list->body[ri];
@@ -728,6 +747,7 @@ AST *ParseSentenceJoin(I64 argc,U8 **argv) {
   ASTSet *set;
   I64 y;
   I64 ass;
+  F64 best_prob=-1.;
   for(y=0;y!=argc;y++) {
     set=*MatrixPtr(matrix,0,y,argc);
     if(set) {
@@ -735,7 +755,11 @@ AST *ParseSentenceJoin(I64 argc,U8 **argv) {
       while(--can>=0) {
         cur=set->body[can];
         if(cur->start==0&&cur->end==argc) {
-	  ret=ASTClone(cur);
+	  if(best_prob<=cur->prob) {
+	    if(ret) ASTDel(ret);
+	    best_prob=cur->prob;
+	    ret=ASTClone(cur);
+	  } 
         }
       }
     }

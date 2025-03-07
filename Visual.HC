@@ -855,7 +855,7 @@ U0 InteractView(U8 *st) {
   ASTDel(ast);
   SettingsPop;
 }
-U0 DumpSentences(U8 *st,U8 *translations=NULL) {
+U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
   U8 **toks;
   I64 tcnt;
   I64 w=0,h=0;
@@ -916,7 +916,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL) {
     tcnt=0;
     while(tmp=LstSub(tcnt,translations)) {
       if(8*StrLen(tmp)>w)
-	w=8*StrLen(tmp);
+        w=8*StrLen(tmp);
       tcnt++;
     }
     h+=tcnt*25;
@@ -931,14 +931,25 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL) {
     h+=tmp_dc->height;
     if(translations) {
       if(tmp=LstSub(tcnt,translations)) {
-	w=dc->width/2.-8*StrLen(tmp)/2.;
-	dc->color=BLACK;
-	GrPrint(dc,w,h+(25-8)/2.,"%s",tmp);
-	h+=25;
+        w=dc->width/2.-8*StrLen(tmp)/2.;
+        dc->color=BLACK;
+        GrPrint(dc,w,h+(25-8)/2.,"%s",tmp);
+        h+=25;
       }
     }
     DCDel(tmp_dc);
   }
+  if(to_file) {
+    tmp_dc=DocRead(to_file);
+    DocSprite(tmp_dc,DC2Sprite(dc));
+    for(h=0;h<dc->height;h+=8) {
+      DocPrint(tmp_dc,"\n");
+    }
+    DocPrint(tmp_dc,"\n\n");
+    DocWrite(tmp_dc);
+    DocDel(tmp_dc);
+  }
+
   bmp=BMPRLE4To(dc); 
   FileWrite("sent.BMP",bmp,bmp->file_size);
   Free(bmp);
@@ -1087,21 +1098,35 @@ DumpSentences(
 //InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
 
 //Genesis 1
-DumpSentences("in principio [creavit Deus [terram et caelum]]");
+//DumpSentences("in principio [creavit Deus [terram et caelum]]");
 //John 9:1
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 //[ita ego ingeniculo]
-InteractView(	"[ita ego ingeniculo] [[dominor  exonerandi] qui [fui [ nexionis vastatorem] et [sciendum omnia]]] ."
-	"ita  habeamus ego [virtutem suum]"
+DumpSentences(
+	"ingeniculo [[dominor  liberandi] qui [fui [ nexionis vastatorem] et [sciendum omnia]]] ."
+	"ita  habeamus [virtutem suum]."
+        "[iustus [fides et mos et cognitio]] sunt semitam."
+	,
+	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
+        "So that I may have their Virtuees.\0" 
+	"Right Faith,Conduct and Knowledge are the path.\0"
+//"/WWW/index.DD"
+);
+DumpSentences("puellam portat saxum");
+DumpSentences(
+	"[[fides rei] reperire]  verum es  fidem."
+	"[hic fides] surgat per discendum.",
+	"Belief in discovered substances is correct faith.\0"
+	"This faith is gotten through learning things.\0",
+//"/WWW/index.DD"
+
 );
 DumpSentences(
-	"[ita ego ingeniculo] [[dominor  exonerandi] qui [fui [ nexionis vastatorem] et [sciendum omnia]]] ."
-	"ita  habeamus [virtutem suum]"
-	,
-	"I bow to the Lord of Liberator who is the destroyer of bondage and knower of all.\0"
-        "So that I may have their Virtuees.\0"
-);
+	" [[non animus] et animus] et [[liberare et cernere] et  [motus et nexio ] ] rem componunt",
+	"Reality is made of Soul,non-soul,movement and bondange,liberation and seperation\0",
+//"/WWW/index.DD"
+);//et [prohibere et]
 #if 0
 DumpSentences("voco.vocabam.vocabo.vocavi.vocaveram.vocavero.vocor.vocabar.vocabor.vocas.vocemus.vocaremus.vocemur");
 DumpSentences("vocantis");
@@ -1118,4 +1143,4 @@ DumpSentences("hominem.homines.homine.hominibus.homines");
 DumpSentences("manus.manuum.manui.manibus.manu");
 //5th Declension
 DumpSentences("res.res.re.rerum.rebus");
-#endf 
+#endif 

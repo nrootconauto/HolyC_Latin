@@ -30,9 +30,9 @@ Noun@Gen OF -> !Noun@Gen Noun@Gen;
 
 Partic@Partic NOUN = PARTICIPLE;
 Adj@Adj ADJECTIVE = PARTICIPLE; (.3) //The "boiled" water
-Noun@Noun NOUN -> !Partic@Partic;
-Adj@Adj ADJECTIVE -> !Partic@Partic; (.3) //The "boiled" water
-Partic@Partic NOUN -> !Partic@Partic Noun@Noun; //TODO what case
+Noun@Noun NOUN -> !Partic@Partic; (.1)
+Adj@Adj ADJECTIVE -> !Partic@Partic; (.3) //The "boiled" water
+Partic@Partic NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
 
 
 
@@ -43,12 +43,12 @@ Noun@Abl NOUN -> !Pron@Abl;
 Noun@Gen OF -> !Pron@Gen;
 
 Conj@Conj CONJUNCTION = CONJUNCTION;
-Noun@Noun (CaseAgree)[FlagsPlural] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;
+Noun@Noun(CaseAgree)[FlagsPlural] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;(1.5)
 
-Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCTION);
+Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCTION);(.9)
 
-Noun@Noun NOUN -> Noun@Gen !Noun@Noun; (1.)  //More common
-Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.5) //Less common
+Noun@Noun NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
+Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
 
 
 Adverb@Adverb ADVERB = ADVERB;
@@ -64,56 +64,57 @@ Noun@Noun NOUN -> Adj@Adj !Noun@Noun;
 
 Noun@Noun NOUN = INFINITIVE;
 Infin@Infin NOUN = INFINITIVE;
-Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.5) //Less common
-Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.) //more commons
+Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.1) //Less common
+Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
 
 
 
-Noun@Noun NOUN -> Noun@Noun !Prep@Prep Noun@Noun(WHERE);
-Noun@Noun NOUN -> !Adj@Adj Prep@Prep Noun@Noun(WHERE); //sometimes adjective comes befoe preposition(with great care)
-Noun@Noun NOUN -> !Noun@Noun Adj@Adj;
+Noun@Noun NOUN -> Noun@Noun !Prep@Prep Noun@Noun(WHERE);(.6)
+Noun@Noun NOUN -> !Adj@Adj Prep@Prep Noun@Noun(WHERE);(.7) //sometimes adjective comes befoe preposition(with great care)
+Noun@Noun NOUN -> !Noun@Noun Adj@Adj; (.99)
 
 Verb@Verb VERB -> !Verb@Verb Prep@Prep(WHERE) Noun@Noun;
 //Think [of him]
-Verb@Verb VERB -> !Verb@Verb Noun@Gen;  (.1) //Favor "I ate the food of life" over "I (ate of food) for life")
-Verb@Verb VERB -> Noun@Gen !Verb@Verb;
+Verb@Verb VERB -> !Verb@Verb Noun@Gen; (.1) //Favor "I ate the food of life" over "I (ate of food) for life")
+Verb@Verb VERB -> Noun@Gen !Verb@Verb; (.1)
 
 Verb@Verb VERB -> !Verb@Verb Adverb@Adverb;
 Verb@Verb VERB -> !Verb@Verb;
 
-Verb@Verb VERB -> Verb@Verb(CONJUNCTION) !Conj@Conj Verb@Verb(CONJUNCTION); 
+Verb@Verb VERB -> Verb@Verb(CONJUNCTION) !Conj@Conj Verb@Verb(CONJUNCTION); (.7)
 
 Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;
 
 //
 // "In the begining",God created....
 //
-Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;
+//Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;(.9)
 //
 //  "((Walking by))...[he] saw a blind man"
 //  
-Sent CLAUSE -> !Partic@Partic Sent(WHERE);
+Sent CLAUSE -> !Partic@Partic Sent(WHERE); (.9)
 //End
 
 
 // This is for "those [who] eat" and
 // "watching all [who]..."
-Noun@Noun[FlagsTransfer] CLAUSE -> Noun@Noun(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.6) //Favor above default
+Noun@Noun[FlagsTransfer] CLAUSE -> Noun@Noun(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.6) //Favor above default
 Sent CLAUSE -> Sent(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.55) //Favor lesser than top one
+
 //End
 
 
 //
 // The fact is "i ate potatoes"
 Verb@Is VERB = VERB,IS;
-Sent CLAUSE -> Noun@Noun !Verb@Is Sent;
+Sent CLAUSE -> Noun@Noun !Verb@Is Sent;(.7)
 Sent CLAUSE -> Noun@Noun Noun@Noun; (.1) //Cats like dogs,and [dogs parrots]
 
 // Predicate nouns are nouns of same case connected by "IS"
-Sent (CaseAgree) CLAUSE -> Noun@Noun !Verb@Is Noun@Noun;
+Sent (CaseAgree) CLAUSE -> Noun@Noun !Verb@Is Noun@Noun; (1.)
 
 //Appositive nouns agree in case  The "Dog Cage"
-Sent (CaseAgree)[FlagsAppositive] NOUN -> !Noun@Noun Noun@Noun; (.4)  //Less common than genitives
+Sent (CaseAgree)[FlagsAppositive] NOUN -> !Noun@Noun Noun@Noun; (.01)  //Less common than genitives
 
 //Intranstive words can be used as transitive verbs when used with prepositions
 Verb@Verb(Intransitive) VERB -> !Verb@Verb Prep@Prep; (.7) //Favor explicit use of syntax
@@ -130,24 +131,28 @@ Sent(CaseAgree) CLAUSE -> Adj@Adj !Noun@Noun;(.1) //Favor lesser than explicit "
 
 // Quam is certified word for  comparsions
 Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> Noun@Noun(COMPARE) !"quam" Noun@Noun(COMPARE);(.6) //Favor comparions
-Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION); //et ea means "and too XXXX"
+Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION); (1.) //et ea means "and too XXXX"
 
 //End
 
 
+//
+Noun@Noun[FlagsTransfer] NOUN -> !"non"(CONJUNCTION) Noun@Noun(NOUN);
+//
+
 Sent CLAUSE -> Noun@Noun !Verb@Verb Prep@Prep Noun@Noun(WHERE);
 
 
-Sent CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun;
-Sent(NumberAgree) CLAUSE -> Noun@Noun !Verb@Verb;
-Sent(Transitive) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;
-Sent(Transitive) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;
-Sent(NumberAgree) CLAUSE -> !Verb@Verb Noun@Noun;
-Sent(NumberAgree) CLAUSE -> !Verb@Verb;
-Sent(NumberAgree) CLAUSE -> !Conj@Conj Sent(CONJUNCTION);
-Sent(NumberAgree) CLAUSE -> Pron@Inter !Verb@Verb;
-Sent(Transitive) CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun Noun@Noun;
-Sent CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun;
-Sent CLAUSE -> Sent !Conj@Conj Sent;
+Sent CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
+Sent(NumberAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
+Sent(Transitive) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
+Sent(Transitive) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;(1.1)
+Sent(NumberAgree) CLAUSE -> !Verb@Verb Noun@Noun;(1.)
+Sent(NumberAgree) CLAUSE -> !Verb@Verb;(.9)
+Sent(NumberAgree) CLAUSE -> !Conj@Conj Sent(CONJUNCTION);(.8)
+Sent(NumberAgree) CLAUSE -> Pron@Inter !Verb@Verb;(.8)
+Sent(Transitive) CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun Noun@Noun;(.85)
+Sent CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun;(1.)
+Sent CLAUSE -> Sent !Conj@Conj Sent;(1.)
 Sent CLAUSE -> !Adverb@Adverb Sent; (.1) //Now he [is] brave
-Sent CLAUSE -> Sent !Adverb@Adverb; //"I praise them all [at once]" dafuq?
+Sent CLAUSE -> Sent !Adverb@Adverb; (.5) //"I praise them all [at once]" dafuq?

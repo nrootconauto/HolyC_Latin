@@ -332,6 +332,13 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
       for(idx2=0;idx2!=senses->cnt;idx2++) {
         StrPrint(dummy,"%d",idx2);
         n=GetJsonMember(senses,dummy);;
+//idx3==1 is forms,make sure that the form is the same as the word
+	if(idx3==1)
+        if(formof=GetJsonMember(n,"form",J_STR)) {
+	  if(StrICmp(word,formof->str))
+	    goto skip;
+        }
+ 
         I64 inflect_mask=DECLENSION1|DECLENSION2|DECLENSION3|DECLENSION4|DECLENSION5|
 	      CONJUGATION1|
 	      CONJUGATION2|
@@ -345,7 +352,6 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	        wstr=GetWordString(tmp);
 		if(wstr) {
 	          inflect_mask&=GetWordFlags0(tmp,formof=ParseJson(wstr),FALSE);
-	          JsonDel(formof);
 	          Free(wstr);
 		}
 	        goto got_inflect;
@@ -703,7 +709,8 @@ defacto:
 //Pick shortest translation
 	  if(g) {
 	    for(idx=0;t=GetJsonMember(g,StrPrint(buf,"%d",idx),J_STR);idx++) {
-	      DocPrint(trans,"%d: %s\n",(*_which)++,t->str);
+	      best=SmallDefinition(t->str);
+	      DocPrint(trans,"%d: %s\n",(*_which)++,best);
 	    }
 	  }
         }
