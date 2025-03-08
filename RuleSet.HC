@@ -22,7 +22,7 @@ class CRule {
 I64 MemberNameToI64(U8 *str) {
   if(!StrCmp(str,"NOUN"))
     return AST_NOUN;
-  else if(!StrCmp(str,"VERB"))
+  else if(!StrCmp(str,"VERB"))
     return AST_VERB;
   else if(!StrCmp(str,"CONJUNCTION"))
     return AST_CONJUNCTION;
@@ -291,6 +291,7 @@ CRule *ParseFormula(CCmpCtrl *cc,CRule *rule) {
         r2=CAlloc(sizeof CRule);
 	r2->weight=1;
 	r2->is_word=1;
+	r2->word_flags=INVALID_PTR;
 	StrCpy(r2->name,cc->cur_str);
 	FramePtrAdd(buf,1);
 	rules_list=I64SetAdd(rules_list,r2);

@@ -873,6 +873,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
     }
     ast=ParseSentenceJoin(tcnt,toks);
     if(ast) {
+	DumpAST(ast);
       dc=DrawSentence(ast,tcnt,toks);
 "
 
@@ -1113,9 +1114,8 @@ DumpSentences(
 	"Right Faith,Conduct and Knowledge are the path.\0"
 //"/WWW/index.DD"
 );
-DumpSentences("puellam portat saxum");
 DumpSentences(
-	"[[fides rei] reperire]  verum es  fidem."
+	"[[fides rei] reperire]  [es verum]  fidem."
 	"[hic fides] surgat per discendum.",
 	"Belief in discovered substances is correct faith.\0"
 	"This faith is gotten through learning things.\0",
@@ -1123,8 +1123,16 @@ DumpSentences(
 
 );
 DumpSentences(
-	" [[non animus] et animus] et [[liberare et cernere] et  [motus et nexio ] ] rem componunt",
-	"Reality is made of Soul,non-soul,movement and bondange,liberation and seperation\0",
+	" [[non animus] et animus] et [[liberare et cernere] et  [motus et nexio ] ] componunt rem."
+	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
+	"septem cognitiones colligunt rationem et sententiam."
+	"septem cognitiones colligunt [ causam et [descriptum et habens] et [locum  nixa et diuturnitatem et partitum]]." // 
+	"septem haec sunt [ [existendum et locum et numerum ] et [longitudinem et tempus] et aetatem et [cogitationem et comparandum ]].",
+	"Reality is made of Soul,non-soul,movement and bondange,liberation and seperation\0"
+	"These are defined by name,representation potentional and state\0"
+	"The 7 knowledges are gained via knowledge and judgement.\0"
+	"The 7 Knowledges are gained by description,ownsership,cause,resting place,duration,and dividing.\0"
+	"These 7 are existence,location,number,measurement,time,timespan,thought at comparsion.\0"
 //"/WWW/index.DD"
 );//et [prohibere et]
 #if 0

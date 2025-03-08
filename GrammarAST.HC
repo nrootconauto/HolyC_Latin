@@ -163,6 +163,8 @@ U0 DumpASTSet(ASTSet*s) {
 U0 DumpAST(AST *a) {
   if(!a) return;
   AST *t;
+//Dumb hack,rule name is first member.
+  "RULE:%s\n",a->rule;
   DocPrint(DocPut(mem_task),"$$ID,4$$\n");
   if(a->word)
     DocPrint(DocPut(mem_task),"(WORD%s,%d):",a->word->str,a->word_idx);

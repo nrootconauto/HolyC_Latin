@@ -28,10 +28,21 @@ Noun@Acc NOUN -> Adj@Acc !Noun@Acc;
 Noun@Gen OF = GENITIVE,NOUN;
 Noun@Gen OF -> !Noun@Gen Noun@Gen;
 
+Gerund@Nom NOUN = GERUND,NOMITIVE;
+Gerund@Acc NOUN = GERUND,ACCUSATIVE;
+Gerund@Abl NOUN = GERUND,ABLATIVE;
+Gerund@Dat NOUN = GERUND,DATIVE;
+Gerund@Gen OF = GENITIVE,GERUND;
+Noun@Noun[FlagsTransfer] NOUN -> Gerund@Nom;
+Noun@Noun[FlagsTransfer] NOUN -> Gerund@Acc;
+Noun@Noun[FlagsTransfer] NOUN -> Gerund@Dat;
+Noun@Noun[FlagsTransfer] NOUN -> Gerund@Abl;
+Noun@Noun[FlagsTransfer] NOUN -> Gerund@Gen;
+
 Partic@Partic NOUN = PARTICIPLE;
 Adj@Adj ADJECTIVE = PARTICIPLE; (.3) //The "boiled" water
 Noun@Noun NOUN -> !Partic@Partic; (.1)
-Adj@Adj ADJECTIVE -> !Partic@Partic; (.3) //The "boiled" water
+Adj@Adj ADJECTIVE -> !Partic@Partic; (.3) //The "boiled" water
 Partic@Partic NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
 
 

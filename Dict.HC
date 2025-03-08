@@ -369,6 +369,7 @@ got_inflect:;
 	    if(f=GetJsonMember(n,dummy,J_STR)) {
 	      I64 old=flags;
 	      if(!StrICmp(f->str,"masculine")) flags|=MASCULINE;
+	      if(!StrICmp(f->str,"gerund")) flags|=GERUND;
 	      if(!StrICmp(f->str,"feminine")) flags|=FEMININE;
 	      if(!StrICmp(f->str,"neuter")) flags|=NEUTER;
 	      if(!StrICmp(f->str,"singular")) flags|=SINGULAR;
