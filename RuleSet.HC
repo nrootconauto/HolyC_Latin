@@ -166,7 +166,7 @@ Bool CaseAgree(I64 argc,AST **argv) {
   I64 cs=0,mask=CASE_MASK;
   while(i<argc) {
     ast=argv[i];
-    if(ast->act_as_type==AST_NOUN) {
+    if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE) {
       if(!cs) {
 	cs=ast->flags&mask;
       } else  {
@@ -181,6 +181,14 @@ Bool CaseAgree(I64 argc,AST **argv) {
 }
 
 Bool HasQueAtEnd(I64 argc,AST **argv) {
+  AST *ast=argv[argc-1];
+  if(ast->flags&CONJUNCTION2)
+    return TRUE;
+  return ast->word&&ast->word->flags&CONJUNCTION2;
+}
+Bool HasQueAtEndWithCase(I64 argc,AST **argv) {
+  if(!CaseAgree(argc,argv))
+    return FALSE;
   AST *ast=argv[argc-1];
   if(ast->flags&CONJUNCTION2)
     return TRUE;
@@ -691,7 +699,7 @@ fail:;
 	  if(old!=add_to) {
 	    repeat_cnt=FramePtr("RS.Added");
 	    FramePtrSet("RS.Added",repeat_cnt+1);
-	    if(1+repeat_cnt>=10) {
+	    if(1+repeat_cnt>=32) {
 	      ASTDel(tmp);
 	      goto fin;
 	    }
@@ -732,7 +740,7 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
 
   //tries is set to 2 to handle recursion,but not forever
   y=cnt-2;
-  for(tries=0;tries!=3;tries++) {
+  for(tries=0;tries!=2;tries++) {
     for(x=cnt-1;x>=0;x--) {
       for(ri=0;ri!=rc;ri++) {
         rule=rules_list->body[ri];

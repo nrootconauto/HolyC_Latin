@@ -31,7 +31,7 @@
 #define NEUTER (1<<25)
 #define RELATIVE (1<<26)
 #define PREPOSITION (1<<27)
-#define ADVERB (1<<28)
+#define ADVERB (1<<28)
 #define PERFECT (1<<29)
 #define PLUPERFECT (1<<30)
 #define SUBJUNCTIVE (1<<31)
@@ -215,7 +215,7 @@ CDeclension *DeclensionForWord(I64 flags,CTrie *w) {
 
 
 U0 InitLatin(U8 *file="Latin.INFLECTS") {
-  QueInit(&declensions);
+  QueInit(&declensions);
   if(!FileFind(file))
     return ;
   I64 line;

@@ -310,10 +310,8 @@ AST *GetFirstConjPair(AST *ast) {
     min=ast->base_expression->start;
     best=ast->base_expression;
   }
-"%d\n",min;
   for(idx=0;idx!=ast->args->cnt;idx++) {
     tmp=ast->args->body[idx];
-"::%d\n",tmp->start;
     if(tmp->start<min&&tmp!=ast)  {
       min=tmp->start;
       best=tmp;
@@ -338,9 +336,7 @@ AST *GetLastConjPair(AST *ast) {
   for(idx=0;idx!=ast->args->cnt;idx++) {
     tmp=ast->args->body[idx];
     if(tmp->start>max)  {
-"PASS:%x\n",tmp->start;
-DumpAST(tmp);
-      max=tmp->start;
+      max=tmp->start;
       best=tmp;
     }
   }
@@ -534,8 +530,6 @@ conj:
 	    goto use_middle;
 	  ast2=GetLastConjPair(ast2);
 	  if(ast2->end-ast2->start>1) {
-	    "ASTMIDDLE\n";
-	    DumpAST(ast2);
 	    use_handle_x=ast2->disp_node->handle_x;
 	    use_handle_y=ast2->disp_node->handle_y;
 	    goto have_handle;
@@ -559,7 +553,7 @@ conj:
 	    goto have_handle;
 	    ;
 	  }
-	  use_handle_x=tmp->handle_left_x;
+	  use_handle_x=tmp->bound_l;
 	  use_handle_y=tmp->handle_left_y;
 //Dumb hack,make
 	  bound_r--;
@@ -724,7 +718,7 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
     wrapped=dc;
   if(w) *w=dc->width;
   if(h) *h=dc->height;
-  Free(t.word_offsets);
+  Free(t.word_offsets);
   Free(forms);
   ASTDel(untainted);
   return wrapped;

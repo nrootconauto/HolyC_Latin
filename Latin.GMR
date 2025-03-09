@@ -63,10 +63,9 @@ Noun@Noun NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
 Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
 
 
-Noun@Noun(HasQueAtEnd)[FlagsPlural] NOUN -> Noun@Noun !Noun@Noun; (2.0)
-Adj@Adj(HasQueAtEnd)[FlagsPlural] ADJECTIVE -> Adj@Adj !Adj@Adj ; (2.0)
+Noun@Noun(HasQueAtEndWithCase)[FlagsPlural] NOUN -> Noun@Noun !Noun@Noun; (2.0)
+Adj@Adj(HasQueAtEndWithCase)[FlagsPlural] ADJECTIVE -> Adj@Adj !Adj@Adj ; (2.0)
 Verb@Verb(HasQueAtEnd)[FlagsPlural] VERB -> Verb@Verb !Verb@Verb; (2.0)
-Noun@Noun(HasQueAtEnd)[FlagsPlural] NOUN -> Noun@Noun !Partic@Partic; (2.0)
 
 
 Adverb@Adverb ADVERB = ADVERB;
@@ -82,7 +81,8 @@ Noun@Noun NOUN -> Adj@Adj !Noun@Noun;
 
 Noun@Noun NOUN = INFINITIVE;
 Infin@Infin NOUN = INFINITIVE;
-Noun@Noun NOUN -> Infin@Infin; (.1) //I like "eating"
+Noun@Noun[FlagsAcc] NOUN -> Infin@Infin; (.1) //I like "eating"
+Noun@Noun[FlagsNom] NOUN -> Infin@Infin; (.1) //I like "eating"
 Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
 Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
 
