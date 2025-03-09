@@ -685,6 +685,7 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
       }
     }
   }
+  I64 width=off;
 //Pass 2,Make "[" and "]" point to leading,trailing words
   for(idx=word_cnt-1;idx>=0;idx--) {
     if(!StrCmp(words[idx],"["))
@@ -698,11 +699,11 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
      else
 	off=t.word_offsets[idx];
  
-  }
+  }
   dc=DCNew(1,1);
   DisplayNodeDel(DisplayNode(&t,dc,sentence));
   DCDel(dc);
-  dc=DCNew(off+WORD_MARGIN,t.max_y+8+10+FONT_HEIGHT*4); //See DisplayNode
+  dc=DCNew(width+WORD_MARGIN,t.max_y+8+10+FONT_HEIGHT*4); //See DisplayNode
   DCFill(dc,TRANSPARENT);
 //DisplayNode will set ->disp_node of the ast,so use the one without the ->	disp_node's
   CDisplayNode*dn=DisplayNode(&t,dc,untainted);
@@ -716,14 +717,14 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
 
   }
   DisplayNodeDel(dn);
-  if(dwidth!=I64_MAX&&off+8>dwidth) {
+  if(dwidth!=I64_MAX&&width+8>dwidth) {
     wrapped=SplitImageIntoColumn(dc,dwidth);
     DCDel(dc);
   } else
     wrapped=dc;
   if(w) *w=dc->width;
   if(h) *h=dc->height;
-  Free(t.word_offsets);
+  Free(t.word_offsets);
   Free(forms);
   ASTDel(untainted);
   return wrapped;
