@@ -31,7 +31,7 @@
 #define NEUTER (1<<25)
 #define RELATIVE (1<<26)
 #define PREPOSITION (1<<27)
-#define ADVERB (1<<28)
+#define ADVERB (1<<28)
 #define PERFECT (1<<29)
 #define PLUPERFECT (1<<30)
 #define SUBJUNCTIVE (1<<31)
@@ -292,7 +292,8 @@ new:
     }
     Free(copy);
   }
-  DbgPrint("Unknonw word %s\n",word);
+  DbgPrint("Unknown word %s\n",word);
+Beep;
   return NULL;
 }
 

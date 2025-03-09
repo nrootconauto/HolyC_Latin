@@ -691,7 +691,7 @@ fail:;
 	  if(old!=add_to) {
 	    repeat_cnt=FramePtr("RS.Added");
 	    FramePtrSet("RS.Added",repeat_cnt+1);
-	    if(1+repeat_cnt>=10) {
+	    if(1+repeat_cnt>=10) {
 	      ASTDel(tmp);
 	      goto fin;
 	    }

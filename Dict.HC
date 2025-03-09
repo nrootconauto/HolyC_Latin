@@ -333,12 +333,12 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
         StrPrint(dummy,"%d",idx2);
         n=GetJsonMember(senses,dummy);;
 //idx3==1 is forms,make sure that the form is the same as the word
-	if(idx3==1)
-        if(formof=GetJsonMember(n,"form",J_STR)) {
-	  if(StrICmp(word,formof->str))
-	    goto skip;
-        }
- 
+        if(idx3==1)
+	  if(formof=GetJsonMember(n,"form",J_STR)) {
+	    if(StrICmp(word,formof->str))
+	      goto skip;
+	  }
+
         I64 inflect_mask=DECLENSION1|DECLENSION2|DECLENSION3|DECLENSION4|DECLENSION5|
 	      CONJUGATION1|
 	      CONJUGATION2|
@@ -350,10 +350,10 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	    if(formof=GetJsonMember(formof,"word",J_STR)) {
 	      if(StrCmp(word,tmp=formof->str)) {
 	        wstr=GetWordString(tmp);
-		if(wstr) {
-	          inflect_mask&=GetWordFlags0(tmp,formof=ParseJson(wstr),FALSE);
-	          Free(wstr);
-		}
+	        if(wstr) {
+		  inflect_mask&=GetWordFlags0(tmp,formof=ParseJson(wstr),FALSE);
+		  Free(wstr);
+	        }
 	        goto got_inflect;
 	      } 
 	    }
@@ -362,7 +362,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 got_inflect:;
 // If we arent adding,just grab all the flags
         if(add) flags=base_flags;
-        
+
         if(n&&(n=GetJsonMember(n,"tags",J_ARRAY))) {
 	  for(idx=0;idx!=n->cnt;idx++) {
 	    StrPrint(dummy,"%d",idx);
@@ -388,7 +388,7 @@ got_inflect:;
 	      if(!StrICmp(f->str,"third-person")) flags|=_3P;
 	      if(!StrICmp(f->str,"perfect")) flags|=PERFECT;
 	      if(!StrICmp(f->str,"pluperfect")) flags|=PLUPERFECT;
-	      if(!StrICmp(f->str,"subjunctive")) flags|=SUBJUNCTIVE;
+	      if(!StrICmp(f->str,"subjunctive")) flags|=SUBJUNCTIVE;
 	      if(!StrICmp(f->str,"passive")) flags|=PASSIVE;
 	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
 	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
@@ -413,14 +413,14 @@ got_inflect:;
 	    }
 	  }
 	  if(add) {
-	      flags|=inflect_mask;
-DbgPrint("ADD:%X,%X\n",flags,flags&VERB);
-	  if(flags&VERB&&flags&INFINITIVE)
-	    //Nroot doesnt like this
-	    flags&=~VERB;
-	  if(flags&VERB&&flags&PARTICIPLE)
-	    //Nroot doesnt like this either
-	    flags&=~VERB;
+	    flags|=inflect_mask;
+	    DbgPrint("ADD:%X,%X\n",flags,flags&VERB);
+	    if(flags&VERB&&flags&INFINITIVE)
+//Nroot doesnt like this
+	      flags&=~VERB;
+	    if(flags&VERB&&flags&PARTICIPLE)
+//Nroot doesnt like this either
+	      flags&=~VERB;
 	    if(!TrieExists(word,flags)) {
 	      added++;
 	      DeclensionForWord(flags,TrieAdd(word,flags,trans));

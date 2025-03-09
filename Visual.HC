@@ -303,20 +303,23 @@ _p_cnt:
 AST *GetFirstConjPair(AST *ast) {
   I64 min=I64_MAX,idx;
   AST*best=ast,*tmp;
-//<2 self is an argument
+  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)))
+     return ast;
   if(!ast->args) return ast;
   if(ast->base_expression) {
     min=ast->base_expression->start;
     best=ast->base_expression;
   }
+"%d\n",min;
   for(idx=0;idx!=ast->args->cnt;idx++) {
     tmp=ast->args->body[idx];
+"::%d\n",tmp->start;
     if(tmp->start<min&&tmp!=ast)  {
       min=tmp->start;
       best=tmp;
     }
   }
-  if(ast!=best&&best->flags&(CONJUNCTION|CONJUNCTION2))
+  if(ast!=best)
 	return GetFirstConjPair(best);
   return best;
 }
@@ -324,6 +327,8 @@ AST *GetFirstConjPair(AST *ast) {
 AST *GetLastConjPair(AST *ast) {
   I64 max=I64_MIN,idx;
   AST*best=ast,*tmp;
+  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)))
+     return ast;
 //Self is an argument
   if(!ast->args) return ast;
   if(ast->base_expression) {
@@ -332,12 +337,14 @@ AST *GetLastConjPair(AST *ast) {
   }
   for(idx=0;idx!=ast->args->cnt;idx++) {
     tmp=ast->args->body[idx];
-    if(tmp->start>max&&tmp!=ast)  {
+    if(tmp->start>max)  {
+"PASS:%x\n",tmp->start;
+DumpAST(tmp);
       max=tmp->start;
       best=tmp;
     }
   }
-  if(ast!=best&&best->flags&(CONJUNCTION|CONJUNCTION2))
+  if(ast!=best)
 	return GetLastConjPair(best);
   return best;
 }
@@ -489,8 +496,8 @@ ent:
         level2=0;
         for(idx2=0;idx2!=left_sides->cnt;idx2++) {
 	  ast2=left_sides->body[idx2];
-	  if(ast2->disp_node)
-	    level2=MaxI64(ast2->disp_node->level,level2);
+//	  if(ast2->disp_node)
+//	    level2=MaxI64(ast2->disp_node->level,level2);
 	  if(ast2==set->body[idx])
 	    break;
         }
@@ -500,15 +507,15 @@ ent:
         level2=0;
         for(idx2=0;idx2!=right_sides->cnt;idx2++) {
 	  ast2=right_sides->body[idx2];
-	  if(ast2->disp_node)
-	    level2=MaxI64(ast2->disp_node->level,level2);
+//	  if(ast2->disp_node)
+//	    level2=MaxI64(ast2->disp_node->level,level2);
 	  if(ast2==set->body[idx])
 	    break;
         }
       }
       max_level=MaxI64(max_level,level2);
       tmp=DisplayNode(world,dc,set->body[idx],level2+1);
-//      set->body[idx](AST*)->disp_node=tmp;
+      set->body[idx](AST*)->disp_node=tmp;
       ret->connects=I64SetAdd(ret->connects,tmp);
       use_x=x2;
       use_y=y2;
@@ -520,29 +527,38 @@ ent:
 conj:
         bound_l=ast->base_expression->start;
         bound_r=ast->base_expression->end;
-	ast2=set->body[idx];
+        ast2=set->body[idx];
 //Ignore "[","]"
         if(ast2->end==bound_l) {
-	  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)&&ast2->flags(CONJUNCTION|CONJUNCTION2)))
+	  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)))
 	    goto use_middle;
 	  ast2=GetLastConjPair(ast2);
-	  if(ast2->end-ast2->start>1)
-	    goto use_middle;
+	  if(ast2->end-ast2->start>1) {
+	    "ASTMIDDLE\n";
+	    DumpAST(ast2);
+	    use_handle_x=ast2->disp_node->handle_x;
+	    use_handle_y=ast2->disp_node->handle_y;
+	    goto have_handle;
+	  }
 	  while(0<=bound_l<world->word_cnt) {
 	    if(StrCmp(world->words[bound_l],"["))
 	      break;
 	    bound_l++;
 	  }
-	  use_handle_x=tmp->handle_right_x;
+	  use_handle_x=tmp->bound_r;
 	  use_handle_y=tmp->handle_right_y;
 	  use_x=world->word_offsets[bound_l];
 	  use_y=use_handle_y;
         } else if(set->body[idx]->start==bound_r) {
-	  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)&&ast2->flags(CONJUNCTION|CONJUNCTION2)))
+	  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)))
 	    goto use_middle;
 	  ast2=GetFirstConjPair(ast2);
-	  if(ast2->end-ast2->start>1)
-	    goto use_middle;
+	  if(ast2->end-ast2->start>1) {
+	    use_handle_x=ast2->disp_node->handle_x;
+	    use_handle_y=ast2->disp_node->handle_y;
+	    goto have_handle;
+	    ;
+	  }
 	  use_handle_x=tmp->handle_left_x;
 	  use_handle_y=tmp->handle_left_y;
 //Dumb hack,make
@@ -561,6 +577,7 @@ use_middle:;
         use_handle_x=tmp->handle_x;
         use_handle_y=tmp->handle_y;
       }
+have_handle:
 //ret->handle_y set here
       if(is_left_side) {
         world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,use_handle_x,use_handle_y,use_x,use_y,0,max_l_deriv,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
@@ -569,16 +586,18 @@ use_middle:;
         world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,use_handle_x,use_handle_y,use_x,use_y,max_r_deriv,0,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
         max_r_deriv=Max(Abs(ret->l_deriv*.55),max_r_deriv);  //our target node is on the right side,our current node is on the left side
       }
-      ret->max_y=Max(ret->max_y,handle_y);
+      ret->max_y=Max(Max(ret->max_y,handle_y),tmp->max_y);
       ret->bound_l=Min(ret->bound_l,tmp->bound_l);
       ret->bound_r=Max(ret->bound_r,tmp->bound_r);
       old_color=dc->color;
-      dc->color=BLACK;
-      GrFillCircle(dc,tmp->handle_x,tmp->handle_y,0,10);
+//      dc->color=BLACK;
+//            GrFillCircle(dc,tmp->handle_x,tmp->handle_y,0,10);
       dc->color=old_color;
     }
 //If we have connects of each side,make our connect in the "center"
-  if(left_sides&&left_sides->cnt&&right_sides&&right_sides->cnt) {
+  if(1) {
+    ret->bound_l=world->word_offsets[ast->start];
+    ret->bound_r=world->word_offsets[ast->end-1];
     ret->handle_x=(ret->bound_r-ret->bound_l)/2.+ret->bound_l;
     ret->handle_y=ret->max_y+8;
   }
@@ -589,12 +608,13 @@ use_middle:;
     ret->handle_right_y=ret->handle_y;
   } else {
     tmp=ret->connects->body[0];
-    ret->handle_left_x=ret->bound_l;
+    ret->handle_left_x=tmp->handle_left_x;
     ret->handle_left_y=tmp->handle_left_y;
     tmp=ret->connects->body[ret->connects->cnt-1];
-    ret->handle_right_x=ret->bound_r;
+    ret->handle_right_x=tmp->handle_right_x;
     ret->handle_right_y=tmp->handle_right_y;
   }
+  Free(set2);
   Free(left_sides),Free(right_sides);
   dc->color=old_color2;
   ret->level=level;
@@ -665,12 +685,26 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
       }
     }
   }
+//Pass 2,Make "[" and "]" point to leading,trailing words
+  for(idx=word_cnt-1;idx>=0;idx--) {
+    if(!StrCmp(words[idx],"["))
+	t.word_offsets[idx]=off;
+     else
+	off=t.word_offsets[idx];
+  }
+  for(off=40,idx=0;idx!=word_cnt;idx++) {
+    if(!StrCmp(words[idx],"]"))
+	t.word_offsets[idx]=off;
+     else
+	off=t.word_offsets[idx];
+ 
+  }
   dc=DCNew(1,1);
   DisplayNodeDel(DisplayNode(&t,dc,sentence));
   DCDel(dc);
   dc=DCNew(off+WORD_MARGIN,t.max_y+8+10+FONT_HEIGHT*4); //See DisplayNode
   DCFill(dc,TRANSPARENT);
-//DisplayNode will set ->display_node of the ast,so use the one without the ->	display_node's
+//DisplayNode will set ->disp_node of the ast,so use the one without the ->	disp_node's
   CDisplayNode*dn=DisplayNode(&t,dc,untainted);
   if(hover_over) *hover_over=NULL;
   for(idx=0;idx!=word_cnt;idx++) {
@@ -1243,8 +1277,8 @@ DumpSentences(
 	" [[non animus] animusque nexioque libertasque motusque dividereque] componunt rem."
 	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
 	"septem cognitiones colligunt rationem et sententiam."
-	"septem cognitiones colligunt [ causam et [descriptum et habens] et [locum  nixa et diuturnitatem et partitum]]."
-	"septem haec sunt [ existendum locumque numerumque  longitudinemque tempusque et aetatem et [cogitationem et comparandum]]."
+	"septem cognitiones colligunt [ causam descriptumque habensque et [locum  nixa] diuturnitatemque partitamque]."
+	"septem haec sunt [ existendum locumque numerumque  longitudinemque tempusque aetatemque et [cogitationem et comparandum]]."
 ,
 	"Reality is made of Soul,non-soul,movement and bondange,liberation and seperation\0"
 	"These are defined by name,representation potentional and state\0"
