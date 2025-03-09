@@ -63,9 +63,9 @@ Noun@Noun NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
 Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
 
 
-Noun@Noun(HasQueAtEnd)[FlagsPlural] NOUN -> !Noun@Noun Noun@Noun; (2.0)
-Adj@Adj(HasQueAtEnd)[FlagsPlural] ADJECTIVE -> !Adj@Adj Adj@Adj ; (2.0)
-Verb@Verb(HasQueAtEnd)[FlagsPlural] VERB -> !Verb@Verb Verb@Verb; (2.0)
+Noun@Noun(HasQueAtEnd)[FlagsPlural] NOUN -> Noun@Noun !Noun@Noun; (2.0)
+Adj@Adj(HasQueAtEnd)[FlagsPlural] ADJECTIVE -> Adj@Adj !Adj@Adj ; (2.0)
+Verb@Verb(HasQueAtEnd)[FlagsPlural] VERB -> Verb@Verb !Verb@Verb; (2.0)
 
 
 Adverb@Adverb ADVERB = ADVERB;

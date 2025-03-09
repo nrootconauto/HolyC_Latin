@@ -55,43 +55,6 @@ class AST {
 };
 extern U0 DumpAST(AST*a);
 extern ASTSet *ASTSetClone(ASTSet *orig);
-AST *ASTClone(AST *orig) {
-  static I64 cnt=0;
-  AST *ret=CAlloc(sizeof(AST),mem_task);
-  MemCpy(ret,orig,sizeof AST);
-  ret->disp_node=NULL;
-  ret->nomitive=ASTSetClone(ret->nomitive);
-  ret->accusative=ASTSetClone(ret->accusative);
-  ret->dative=ASTSetClone(ret->dative);
-  ret->ablative=ASTSetClone(ret->ablative);
-  ret->genitive=ASTSetClone(ret->genitive);
-  ret->adjective=ASTSetClone(ret->adjective);
-  ret->preposition=ASTSetClone(ret->preposition);
-  ret->conjunction=ASTSetClone(ret->conjunction);
-  ret->measurement=ASTSetClone(ret->measurement);
-  ret->adverb=ASTSetClone(ret->adverb);
-  ret->question=ASTSetClone(ret->question);
-  if(ret->args) ret->args=MAllocIdent(ret->args,mem_task);
-  return ret;
-}
-ASTSet *ASTSetClone(ASTSet *orig) {
-  if(!orig) return NULL;
-  ASTSet *ret=CAlloc(sizeof(ASTSet)+8*orig->cnt,mem_task);
-  MemCpy(ret,orig,sizeof ASTSet);
-  I64 cnt=orig->cnt;
-  while(cnt--) {
-    ret->body[cnt]=ASTClone(orig->body[cnt]);
-  }
-  return ret;
-}
-Bool I64SetHasItem(I64Set*dst,I64 a) {
-  I64 i;
-  if(!dst) return FALSE;
-  for(i=0;i!=dst->cnt;i++)
-    if(dst->body[i]==a)
-      return TRUE;
-  return FALSE;
-}
 I64Set *I64SetAdd(I64Set *dst,I64 a,Bool repeats=FALSE){
   I64Set *tmp;
   I64 i;
@@ -128,6 +91,63 @@ ASTSet *ASTSetAdd(ASTSet *dst,AST *a) {
   tmp->body[tmp->cnt-1]=a;
   Free(dst);
   return tmp;
+}
+ASTSet *ASTSetAddAll(ASTSet *a,ASTSet *b) {
+  if(!b) return a;
+  I64 i=b->cnt;
+  while(--i>=0)
+    a=ASTSetAdd(a,b->body[i]);
+  return a;
+}
+
+
+AST *ASTClone(AST *orig) {
+  static I64 cnt=0;
+  AST *ret=CAlloc(sizeof(AST),mem_task);
+  MemCpy(ret,orig,sizeof AST);
+  ret->disp_node=NULL;
+  ret->nomitive=ASTSetClone(ret->nomitive);
+  ret->accusative=ASTSetClone(ret->accusative);
+  ret->dative=ASTSetClone(ret->dative);
+  ret->ablative=ASTSetClone(ret->ablative);
+  ret->genitive=ASTSetClone(ret->genitive);
+  ret->adjective=ASTSetClone(ret->adjective);
+  ret->preposition=ASTSetClone(ret->preposition);
+  ret->conjunction=ASTSetClone(ret->conjunction);
+  ret->measurement=ASTSetClone(ret->measurement);
+  ret->adverb=ASTSetClone(ret->adverb);
+  ret->question=ASTSetClone(ret->question);
+  ret->args=I64SetAdd(NULL,ret);
+  ret->args=ASTSetAddAll(ret->args,ret->nomitive);
+  ret->args=ASTSetAddAll(ret->args,ret->ablative);
+  ret->args=ASTSetAddAll(ret->args,ret->accusative);
+  ret->args=ASTSetAddAll(ret->args,ret->dative);
+  ret->args=ASTSetAddAll(ret->args,ret->genitive);
+  ret->args=ASTSetAddAll(ret->args,ret->adjective);
+  ret->args=ASTSetAddAll(ret->args,ret->preposition);
+  ret->args=ASTSetAddAll(ret->args,ret->conjunction);
+  ret->args=ASTSetAddAll(ret->args,ret->measurement);
+  ret->args=ASTSetAddAll(ret->args,ret->adverb);
+  ret->args=ASTSetAddAll(ret->args,ret->question);
+  return ret;
+}
+ASTSet *ASTSetClone(ASTSet *orig) {
+  if(!orig) return NULL;
+  ASTSet *ret=CAlloc(sizeof(ASTSet)+8*orig->cnt,mem_task);
+  MemCpy(ret,orig,sizeof ASTSet);
+  I64 cnt=orig->cnt;
+  while(cnt--) {
+    ret->body[cnt]=ASTClone(orig->body[cnt]);
+  }
+  return ret;
+}
+Bool I64SetHasItem(I64Set*dst,I64 a) {
+  I64 i;
+  if(!dst) return FALSE;
+  for(i=0;i!=dst->cnt;i++)
+    if(dst->body[i]==a)
+      return TRUE;
+  return FALSE;
 }
 extern U0 ASTSetDel(ASTSet *s);
 extern U0 ASTDel(AST *a);
@@ -258,11 +278,3 @@ I64 ASTGetTrieWords(AST *a,CTrie **words) {
   }
   return max;
 }
-ASTSet *ASTSetAddAll(ASTSet *a,ASTSet *b) {
-  if(!b) return a;
-  I64 i=b->cnt;
-  while(--i>=0)
-    a=ASTSetAdd(a,b->body[i]);
-  return a;
-}
-

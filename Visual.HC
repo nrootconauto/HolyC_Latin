@@ -127,6 +127,7 @@ CTrie *DisplayNodeGetHoverWord(CDisplayNode *n,I64 ms_x,I64 ms_y) {
 class CDisplayTmp {
   I64 *word_offsets;
   U8 **words;
+  I64 word_cnt;
   F64 word_font_size;
   F64 definition_font_size;
   F64 xoff,yoff,max_y;
@@ -298,8 +299,48 @@ _p_cnt:
   if(dummy) DCDel(dc);
   return x-ox;
 }
-
-
+//Used for grouping togheter conjunctions
+AST *GetFirstConjPair(AST *ast) {
+  I64 min=I64_MAX,idx;
+  AST*best=ast,*tmp;
+//<2 self is an argument
+  if(!ast->args) return ast;
+  if(ast->base_expression) {
+    min=ast->base_expression->start;
+    best=ast->base_expression;
+  }
+  for(idx=0;idx!=ast->args->cnt;idx++) {
+    tmp=ast->args->body[idx];
+    if(tmp->start<min&&tmp!=ast)  {
+      min=tmp->start;
+      best=tmp;
+    }
+  }
+  if(ast!=best&&best->flags&(CONJUNCTION|CONJUNCTION2))
+	return GetFirstConjPair(best);
+  return best;
+}
+//Used for grouping togheter conjunctions
+AST *GetLastConjPair(AST *ast) {
+  I64 max=I64_MIN,idx;
+  AST*best=ast,*tmp;
+//Self is an argument
+  if(!ast->args) return ast;
+  if(ast->base_expression) {
+    max=ast->base_expression->start;
+    best=ast->base_expression;
+  }
+  for(idx=0;idx!=ast->args->cnt;idx++) {
+    tmp=ast->args->body[idx];
+    if(tmp->start>max&&tmp!=ast)  {
+      max=tmp->start;
+      best=tmp;
+    }
+  }
+  if(ast!=best&&best->flags&(CONJUNCTION|CONJUNCTION2))
+	return GetLastConjPair(best);
+  return best;
+}
 
 CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *max_h=NULL) {
   CDisplayNode *ret=CAlloc(sizeof CDisplayNode),*tmp;
@@ -313,6 +354,7 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
   I64 level2,max_level=0;
   AST *ast2;
   F64 use_handle_x,use_handle_y;
+  F64 use_x,use_y;
   CD3I32 ctrls[3];
   I64 bound_l,bound_r;
   Bool is_left_side;
@@ -468,30 +510,50 @@ ent:
       tmp=DisplayNode(world,dc,set->body[idx],level2+1);
 //      set->body[idx](AST*)->disp_node=tmp;
       ret->connects=I64SetAdd(ret->connects,tmp);
+      use_x=x2;
+      use_y=y2;
 
       if(!ast->base_expression) {
-        bound_l=ast->word_idx;
-        bound_r=ast->word_idx+1;
-        if(ast->flags&(CONJUNCTION|CONJUNCTION2))
-	  goto conj;
         goto use_middle;
       } 
-      if(ast->base_expression->raw_type==AST_CONJUNCTION)
-        goto conj;
-      if(ast->base_expression->flags&(CONJUNCTION2|CONJUNCTION)) {
-	goto conj;
-      }
-
-      if(ast->raw_type==AST_CONJUNCTION) {
+      if(ast->flags&(CONJUNCTION|CONJUNCTION2)) {
 conj:
-      bound_l=ast->base_expression->start;
-      bound_r=ast->base_expression->end;
-        if(set->body[idx]->end==bound_l) {
+        bound_l=ast->base_expression->start;
+        bound_r=ast->base_expression->end;
+	ast2=set->body[idx];
+//Ignore "[","]"
+        if(ast2->end==bound_l) {
+	  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)&&ast2->flags(CONJUNCTION|CONJUNCTION2)))
+	    goto use_middle;
+	  ast2=GetLastConjPair(ast2);
+	  if(ast2->end-ast2->start>1)
+	    goto use_middle;
+	  while(0<=bound_l<world->word_cnt) {
+	    if(StrCmp(world->words[bound_l],"["))
+	      break;
+	    bound_l++;
+	  }
 	  use_handle_x=tmp->handle_right_x;
 	  use_handle_y=tmp->handle_right_y;
+	  use_x=world->word_offsets[bound_l];
+	  use_y=use_handle_y;
         } else if(set->body[idx]->start==bound_r) {
+	  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)&&ast2->flags(CONJUNCTION|CONJUNCTION2)))
+	    goto use_middle;
+	  ast2=GetFirstConjPair(ast2);
+	  if(ast2->end-ast2->start>1)
+	    goto use_middle;
 	  use_handle_x=tmp->handle_left_x;
 	  use_handle_y=tmp->handle_left_y;
+//Dumb hack,make
+	  bound_r--;
+	  while(0<=bound_r<world->word_cnt) {
+	    if(StrCmp(world->words[bound_r],"]"))
+	      break;
+	    bound_r--;
+	  }
+	  use_x=world->word_offsets[bound_r];
+	  use_y=use_handle_y;
         } else 
 	  goto use_middle;
       } else {
@@ -501,10 +563,10 @@ use_middle:;
       }
 //ret->handle_y set here
       if(is_left_side) {
-        world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,use_handle_x,use_handle_y,x2,y2,0,max_l_deriv,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
+        world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,use_handle_x,use_handle_y,use_x,use_y,0,max_l_deriv,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
         max_l_deriv=Max(Abs(ret->r_deriv*.55),max_l_deriv); //our target node is on the left side,our current node is on the rgiht side
       } else {
-        world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,use_handle_x,use_handle_y,x2,y2,max_r_deriv,0,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
+        world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,use_handle_x,use_handle_y,use_x,use_y,max_r_deriv,0,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
         max_r_deriv=Max(Abs(ret->l_deriv*.55),max_r_deriv);  //our target node is on the right side,our current node is on the left side
       }
       ret->max_y=Max(ret->max_y,handle_y);
@@ -574,6 +636,7 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
   forms=CAlloc(word_cnt*8);
   t.words=words;
   t.word_font_size=17;
+  t.word_cnt=word_cnt;
   t.definition_font_size=14;
   ASTGetTrieWords(sentence,forms);
   t.xoff=0,t.yoff=0;
@@ -1181,7 +1244,7 @@ DumpSentences(
 	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
 	"septem cognitiones colligunt rationem et sententiam."
 	"septem cognitiones colligunt [ causam et [descriptum et habens] et [locum  nixa et diuturnitatem et partitum]]."
-	"septem haec sunt [ [existendum locumque numerumque  longitudinemque tempusque] aetatem et [cogitationem et comparandum]]"
+	"septem haec sunt [ existendum locumque numerumque  longitudinemque tempusque et aetatem et [cogitationem et comparandum]]."
 ,
 	"Reality is made of Soul,non-soul,movement and bondange,liberation and seperation\0"
 	"These are defined by name,representation potentional and state\0"
@@ -1206,4 +1269,4 @@ DumpSentences("hominem.homines.homine.hominibus.homines");
 DumpSentences("manus.manuum.manui.manibus.manu");
 //5th Declension
 DumpSentences("res.res.re.rerum.rebus");
-#endif 
+#endif 
