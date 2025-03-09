@@ -1158,7 +1158,6 @@ DumpSentences(
 //1st conjugation
 //[ita ego ingeniculo]
 DumpSentences("Fames sitisque");
-PressAKey;
 DumpSentences(
 	"ingeniculo [[dominor  liberandi] qui [fui [ nexionis vastatorem] et [sciendum omnia]]] ."
 	"ita  habeamus [virtutem suum]."
@@ -1179,10 +1178,10 @@ DumpSentences(
 );
 DumpSentences(
 	" [[non animus] animusque nexioque libertasque motusque dividereque] componunt rem."
-//	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
-//	"septem cognitiones colligunt rationem et sententiam."
-//	"septem cognitiones colligunt [ causam et [descriptum et habens] et [locum  nixa et diuturnitatem et partitum]]." // 
-//	"septem haec sunt [ [existendum et locum et numerum ] et [longitudinem et tempus] et aetatem et [cogitationem et comparandum]]."
+	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
+	"septem cognitiones colligunt rationem et sententiam."
+	"septem cognitiones colligunt [ causam et [descriptum et habens] et [locum  nixa et diuturnitatem et partitum]]."
+	"septem haec sunt [ [existendum locumque numerumque  longitudinemque tempusque] aetatem et [cogitationem et comparandum]]"
 ,
 	"Reality is made of Soul,non-soul,movement and bondange,liberation and seperation\0"
 	"These are defined by name,representation potentional and state\0"
@@ -1207,4 +1206,4 @@ DumpSentences("hominem.homines.homine.hominibus.homines");
 DumpSentences("manus.manuum.manui.manibus.manu");
 //5th Declension
 DumpSentences("res.res.re.rerum.rebus");
-#endif 
+#endif 
