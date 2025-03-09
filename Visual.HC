@@ -86,6 +86,8 @@ U0 QuessCenter(CD3I32 *middle,CD3I32 *l,CD3I32 *r,
 class CDisplayNode {
   AST *ast;
   CD2 hover_node_pos;
+  F64 handle_left_x,handle_left_y;
+  F64 handle_right_x,handle_right_y;
   F64 handle_x,handle_y;
   F64 bound_l,bound_r;
   F64 max_y;
@@ -310,7 +312,9 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
   U8 *optr,*base_word;
   I64 level2,max_level=0;
   AST *ast2;
+  F64 use_handle_x,use_handle_y;
   CD3I32 ctrls[3];
+  I64 bound_l,bound_r;
   Bool is_left_side;
   F64 max_l_deriv=0.,max_r_deriv=0.;
   switch(ast->act_as_type) {
@@ -366,7 +370,11 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
     ret->hover_node_pos.y=I64_MAX;
     ret->max_y=y2;
   } else
-	Break;
+    Break;
+  ret->handle_left_x=ret->handle_x;
+  ret->handle_left_y=ret->handle_y;
+  ret->handle_right_x=ret->handle_x;
+  ret->handle_right_y=ret->handle_y;
 //I will sort the left and right sides by distance
   for(run=0;run<=10;run++) {
     if((set=ast->nomitive)&&run==0) {
@@ -460,17 +468,53 @@ ent:
       tmp=DisplayNode(world,dc,set->body[idx],level2+1);
 //      set->body[idx](AST*)->disp_node=tmp;
       ret->connects=I64SetAdd(ret->connects,tmp);
+
+      if(!ast->base_expression) {
+        bound_l=ast->word_idx;
+        bound_r=ast->word_idx+1;
+        if(ast->word->flags&CONJUNCTION)
+	  goto conj;
+        goto use_middle;
+      } 
+      if(ast->base_expression->act_as_type==AST_CONJUNCTION)
+        goto conj;
+
+      if(ast->raw_type==AST_CONJUNCTION) {
+conj:
+      bound_l=ast->base_expression->start;
+      bound_r=ast->base_expression->end;
+        if(set->body[idx]->end==bound_l) {
+	  use_handle_x=tmp->handle_right_x;
+	  use_handle_y=tmp->handle_right_y;
+        } else if(set->body[idx]->start==bound_r) {
+	  use_handle_x=tmp->handle_left_x;
+	  use_handle_y=tmp->handle_left_y;
+        } else 
+	  goto use_middle;
+      } else {
+use_middle:;
+        use_handle_x=tmp->handle_x;
+        use_handle_y=tmp->handle_y;
+      }
 //ret->handle_y set here
       if(is_left_side) {
-        world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,tmp->handle_x,tmp->handle_y,x2,y2,0,max_l_deriv,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
+        world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,use_handle_x,use_handle_y,x2,y2,0,max_l_deriv,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
         max_l_deriv=Max(Abs(ret->r_deriv*.55),max_l_deriv); //our target node is on the left side,our current node is on the rgiht side
       } else {
-        world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,tmp->handle_x,tmp->handle_y,x2,y2,max_r_deriv,0,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
+        world->max_y=Max(world->max_y,ret->handle_y=DrawConnect(dc,level2+1,use_handle_x,use_handle_y,x2,y2,max_r_deriv,0,&handle_x,&handle_y,&ret->l_deriv,&ret->r_deriv,&ret->handle_x));
         max_r_deriv=Max(Abs(ret->l_deriv*.55),max_r_deriv);  //our target node is on the right side,our current node is on the left side
       }
       ret->max_y=Max(ret->max_y,handle_y);
       ret->bound_l=Min(ret->bound_l,tmp->bound_l);
       ret->bound_r=Max(ret->bound_r,tmp->bound_r);
+      if(tmp->bound_l<tmp->handle_left_x) {
+	ret->handle_left_x=tmp->handle_left_x;
+	ret->handle_left_y=tmp->handle_left_y;
+      }
+      if(tmp->bound_r>tmp->handle_right_x) {
+	ret->handle_right_x=tmp->handle_right_x;
+	ret->handle_right_y=tmp->handle_right_y;
+      }
       old_color=dc->color;
       dc->color=BLACK;
       GrFillCircle(dc,tmp->handle_x,tmp->handle_y,0,10);
@@ -480,6 +524,19 @@ ent:
   if(left_sides&&left_sides->cnt&&right_sides&&right_sides->cnt) {
     ret->handle_x=(ret->bound_r-ret->bound_l)/2.+ret->bound_l;
     ret->handle_y=ret->max_y+8;
+  }
+  if(!ret->connects) {
+    ret->handle_left_x=ret->handle_x;
+    ret->handle_left_y=ret->handle_y;
+    ret->handle_right_x=ret->handle_x;
+    ret->handle_right_y=ret->handle_y;
+  } else {
+    tmp=ret->connects->body[0];
+    ret->handle_left_x=ret->bound_l;
+    ret->handle_left_y=tmp->handle_left_y;
+    tmp=ret->connects->body[ret->connects->cnt-1];
+    ret->handle_right_x=ret->bound_r;
+    ret->handle_right_y=tmp->handle_right_y;
   }
   Free(left_sides),Free(right_sides);
   dc->color=old_color2;
@@ -1127,14 +1184,14 @@ DumpSentences(
 	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
 	"septem cognitiones colligunt rationem et sententiam."
 	"septem cognitiones colligunt [ causam et [descriptum et habens] et [locum  nixa et diuturnitatem et partitum]]." // 
-	"septem haec sunt [ [existendum et locum et numerum ] et [longitudinem et tempus] et aetatem et [cogitationem et comparandum ]].",
+	"septem haec sunt [ [existendum et locum et numerum ] et [longitudinem et tempus] et aetatem et [cogitationem et comparandum ]].",
 	"Reality is made of Soul,non-soul,movement and bondange,liberation and seperation\0"
 	"These are defined by name,representation potentional and state\0"
 	"The 7 knowledges are gained via knowledge and judgement.\0"
 	"The 7 Knowledges are gained by description,ownsership,cause,resting place,duration,and dividing.\0"
 	"These 7 are existence,location,number,measurement,time,timespan,thought at comparsion.\0"
 //"/WWW/index.DD"
-);//et [prohibere et]
+);//et [prohibere et]18
 #if 0
 DumpSentences("voco.vocabam.vocabo.vocavi.vocaveram.vocavero.vocor.vocabar.vocabor.vocas.vocemus.vocaremus.vocemur");
 DumpSentences("vocantis");

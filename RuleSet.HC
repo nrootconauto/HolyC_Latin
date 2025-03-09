@@ -22,7 +22,7 @@ class CRule {
 I64 MemberNameToI64(U8 *str) {
   if(!StrCmp(str,"NOUN"))
     return AST_NOUN;
-  else if(!StrCmp(str,"VERB"))
+  else if(!StrCmp(str,"VERB"))
     return AST_VERB;
   else if(!StrCmp(str,"CONJUNCTION"))
     return AST_CONJUNCTION;
