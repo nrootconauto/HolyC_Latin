@@ -261,27 +261,37 @@ CTrie *GetWord(U8 *word) {
   if(*word=='['||*word==']')
     return NULL;
   U8 *copy=NULL;
+  I64 add_flags=0;
   LookUpWord(word);
   CTrie *base=TrieGet(word);
   if(base) return base;
   if(EndsWith(word,"ne")) {
     copy=StrNew(word);
     copy[StrLen(word)-2]=0;
+    LookUpWord(copy);
     if(base=TrieGet(copy)) {
-      Free(copy);
-      return TrieAdd(word,base->flags|INTEROGITIVE);
+      add_flags=INTEROGITIVE;
+      goto new;
     }
     Free(copy);
   }
-/*  if(EndsWith(word,"que")) {
+  if(EndsWith(word,"que")) {
     copy=StrNew(word);
     copy[StrLen(word)-3]=0;
+    add_flags=CONJUNCTION2;
+new:
+    LookUpWord(copy);
     if(base=TrieGet(copy)) {
+      while(base) {
+        TrieAdd(word,base->flags|add_flags,base->translation);
+        base=base->next;
+      }
+      base=TrieGet(word);
       Free(copy);
-      return TrieAdd(word,base->flags|CONJUNCTION2|CONJUNCTION,base->translation);
+      return base;
     }
     Free(copy);
-  }*/
+  }
   DbgPrint("Unknonw word %s\n",word);
   return NULL;
 }

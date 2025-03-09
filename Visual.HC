@@ -472,12 +472,15 @@ ent:
       if(!ast->base_expression) {
         bound_l=ast->word_idx;
         bound_r=ast->word_idx+1;
-        if(ast->word->flags&CONJUNCTION)
+        if(ast->flags&(CONJUNCTION|CONJUNCTION2))
 	  goto conj;
         goto use_middle;
       } 
-      if(ast->base_expression->act_as_type==AST_CONJUNCTION)
+      if(ast->base_expression->raw_type==AST_CONJUNCTION)
         goto conj;
+      if(ast->base_expression->flags&(CONJUNCTION2|CONJUNCTION)) {
+	goto conj;
+      }
 
       if(ast->raw_type==AST_CONJUNCTION) {
 conj:
@@ -507,14 +510,6 @@ use_middle:;
       ret->max_y=Max(ret->max_y,handle_y);
       ret->bound_l=Min(ret->bound_l,tmp->bound_l);
       ret->bound_r=Max(ret->bound_r,tmp->bound_r);
-      if(tmp->bound_l<tmp->handle_left_x) {
-	ret->handle_left_x=tmp->handle_left_x;
-	ret->handle_left_y=tmp->handle_left_y;
-      }
-      if(tmp->bound_r>tmp->handle_right_x) {
-	ret->handle_right_x=tmp->handle_right_x;
-	ret->handle_right_y=tmp->handle_right_y;
-      }
       old_color=dc->color;
       dc->color=BLACK;
       GrFillCircle(dc,tmp->handle_x,tmp->handle_y,0,10);
@@ -929,6 +924,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
       tcnt++;
     }
     ast=ParseSentenceJoin(tcnt,toks);
+"%x\n",ast;
     if(ast) {
 	DumpAST(ast);
       dc=DrawSentence(ast,tcnt,toks);
@@ -1161,6 +1157,8 @@ DumpSentences(
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 //[ita ego ingeniculo]
+DumpSentences("Fames sitisque");
+PressAKey;
 DumpSentences(
 	"ingeniculo [[dominor  liberandi] qui [fui [ nexionis vastatorem] et [sciendum omnia]]] ."
 	"ita  habeamus [virtutem suum]."
@@ -1180,11 +1178,12 @@ DumpSentences(
 
 );
 DumpSentences(
-	" [[non animus] et animus] et [[liberare et cernere] et  [motus et nexio ] ] componunt rem."
-	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
-	"septem cognitiones colligunt rationem et sententiam."
-	"septem cognitiones colligunt [ causam et [descriptum et habens] et [locum  nixa et diuturnitatem et partitum]]." // 
-	"septem haec sunt [ [existendum et locum et numerum ] et [longitudinem et tempus] et aetatem et [cogitationem et comparandum ]].",
+	" [[non animus] animusque nexioque libertasque motusque dividereque] componunt rem."
+//	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
+//	"septem cognitiones colligunt rationem et sententiam."
+//	"septem cognitiones colligunt [ causam et [descriptum et habens] et [locum  nixa et diuturnitatem et partitum]]." // 
+//	"septem haec sunt [ [existendum et locum et numerum ] et [longitudinem et tempus] et aetatem et [cogitationem et comparandum]]."
+,
 	"Reality is made of Soul,non-soul,movement and bondange,liberation and seperation\0"
 	"These are defined by name,representation potentional and state\0"
 	"The 7 knowledges are gained via knowledge and judgement.\0"

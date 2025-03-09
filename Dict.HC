@@ -310,7 +310,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
   I64 flags=0,base_flags=0,idx3,idx2,idx;
   U8 dummy[STR_LEN];
   U8 *tmp,*wstr;
-  CJson *n,*f,*senses,*formof;
+  CJson *n,*f,*senses,*formof,*tags;
   I64 added=0;
   if(n=GetJsonMember(j,"pos",J_STR)) {
     if(!StrICmp(n->str,"verb")) flags|=VERB;
@@ -412,17 +412,18 @@ got_inflect:;
 	      DbgPrint("UNIMP:%s,%s,%x(%x)\n",f->str,word,flags|inflect_mask,old);
 	    }
 	  }
+	  if(add) {
+	      flags|=inflect_mask;
+DbgPrint("ADD:%X,%X\n",flags,flags&VERB);
 	  if(flags&VERB&&flags&INFINITIVE)
 	    //Nroot doesnt like this
 	    flags&=~VERB;
 	  if(flags&VERB&&flags&PARTICIPLE)
 	    //Nroot doesnt like this either
 	    flags&=~VERB;
-	  if(add) {
-DbgPrint("ADD:%X\n",flags|inflect_mask);
-	    if(!TrieExists(word,flags|inflect_mask)) {
+	    if(!TrieExists(word,flags)) {
 	      added++;
-	      DeclensionForWord(flags,TrieAdd(word,flags|inflect_mask,trans));
+	      DeclensionForWord(flags,TrieAdd(word,flags,trans));
 	    }
 	  }
 skip:;

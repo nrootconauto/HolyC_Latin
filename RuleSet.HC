@@ -179,6 +179,15 @@ Bool CaseAgree(I64 argc,AST **argv) {
   }
   return TRUE;
 }
+
+Bool HasQueAtEnd(I64 argc,AST **argv) {
+  AST *ast=argv[argc-1];
+  if(ast->flags&CONJUNCTION2)
+    return TRUE;
+  return ast->word&&ast->word->flags&CONJUNCTION2;
+}
+
+
 //Momitive quam albative
 Bool CaseQuam(I64 argc,AST **argv) {
   I64 i=0;
@@ -682,7 +691,7 @@ fail:;
 	  if(old!=add_to) {
 	    repeat_cnt=FramePtr("RS.Added");
 	    FramePtrSet("RS.Added",repeat_cnt+1);
-	    if(1+repeat_cnt>=15) {
+	    if(1+repeat_cnt>=31) {
 	      ASTDel(tmp);
 	      goto fin;
 	    }

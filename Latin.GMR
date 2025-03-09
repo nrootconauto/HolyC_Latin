@@ -35,15 +35,16 @@ Gerund@Dat NOUN = GERUND,DATIVE;
 Gerund@Gen OF = GENITIVE,GERUND;
 Noun@Noun[FlagsTransfer] NOUN -> Gerund@Nom;
 Noun@Noun[FlagsTransfer] NOUN -> Gerund@Acc;
-Noun@Noun[FlagsTransfer] NOUN -> Gerund@Dat;
+Noun@Noun[FlagsTransfer] NOUN -> Gerund@Dat;
 Noun@Noun[FlagsTransfer] NOUN -> Gerund@Abl;
 Noun@Noun[FlagsTransfer] NOUN -> Gerund@Gen;
+
 
 Partic@Partic NOUN = PARTICIPLE;
 Adj@Adj ADJECTIVE = PARTICIPLE; (.3) //The "boiled" water
 Noun@Noun NOUN -> !Partic@Partic; (.1)
 Adj@Adj ADJECTIVE -> !Partic@Partic; (.3) //The "boiled" water
-Partic@Partic NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
+Noun@Noun NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
 
 
 
@@ -62,6 +63,11 @@ Noun@Noun NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
 Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
 
 
+Noun@Noun(HasQueAtEnd)[FlagsPlural] NOUN -> !Noun@Noun Noun@Noun; (2.0)
+Adj@Adj(HasQueAtEnd)[FlagsPlural] ADJECTIVE -> !Adj@Adj Adj@Adj ; (2.0)
+Verb@Verb(HasQueAtEnd)[FlagsPlural] VERB -> !Verb@Verb Verb@Verb; (2.0)
+
+
 Adverb@Adverb ADVERB = ADVERB;
 Prep@Prep WHERE = PREPOSITION;
 Verb@Verb VERB = VERB;
@@ -75,7 +81,8 @@ Noun@Noun NOUN -> Adj@Adj !Noun@Noun;
 
 Noun@Noun NOUN = INFINITIVE;
 Infin@Infin NOUN = INFINITIVE;
-Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.1) //Less common
+Noun@Noun NOUN -> Infin@Infin; (.1) //I like "eating"
+Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
 Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
 
 

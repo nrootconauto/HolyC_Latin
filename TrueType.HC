@@ -732,7 +732,7 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
 Cd(__DIR__);;;
 DCFill;
 WinMax;
-//DocClear;
+DocClear;
 gr.dc->color=BLACK;
 TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21\n     21 Savage\n   Ἇῗῷν",15,font);
 
