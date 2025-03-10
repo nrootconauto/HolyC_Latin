@@ -3,13 +3,18 @@
 
 
 Adj@Adj ADJECTIVE = ADJECTIVE;
+Det@Det ADJECTIVE = DETIRMINER;
 // The Fat black cat
 Adj@Adj ADJECTIVE -> Adj@Adj Adj@Adj;
 //End
 
 
-Noun@Noun[FlagsTransfer] NOUN -> Adj@Adj; (.1) //Substanive adjective is rarley used
-Adverb@Adverb[FlagsTransfer] NOUN -> Adj@Adj; (.2) // Adjectives are like adverbs sometimes
+Noun@Noun[FlagsTransfer] NOUN -> Adj@Adj; (.99) //Substanive adjective is rarley used
+Adverb@Adverb[FlagsTransfer] NOUN -> Adj@Adj; (.1) // Adjectives are like adverbs sometimes
+
+Det@Det ADJECTIVE = DETIRMINER;
+Noun@Noun[FlagsTransfer] NOUN -> Det@Det; (.98)
+Noun@Noun(CaseAgree)[FlagsTransfer] NOUN -> !Det@Det Noun@Noun; (.99)
 
 Pron@Inter QUESTION = INTEROGITIVE;
 Pron@Pron NOUN = PRONOUN;
@@ -41,7 +46,6 @@ Noun@Noun[FlagsTransfer] NOUN -> Gerund@Gen;
 
 
 Partic@Partic NOUN = PARTICIPLE;
-Adj@Adj ADJECTIVE = PARTICIPLE; (.3) //The "boiled" water
 Noun@Noun[FlagsTransfer] NOUN -> !Partic@Partic; (.1)
 Adj@Adj ADJECTIVE -> !Partic@Partic; (.3) //The "boiled" water
 Noun@Noun NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
@@ -64,7 +68,7 @@ Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
 
 
 Noun@Noun(HasQueAtEndWithCase)[FlagsPlural] NOUN -> Noun@Noun !Noun@Noun; (2.0)
-Adj@Adj(HasQueAtEndWithCase)[FlagsPlural] ADJECTIVE -> Adj@Adj !Adj@Adj ; (2.0)
+Adj@Adj(HasQueAtEndWithCase)[FlagsPlural] ADJECTIVE -> Adj@Adj !Adj@Adj; (2.0)
 Verb@Verb(HasQueAtEnd)[FlagsPlural] VERB -> Verb@Verb !Verb@Verb; (2.0)
 
 
@@ -97,12 +101,12 @@ Verb@Verb VERB -> !Verb@Verb Prep@Prep(WHERE) Noun@Noun;
 Verb@Verb VERB -> !Verb@Verb Noun@Gen; (.1) //Favor "I ate the food of life" over "I (ate of food) for life")
 Verb@Verb VERB -> Noun@Gen !Verb@Verb; (.1)
 
-Verb@Verb VERB -> !Verb@Verb Adverb@Adverb;
+Verb@Verb VERB -> !Verb@Verb Adverb@Adverb;(.5)
 Verb@Verb VERB -> !Verb@Verb;
 
 Verb@Verb VERB -> Verb@Verb(CONJUNCTION) !Conj@Conj Verb@Verb(CONJUNCTION); (.7)
 
-Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;
+Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;(.5)
 
 //
 // "In the begining",God created....
@@ -117,8 +121,8 @@ Sent CLAUSE -> !Partic@Partic Sent(WHERE); (.9)
 
 // This is for "those [who] eat" and
 // "watching all [who]..."
-Noun@Noun[FlagsTransfer] CLAUSE -> Noun@Noun(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.6) //Favor above default
-Sent CLAUSE -> Sent(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.55) //Favor lesser than top one
+Noun@Noun[FlagsTransfer] CLAUSE -> Noun@Noun(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.1) //Favor above default
+Sent CLAUSE -> Sent(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.15) //Favor lesser than top one
 
 //End
 
@@ -139,8 +143,8 @@ Sent (CaseAgree)[FlagsAppositive] NOUN -> !Noun@Noun Noun@Noun; (.01)  //Less co
 Verb@Verb(Intransitive) VERB -> !Verb@Verb Prep@Prep; (.7) //Favor explicit use of syntax
 
 //Gentives can be used with adjactives to "desirous of learning"
-Adj@Adj(CaseGen) ADJECTIVE -> !Adj@Adj Noun@Noun ; (.5) //Less common?
-Adj@Adj(CaseGen) ADJECTIVE -> Noun@Noun !Adj@Adj ; (.6)
+Adj@Adj(CaseGen) ADJECTIVE -> !Adj@Adj Noun@Noun ; (.6) //Less common?
+Adj@Adj(CaseGen) ADJECTIVE -> Noun@Noun !Adj@Adj ; (1)
 //
 
 

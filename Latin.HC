@@ -60,6 +60,7 @@
 #define CONJUGATION5 (1<<53)
 #define INTRANSITIVE (1<<54)
 #define VOCATIVE (1<<55)
+#define NEGATIVE (1<<56)
 class CDeclension:CQue {
   I64 flags;
   U64 set;
@@ -215,7 +216,7 @@ CDeclension *DeclensionForWord(I64 flags,CTrie *w) {
 
 
 U0 InitLatin(U8 *file="Latin.INFLECTS") {
-  QueInit(&declensions);
+  QueInit(&declensions);
   if(!FileFind(file))
     return ;
   I64 line;
@@ -265,6 +266,14 @@ CTrie *GetWord(U8 *word) {
   LookUpWord(word);
   CTrie *base=TrieGet(word);
   if(base) return base;
+  if(!StrNICmp(word,"in",2)) {
+    copy=StrNew(word+2);
+    if(base=GetWord(copy)) {
+      add_flags=NEGATIVE;
+      goto new;
+    }
+    Free(copy);
+  }
   if(EndsWith(word,"ne")) {
     copy=StrNew(word);
     copy[StrLen(word)-2]=0;
@@ -280,7 +289,7 @@ CTrie *GetWord(U8 *word) {
     copy[StrLen(word)-3]=0;
     add_flags=CONJUNCTION2;
 new:
-    LookUpWord(copy);
+    GetWord(copy);
     if(base=TrieGet(copy)) {
       while(base) {
         TrieAdd(word,base->flags|add_flags,base->translation);
@@ -293,14 +302,16 @@ new:
     Free(copy);
   }
   DbgPrint("Unknown word %s\n",word);
-Beep;
   return NULL;
 }
 
 U0 InitDict0() {
   TrieAdd("nam",CONJUNCTION,"thus");
   TrieAdd("namque",CONJUNCTION,"thus");
+  TrieAdd("duo",ADJECTIVE,"two");
+  TrieAdd("tres",ADJECTIVE,"three");
   TrieAdd("septem",ADJECTIVE,"seven");
+  TrieAdd("quinque",ADJECTIVE,"five");
   TrieAdd("ego",PRONOUN|NOMITIVE|SINGULAR,"I");
   TrieAdd("qui",PRONOUN|NOMITIVE|SINGULAR|INTEROGITIVE,"who");
 }

@@ -541,9 +541,12 @@ ASTSet *DoTerminals(U8 *_word,I64 idx) {
 	  ret->args=I64SetAdd(ret->args,ret);
 	  ret->rule=rule;
 
-          if(RulePost(ret,rule,ret->args->body,ret->args->cnt))
+
+	    "%x,%s,%s\n",ADJECTIVE&ret->flags,rule->name,word->str;
+          if(RulePost(ret,rule,ret->args->body,ret->args->cnt)) {
+	    "PASS:%x,%s,%s\n",ADJECTIVE&ret->flags,rule->name,word->str;
 	    all=ASTSetAdd(all,ret);
-	  else {
+	  } else {
 //	    ret->args
 //	    ASTDel(ret);
           }
@@ -790,7 +793,7 @@ AST *ParseSentenceJoin(I64 argc,U8 **argv) {
   Free(matrix);
   return ret;
 }
-AST *ParseSentence(...) {
+AST *ParseSentence(...) {
   return ParseSentenceJoin(argc,argv);
 }
 

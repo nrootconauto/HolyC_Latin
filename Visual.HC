@@ -336,7 +336,7 @@ AST *GetLastConjPair(AST *ast) {
   for(idx=0;idx!=ast->args->cnt;idx++) {
     tmp=ast->args->body[idx];
     if(tmp->start>max)  {
-      max=tmp->start;
+      max=tmp->start;
       best=tmp;
     }
   }
@@ -1249,37 +1249,38 @@ DumpSentences(
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 //[ita ego ingeniculo]
-DumpSentences("Fames sitisque");
 DumpSentences(
-	"ingeniculo [[dominor  liberandi] qui [fui [ nexionis vastatorem] et [sciendum omnia]]] ."
+	"ingeniculo [dominum  liberandi qui fui [ nexionis vastatorem] et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."
         "[iustus [fides et mos et cognitio]] sunt semitam."
-	,
-	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
-        "So that I may have their Virtuees.\0" 
-	"Right Faith,Conduct and Knowledge are the path.\0"
-//"/WWW/index.DD"
-);
-DumpSentences(
 	"[[fides rei] reperire]  [es verum]  fidem."
-	"[hic fides] surgat per discendum.",
-	"Belief in discovered substances is correct faith.\0"
-	"This faith is gotten through learning things.\0",
-//"/WWW/index.DD"
-
-);
-DumpSentences(
+	"[hic fides] surgat per discendum."
 	" [[non animus] animusque nexioque libertasque motusque dividereque] componunt rem."
 	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
 	"septem cognitiones colligunt rationem et sententiam."
 	"septem cognitiones colligunt [ causam descriptumque habensque et [locum  nixa] diuturnitatemque partitamque]."
 	"septem haec sunt [ existendum locumque numerumque  longitudinemque tempusque aetatemque et [cogitationem et comparandum]]."
+	"[quinque genus cognitionum] sunt sensum scriptumque inobservatumque divinationemque omnisciensque. "
+	"hoc sunt [duo [verum cognitionem] generum]."
+	"[duo primus] sunt visibilem cognitionem."
+	"[hoc tres postremus] sunt [directum cognitum]."
+	"[sensusque cogitareque meminisseque agnoscereque colligensque et reducere] sunt idem."
 ,
+	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
+        "So that I may have their Virtuees.\0" 
+	"Right Faith,Conduct and Knowledge are the path.\0"
+	"Belief in discovered substances is correct faith.\0"
+	"This faith is gotten through learning things.\0"
 	"Reality is made of Soul,non-soul,movement and bondange,liberation and seperation\0"
 	"These are defined by name,representation potentional and state\0"
 	"The 7 knowledges are gained via knowledge and judgement.\0"
 	"The 7 Knowledges are gained by description,ownsership,cause,resting place,duration,and dividing.\0"
 	"These 7 are existence,location,number,measurement,time,timespan,thought at comparsion.\0"
+	"The 5 classifications of the knowledges are senses,scripture,unseen,divination and all-knowing.\0"
+	"These valid knowledges\0"
+	"The first 2 of them are seen knowledges.\0"
+	"The last 3 of them are unseen knowledges.\0"
+	"Senses,thinking,remembering,reducing and gathing are the seme.\0"
 //"/WWW/index.DD"
 );//et [prohibere et]18
 #if 0
