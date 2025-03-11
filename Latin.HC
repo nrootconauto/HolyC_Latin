@@ -66,7 +66,7 @@ class CDeclension:CQue {
   U64 set;
   U8 *str;
 };
-CDeclension declensions;
+CQue declensions;
 CDeclension AddDeclension(U8*declen,I64 flags,U64 set){
   CDeclension *d=CAlloc(sizeofCDeclension);
   U8 as_str[9];
@@ -199,10 +199,14 @@ Bool MatchesFlags(I64 a,I64 b) {
 }
 
 CDeclension *DeclensionForWord(I64 flags,CTrie *w) {
+  U8 *copy=StrNew(w->str);
+  if(w->suffix) {
+    copy[StrLen(copy)-StrLen(w->suffix)]=0;
+  }
   I64 max_l=0,l;
   CDeclension *d,*head=&declensions,*d2;
   for(d=head->next;d!=head;d=d->next) {
-    if(EndsWith(w->str,d->str)) {
+    if(EndsWith(copy,d->str)) {
       if(MatchesFlags(d->flags,w->flags)) {
         l=StrLen(d->str);
         max_l=MaxI64(l,max_l);
@@ -211,6 +215,7 @@ CDeclension *DeclensionForWord(I64 flags,CTrie *w) {
       }
     }
   }
+  Free(copy);
   return w->front_declension;
 }
 
@@ -262,14 +267,16 @@ CTrie *GetWord(U8 *word) {
   if(*word=='['||*word==']')
     return NULL;
   U8 *copy=NULL;
+  U8 *suffix=NULL,*prefix=NULL;
   I64 add_flags=0;
   LookUpWord(word);
-  CTrie *base=TrieGet(word);
+  CTrie *base=TrieGet(word),*added;
   if(base) return base;
   if(!StrNICmp(word,"in",2)) {
     copy=StrNew(word+2);
     if(base=GetWord(copy)) {
       add_flags=NEGATIVE;
+      prefix="in";
       goto new;
     }
     Free(copy);
@@ -280,6 +287,7 @@ CTrie *GetWord(U8 *word) {
     LookUpWord(copy);
     if(base=TrieGet(copy)) {
       add_flags=INTEROGITIVE;
+      suffix="n\e";
       goto new;
     }
     Free(copy);
@@ -288,11 +296,15 @@ CTrie *GetWord(U8 *word) {
     copy=StrNew(word);
     copy[StrLen(word)-3]=0;
     add_flags=CONJUNCTION2;
+    suffix="que";
 new:
     GetWord(copy);
     if(base=TrieGet(copy)) {
       while(base) {
-        TrieAdd(word,base->flags|add_flags,base->translation);
+        added=TrieAdd(word,base->flags|add_flags,base->translation);
+	added->suffix=suffix;
+	added->prefix=prefix;
+	DeclensionForWord(base->flags|add_flags,added);
         base=base->next;
       }
       base=TrieGet(word);
@@ -309,7 +321,7 @@ U0 InitDict0() {
   TrieAdd("nam",CONJUNCTION,"thus");
   TrieAdd("namque",CONJUNCTION,"thus");
   TrieAdd("duo",ADJECTIVE,"two");
-  TrieAdd("tres",ADJECTIVE,"three");
+  TrieAdd("tres",ADJECTIVE,"three");
   TrieAdd("septem",ADJECTIVE,"seven");
   TrieAdd("quinque",ADJECTIVE,"five");
   TrieAdd("ego",PRONOUN|NOMITIVE|SINGULAR,"I");

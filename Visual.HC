@@ -204,11 +204,22 @@ I64 DrawSexyWord(CDC *dc,F64 fsize,I64 x,I64 y,CTrie *word,U8 *text) {
   U8 *tmp;
   U8 buf[STR_LEN];
   I64 badv=0,fadv=0;
+  I64 padv=0,sadv=0;
   I64 ptr=0;
+  if(tmp=word->prefix)
+    padv=StrLen(tmp);
   if(tmp=word->back_declension)
     badv=StrLen(tmp);
   if(tmp=word->front_declension)
     fadv=StrLen(tmp);
+  if(tmp=word->suffix)
+    sadv=StrLen(tmp);
+  if(padv) {
+    dc->color=DKGRAY;
+    ptr=SliceUTF8(buf,text,padv);
+    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    text+=ptr;
+  }
   if(badv) {
     dc->color=inflect_color;
     ptr=SliceUTF8(buf,text,badv);
@@ -217,14 +228,26 @@ I64 DrawSexyWord(CDC *dc,F64 fsize,I64 x,I64 y,CTrie *word,U8 *text) {
   }
   if(fadv) {
     dc->color=old_color;
-    ptr=StrLenUTF8(text)-fadv;
+    ptr=StrLenUTF8(text)-fadv-sadv;
     ptr=SliceUTF8(buf,text,ptr);
     text+=ptr;
     x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
     dc->color=inflect_color;
+    ptr=SliceUTF8(buf,text,fadv);
+    text+=ptr;
+    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    dc->color=DKGRAY;
     x+=SexyGrPrintSize(dc,fsize,x,y,"%s",text);
-  } else{
+  } elseif(!sadv){
     dc->color=old_color;
+    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",text);
+  } else {
+    ptr=StrLenUTF8(text)-sadv;
+    ptr=SliceUTF8(buf,text,ptr);
+    text+=ptr;
+    dc->color=old_color;
+    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    dc->color=DKGRAY;
     x+=SexyGrPrintSize(dc,fsize,x,y,"%s",text);
   }
   dc->color=old_color;
@@ -1249,8 +1272,10 @@ DumpSentences(
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 //[ita ego ingeniculo]
+DumpSentences("insaxum");
+Break;
 DumpSentences(
-	"ingeniculo [dominum  liberandi qui fui [ nexionis vastatorem] et [sciendum omnia]]." // 
+	"ingeniculo [dominum  liberandi qui fui [ nexionis vastatorem] et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."
         "[iustus [fides et mos et cognitio]] sunt semitam."
 	"[[fides rei] reperire]  [es verum]  fidem."

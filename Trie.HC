@@ -4,6 +4,8 @@ class CTrie {
   U8 *str;
   U8 *front_declension;
   U8 *back_declension;
+  U8 *suffix; //Used for -que
+  U8 *prefix; //Used for in-
   U8 *translation;
   I64 flags;
   CTrie *branches[ALPHABET_SIZE];

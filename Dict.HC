@@ -320,7 +320,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
     else if(!StrICmp(n->str,"prep")) flags|=PREPOSITION;
     else if(!StrICmp(n->str,"adv")) flags|=ADVERB;
     else if(!StrICmp(n->str,"pron")) flags|=PRONOUN;
-    else if(!StrICmp(n->str,"det")) flags|=DETIRMINER;
+    else if(!StrICmp(n->str,"det")) flags|=DETIRMINER;
   }
   base_flags=flags;
   for(idx3=0;idx3!=2;idx3++) {
