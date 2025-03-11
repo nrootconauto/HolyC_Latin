@@ -261,7 +261,7 @@ I64 DrawWordInfo(CDC *dc,I64 x,I64 y,CTrie *word,Bool dummy=FALSE,U8 *text) {
   F64 sub=14.;
   if(dummy) dc=DCNew(1,1);
   if(word->flags&(NOUN|PRONOUN|ADJECTIVE)) {
-    dc->color=GREEN;
+    dc->color=GREEN;
     if(word->flags&MASCULINE) {
       x+=SexyGrPrintSize(dc,sub,x,y,"M");
     } else if(word->flags&FEMININE) {
@@ -288,6 +288,9 @@ I64 DrawWordInfo(CDC *dc,I64 x,I64 y,CTrie *word,Bool dummy=FALSE,U8 *text) {
     } else if(word->flags&ABLATIVE) {
       dc->color=LTBLUE;
       x+=SexyGrPrintSize(dc,sub,x,y,"Ab");
+    } else if(word->flags&VOCATIVE) {
+      dc->color=LTPURPLE;
+      x+=SexyGrPrintSize(dc,sub,x,y,"Vo");
     }
 
 _p_cnt:
@@ -1124,7 +1127,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
   Free(bmp);
   DCDel(dc);
 }
-
+#if __CMD_LINE__
 DocMax;
 /*
 
@@ -1271,9 +1274,6 @@ DumpSentences(
 //John 9:1
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
-//[ita ego ingeniculo]
-DumpSentences("insaxum");
-Break;
 DumpSentences(
 	"ingeniculo [dominum  liberandi qui fui [ nexionis vastatorem] et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."
@@ -1325,3 +1325,4 @@ DumpSentences("manus.manuum.manui.manibus.manu");
 //5th Declension
 DumpSentences("res.res.re.rerum.rebus");
 #endif 
+#endif

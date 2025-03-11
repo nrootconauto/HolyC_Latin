@@ -1,4 +1,4 @@
-set words = ( ` tail +2 $argv[2] | cut -f2,4 ` )
+set words = ( ` tail -n+2 $argv[2] | cut -f2,4 ` )
 set idx = 0
 set more = ''
 set more2 = ` head -n1 $argv[2] `

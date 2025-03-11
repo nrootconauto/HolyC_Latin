@@ -285,7 +285,7 @@ I64 GetWordPtr(I64 *max,CFile *file,U8*str,I64 ptr=0,Bool *new=NULL) {
     MemSet(&dummy,0,sizeof CIndexBlk);
     SubFBlkWrite(file,&dummy,ptr=(*max)++);
     if(new) *new=TRUE;
-    return GetWordPtr(max,file,str+1,ptr);
+    return GetWordPtr(max,file,str+1,ptr);
   }
   if(ptr>*max) throw('trie');
   return GetWordPtr(max,file,str+1,dummy.body[idx],new);
