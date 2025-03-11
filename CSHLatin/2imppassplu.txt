@@ -1,4 +1,4 @@
 VERB|SUBJUNCTIVE|PLUPERFECT
-1st 	monuissem 	I should have warned 	monuissēmus 	We should have warned
-2nd 	monuissēs 	You would have warned 	monuissētis 	You (pl.) would have warned
-3rd 	monuisset 	He/she/it would have warned 	monuissent 	They would have warned 
+1st 	monissem 	I should have warned 	monissēmus 	We should have warned
+2nd 	monissēs 	You would have warned 	monissētis 	You (pl.) would have warned
+3rd 	monisset 	He/she/it would have warned 	monissent 	They would have warned 

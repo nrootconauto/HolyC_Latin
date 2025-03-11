@@ -1,4 +1,4 @@
 PLUPERFECT|VERB
-1st 	monueram 	I had warned 	monuerāmus 	We had warned
-2nd 	monuerās 	You had warned 	monuerātis 	You (pl.) had warned
-3rd 	monuerat 	He/she/it had warned 	monuerant 	They had warned 
+1st 	moneram 	I had warned 	monerāmus 	We had warned
+2nd 	monerās 	You had warned 	monerātis 	You (pl.) had warned
+3rd 	monerat 	He/she/it had warned 	monerant 	They had warned 

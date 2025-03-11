@@ -1,4 +1,4 @@
 PERFECT|VERB
-1st 	monuī 	I have warned 	monuimus 	We have warned
-2nd 	monuistī 	You have warned 	monuistis 	You (pl.) have warned
-3rd 	monuit 	He/she/it has warned 	monuērunt 	They have warned 
+1st 	monī 	I have warned 	monimus 	We have warned
+2nd 	monistī 	You have warned 	monistis 	You (pl.) have warned
+3rd 	monit 	He/she/it has warned 	monērunt 	They have warned 

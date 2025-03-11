@@ -28,7 +28,16 @@ CEntDim WordTableEntry(CDC *dc,I64 cx,I64 cy,I64Set *f,I64 flags) {
 	  if(trie->flags&VERB&&(flags&INFINITIVE^^trie->flags&INFINITIVE)) {
 	     goto skip;
 	  }
-	  MemCpy(&dumbt,trie,sizeof(CTrie));
+	  if(trie->flags&VERB&&(flags&FUTURE^^trie->flags&FUTURE)) {
+	     goto skip;
+	  }
+	  if(trie->flags&VERB&&(flags&PARTICIPLE^^trie->flags&PARTICIPLE)) {
+	     goto skip;
+	  }
+	  if(trie->flags&VERB&&(flags&PERFECT^^trie->flags&PERFECT)) {
+	     goto skip;
+	  }
+	  MemCpy(&dumbt,trie,sizeof(CTrie));
 	  dumbt.flags=flags|NOUN|VERB; //Only use relevant flags
 	  dc->color=LTGREEN;
 	  w=DrawSexyWord(dumb,14,cx,cy,&dumbt,trie->str);
@@ -211,10 +220,30 @@ skip:;
   Free(word_str);
   Free(base);
 }
+U0 DocWordTable(CDoc *doc,U8 *word) {
+  CDC *dc=DCNew(I32_MAX,I32_MAX,Fs,TRUE),*dc2;
+  I64 w,h;
+  U8 *tmp;
+  dc->flags|=DCF_RECORD_EXTENTS;
+  dc->max_y=I32_MAX/2;
+  dc->max_x=I32_MAX/2;
+  dc->min_y=I32_MAX/2;
+  dc->min_x=I32_MAX/2;
+  WordTable(dc,word,I32_MAX/2,I32_MAX/2);
+  w=dc->max_y-dc->min_x+10;
+  h=dc->max_y-dc->min_y+10;
+  if(w<0||h<0)
+    return;
+  dc2=DCNew(w,h);
+  DCFill(dc2,TRANSPARENT);
+  WordTable(dc2,word,I32_MAX/2-dc->min_x,I32_MAX/2-dc->min_y);
+  DocSprite(doc,tmp=DC2Sprite(dc2));
+  Free(tmp);
+  DCDel(dc2);
+  DCDel(dc);
+  while((h-=8)>=0)
+    "\n";
+  "\n";
+}
 DocClear;
-WordTable(gr.dc,"puellam",100,50);
-PressAKey;
-DCFill;
-WordTable(gr.dc,"video",100,50);
-PressAKey;
-DCFill;
+DocWordTable(DocPut,"video");

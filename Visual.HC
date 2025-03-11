@@ -261,7 +261,7 @@ I64 DrawWordInfo(CDC *dc,I64 x,I64 y,CTrie *word,Bool dummy=FALSE,U8 *text) {
   F64 sub=14.;
   if(dummy) dc=DCNew(1,1);
   if(word->flags&(NOUN|PRONOUN|ADJECTIVE)) {
-    dc->color=GREEN;
+    dc->color=GREEN;
     if(word->flags&MASCULINE) {
       x+=SexyGrPrintSize(dc,sub,x,y,"M");
     } else if(word->flags&FEMININE) {
@@ -313,7 +313,7 @@ _p_cnt:
     dc->color=BLUE;
     if(word->flags&IMPERFECT) {
       x+=SexyGrPrintSize(dc,sub,x,y,"Imp");
-    } else if(word->flags&FUTURE) {
+    } else if(word->flags&FUTURE) {
       x+=SexyGrPrintSize(dc,sub,x,y,"Fut");
     } else if(word->flags&PERFECT) {
       x+=SexyGrPrintSize(dc,sub,x,y,"Per");
