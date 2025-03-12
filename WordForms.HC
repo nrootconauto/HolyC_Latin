@@ -91,7 +91,7 @@ skip:;
   trie=GetWord(base);
   if(f)
     for(idx=0;idx!=2;idx++) {
-      if(trie->flags&(CONJUGATION1|CONJUGATION2|CONJUGATION3)) {
+      if(trie->flags&(CONJUGATION1|CONJUGATION2|CONJUGATION3|CONJUGATION4)) {
         static I64 conj_x[6]={
         SINGULAR|_1P,
 	      SINGULAR|_2P,
@@ -251,6 +251,8 @@ U0 DocWordTable(CDoc *doc,U8 *word) {
 }
 DocClear;
 DocMax;
+DocWordTable(DocPut,"amo");
 DocWordTable(DocPut,"video");
-//DocWordTable(DocPut,"puella");
-DumpSentences("videmini");
+DocWordTable(DocPut,"tego");
+DocWordTable(DocPut,"audio");
+//DocWordTable(DocPut,"puella");

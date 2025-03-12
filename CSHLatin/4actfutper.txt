@@ -1,4 +1,4 @@
-FUTURE|PERFECT|VERB
-1st 	audiveram 	I had heard 	audiverāmus 	We had heard
-2nd 	audiverās 	You had heard 	audiverātis 	You (pl.) had heard
-3rd 	audiverat 	He/she/it had heard 	audiverant 	They had heard 
+FUTURE|PERFECT|VERB	
+1st 	audīverō 	I will have heard 	audīverimus 	We will have heard
+2nd 	audīveris 	You will have heard 	audīveritis 	You (pl.) will have heard
+3rd 	audīverit 	He/she/it will have heard 	audīverint 	They will have heard 

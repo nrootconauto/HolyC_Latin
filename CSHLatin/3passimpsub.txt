@@ -1,4 +1,4 @@
-SUBJUNCTIVE|VERB|IMPERFECT
+SUBJUNCTIVE|VERB|IMPERFECT|PASSIVE
 1st 	tegerer 	I should be covered 	tegerēmur 	We should be covered
 2nd 	tegerēris 	You would be covered 	tegerēminī 	You (pl.) would be covered
 3rd 	tegerētur 	He/she/it would be covered 	tegerentur 	They would be covered 

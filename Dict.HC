@@ -668,18 +668,15 @@ U8 *SmallDefinition(U8 *def) {
   U8 buf[STR_LEN],*bptr=buf,*want;
   Bool changed=TRUE;
   I64 len1,len2;
-  def=StrNew(def);
-  if(want=StrIMatch("conjugation of",def)) {
-    StrScan(want,"conjugation of %s:",&bptr);
-    return GetTranslation(buf);
-  }
-  if(want=StrIMatch("inflection of",def)) {
-    StrScan(want,"inflection of %s:",&bptr);
-    return GetTranslation(buf);
-  }
-  if(want=StrIMatch("alternative spelling of",def)) {
-    StrScan(want,"alternative spelling of %s:",&bptr);
-    return GetTranslation(buf);
+  def=StrNew(def); 
+  if(want=GetBaseWord(def)) {
+    if(StrCmp(want,def)) {
+      bptr=GetTranslation(want);
+      Free(want);
+      Free(def);
+      return bptr;
+    }
+    Free(want);
   }
   while(changed) {
     changed=FALSE;
