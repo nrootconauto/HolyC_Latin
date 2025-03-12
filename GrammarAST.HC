@@ -92,7 +92,7 @@ ASTSet *ASTSetAdd(ASTSet *dst,AST *a) {
   Free(dst);
   return tmp;
 }
-ASTSet *ASTSetAddAll(ASTSet *a,ASTSet *b) {
+ASTSet *ASTSetAddAll(ASTSet *a,ASTSet *b) {
   if(!b) return a;
   I64 i=b->cnt;
   while(--i>=0)

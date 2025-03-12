@@ -159,6 +159,10 @@ Bool MatchesFlags(I64 a,I64 b) {
     if(!(a&mask&b))
       return FALSE;
   }
+  if(a&IMPERATIVE) {
+    mask=SINGULAR|PLURAL|PASSIVE|IMPERATIVE;
+    return a&mask==b&mask;
+  }
   if(a&(VERB|INFINITIVE)) {
     if(!(b&(VERB|INFINITIVE))) return FALSE;
 //Passive/Active
@@ -166,8 +170,8 @@ Bool MatchesFlags(I64 a,I64 b) {
       return FALSE;
 //Person
     mask=_1P|_2P|_3P;
-    if(a&mask!=b&mask) 
-      return FALSE;
+    if(a&mask!=b&mask)
+        return FALSE;
 //Mood
     mask=IMPERATIVE|SUBJUNCTIVE;
     if(a&mask!=b&mask) 
@@ -304,7 +308,7 @@ new:
         added=TrieAdd(word,base->flags|add_flags,base->translation);
 	added->suffix=suffix;
 	added->prefix=prefix;
-	DeclensionForWord(base->flags|add_flags,added);
+	DeclensionForWord(base->flags|add_flags,added);
         base=base->next;
       }
       base=TrieGet(word);

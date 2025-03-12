@@ -102,7 +102,7 @@ I64 ReadUTF8(U8 *st,U8 **en=NULL) {
 U8 Transliterate(U64 ch) {
 //https://en.wiktionary.org/wiki/Appendix:Unicode/Latin_Extended-A
   switch(ch) {
-    case 0x100 ... 0x105:
+    case 0x100 ... 0x105:
       ch='a';
       break;
     case 0x106...0x10D:

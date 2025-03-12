@@ -285,7 +285,7 @@ I64 GetWordPtr(I64 *max,CFile *file,U8*str,I64 ptr=0,Bool *new=NULL) {
     MemSet(&dummy,0,sizeof CIndexBlk);
     SubFBlkWrite(file,&dummy,ptr=(*max)++);
     if(new) *new=TRUE;
-    return GetWordPtr(max,file,str+1,ptr);
+    return GetWordPtr(max,file,str+1,ptr);
   }
   if(ptr>*max) throw('trie');
   return GetWordPtr(max,file,str+1,dummy.body[idx],new);
@@ -327,7 +327,16 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
     if(idx3==0)
       senses=GetJsonMember(j,"senses",J_ARRAY);
     else if(idx3==1) {
-      senses=GetJsonMember(j,"forms",J_ARRAY);
+        if(tmp=GetBaseWord(word)) {
+	   wstr=GetWordString(tmp);
+	   if(wstr) {
+ 	     JsonDel(j);
+	     j=ParseJson(wstr);
+	   }
+ 	   Free(wstr);
+	   Free(tmp);
+        }
+        senses=GetJsonMember(j,"forms",J_ARRAY);
     }
     if(senses) {
       for(idx2=0;idx2!=senses->cnt;idx2++) {
@@ -339,7 +348,6 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	    if(StrICmp(word,formof->str))
 	      goto skip;
 	  }
-
         I64 inflect_mask=DECLENSION1|DECLENSION2|DECLENSION3|DECLENSION4|DECLENSION5|
 	      CONJUGATION1|
 	      CONJUGATION2|
@@ -353,6 +361,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	        wstr=GetWordString(tmp);
 	        if(wstr) {
 		  inflect_mask&=GetWordFlags0(tmp,formof=ParseJson(wstr),FALSE);
+		  JsonDel(formof);
 		  Free(wstr);
 	        }
 	        goto got_inflect;
@@ -387,6 +396,7 @@ got_inflect:;
 	      if(!StrICmp(f->str,"first-person")) flags|=_1P;
 	      if(!StrICmp(f->str,"second-person")) flags|=_2P;
 	      if(!StrICmp(f->str,"third-person")) flags|=_3P;
+	      if(!StrICmp(f->str,"imperative")) flags|=IMPERATIVE;
 	      if(!StrICmp(f->str,"perfect")) flags|=PERFECT;
 	      if(!StrICmp(f->str,"pluperfect")) flags|=PLUPERFECT;
 	      if(!StrICmp(f->str,"subjunctive")) flags|=SUBJUNCTIVE;
@@ -598,7 +608,7 @@ U8 *GetWordString(U8 *word,I64 inst=0)  {
   return ret;
 }
 U8 *GetBaseWord(U8 *word,I64 inst=0) {
-  U8 *ws=GetWordString(word);
+  U8 *ws=GetWordString(word),*p;
   if(!ws) return NULL;
   U8 buf[STR_LEN];
   I64 idx,idx2;
@@ -617,6 +627,21 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
 	  }
         }
       }
+      if(f=GetJsonMember(s,"glosses",J_ARRAY)) {
+        if(f=GetJsonMember(f,StrPrint(buf,"%d",0),J_STR)) {
+	  if(p=StrIMatch(" of ",f->str)) {
+	    p+=StrLen(" of ");
+	    if(StrLastOcc(p,","))
+	      p=StrLastOcc(p,",")+1;
+	    if(StrLastOcc(p,"."))
+	      StrLastOcc(p,".")[0]=0;
+	    word=StrNew(p);
+	    JsonDel(j);
+	    return word;
+	  }
+        }
+      }
+
     }
   }
   JsonDel(j);

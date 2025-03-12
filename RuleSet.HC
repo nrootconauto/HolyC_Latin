@@ -793,7 +793,7 @@ AST *ParseSentenceJoin(I64 argc,U8 **argv) {
   Free(matrix);
   return ret;
 }
-AST *ParseSentence(...) {
+AST *ParseSentence(...) {
   return ParseSentenceJoin(argc,argv);
 }
 

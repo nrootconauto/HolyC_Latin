@@ -313,7 +313,7 @@ _p_cnt:
     dc->color=BLUE;
     if(word->flags&IMPERFECT) {
       x+=SexyGrPrintSize(dc,sub,x,y,"Imp");
-    } else if(word->flags&FUTURE) {
+    } else if(word->flags&FUTURE) {
       x+=SexyGrPrintSize(dc,sub,x,y,"Fut");
     } else if(word->flags&PERFECT) {
       x+=SexyGrPrintSize(dc,sub,x,y,"Per");

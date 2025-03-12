@@ -16,13 +16,15 @@ CEntDim WordTableEntry(CDC *dc,I64 cx,I64 cy,I64Set *f,I64 flags) {
     if(trie=GetWord(f->body[idx])) {
       while(trie) {
         if(trie->flags&flags==flags) {
+	  if(trie->flags&VERB&&(flags&IMPERATIVE^^trie->flags&IMPERATIVE)) {
+	     goto skip;
+	  }
+	  if(trie->flags&VERB&&flags&IMPERATIVE)
+	    goto pass;
 	  if(trie->flags&VERB&&(flags&PASSIVE^^trie->flags&PASSIVE)) {
 	     goto skip;
 	  }
 	  if(trie->flags&VERB&&(flags&SUBJUNCTIVE^^trie->flags&SUBJUNCTIVE)) {
-	     goto skip;
-	  }
-	  if(trie->flags&VERB&&(flags&IMPERATIVE^^trie->flags&IMPERATIVE)) {
 	     goto skip;
 	  }
 	  if(trie->flags&VERB&&(flags&INFINITIVE^^trie->flags&INFINITIVE)) {
@@ -37,6 +39,7 @@ CEntDim WordTableEntry(CDC *dc,I64 cx,I64 cy,I64Set *f,I64 flags) {
 	  if(trie->flags&VERB&&(flags&PERFECT^^trie->flags&PERFECT)) {
 	     goto skip;
 	  }
+pass:;
 	  MemCpy(&dumbt,trie,sizeof(CTrie));
 	  dumbt.flags=flags|NOUN|VERB; //Only use relevant flags
 	  dc->color=LTGREEN;
@@ -47,10 +50,12 @@ CEntDim WordTableEntry(CDC *dc,I64 cx,I64 cy,I64Set *f,I64 flags) {
   	  DrawWordInfo(dc,cx-w/2,cy+12,&dumbt,FALSE,trie->str);
 	  mw=MaxI64(mw,w+10);
 	  cy+=24;
+	  goto next;
         }
 skip:;
         trie=trie->next;
       }
+next:;
     }
   }
   DCDel(dumb);
@@ -66,7 +71,7 @@ U0 WordTable(CDC *dc,U8 *word,I64 ox,I64 oy) {
   CJson *j=ParseJson(word_str),*forms,*form;
   CTrie *trie;
   CDC*dummy=DCNew(1,1);
-  I64 x,y,x2,y2;
+  I64 x,y,x2,y2,use_flags;
   if(!j) goto en;
   forms=GetJsonMember(j,"forms");
   if(forms) {
@@ -95,7 +100,7 @@ skip:;
 	      PLURAL|_2P,
 	      PLURAL|_3P
 	      };
-        static I64 conj_y[9+6+4]={
+        static I64 conj_y[9+6+2]={
         ACTIVE|PRESENT,
 	      ACTIVE|IMPERFECT,
 	      ACTIVE|FUTURE,
@@ -113,14 +118,12 @@ skip:;
 	      SUBJUNCTIVE|PASSIVE|PRESENT,
 	      SUBJUNCTIVE|IMPERFECT|PASSIVE,
 //
-	      IMPERATIVE|ACTIVE|PRESENT,
-	      IMPERATIVE|ACTIVE|FUTURE,
-	      IMPERATIVE|PASSIVE|PRESENT,
-	      IMPERATIVE|PASSIVE|FUTURE,
+	      IMPERATIVE|ACTIVE,
+	      IMPERATIVE|PASSIVE,
 
 	      };
 
-        static U8 *conj_y_labels[9+6+4]={
+        static U8 *conj_y_labels[9+6+2]={
         "Act.Ind. Pres",
 	      "Act.Ind. Imper",
 	      "Act.Ind. Fur",
@@ -138,10 +141,8 @@ skip:;
 	      "Pass.Subj. Pres",
 	      "Pass.Subj. Imp",
 
-	      "Imp.Act. Pres",
-	      "Imp.Act. Fut",
-	      "Imp.Pass. Pres",
-	      "Imp.Pass. Fut",
+	      "Act. Imper",
+	      "Pass. Imper",
 	      };
 
         y2=oy-15;
@@ -153,7 +154,7 @@ skip:;
         GrTextBox3(dummy,ox+4*ent_max.w,y2,0,"Plu. 2P");
         GrTextBox3(dummy,ox+5*ent_max.w,y2,0,"Plu. 3P");
         for(x2=0;x2!=6;x2++) {
-	  for(y2=0;y2!=9+6+4;y2++) {
+	  for(y2=0;y2!=9+6+2;y2++) {
 	    x=ox+ent_max.w*x2,y=oy+ent_max.h*y2;
 	    dummy->color=LTRED;
 	    GrRect(dummy,x,y,ent_max.w,ent_max.h);
@@ -164,7 +165,10 @@ skip:;
 
 	    GrRect(dummy,x+5,y+5,ent_max.w-10,ent_max.h-10);
 
-	    ent_max=EntDimMax(ent_max,WordTableEntry(dummy,x+ent_max.w/2,y,f,conj_x[x2]|conj_y[y2]));
+	    use_flags=conj_x[x2]|conj_y[y2];
+	    if(y2>=6+9)
+		use_flags&=~(_1P|_2P|_3P);
+	    ent_max=EntDimMax(ent_max,WordTableEntry(dummy,x+ent_max.w/2,y,f,use_flags));
 
 	    if(x2==0) {
 	      dummy->color=LTGREEN;
@@ -238,7 +242,7 @@ U0 DocWordTable(CDoc *doc,U8 *word) {
   DCFill(dc2,TRANSPARENT);
   WordTable(dc2,word,I32_MAX/2-dc->min_x,I32_MAX/2-dc->min_y);
   DocSprite(doc,tmp=DC2Sprite(dc2));
-  Free(tmp);
+  Free(tmp);
   DCDel(dc2);
   DCDel(dc);
   while((h-=8)>=0)
@@ -246,4 +250,7 @@ U0 DocWordTable(CDoc *doc,U8 *word) {
   "\n";
 }
 DocClear;
+DocMax;
 DocWordTable(DocPut,"video");
+//DocWordTable(DocPut,"puella");
+DumpSentences("videmini");
