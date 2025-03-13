@@ -542,9 +542,7 @@ ASTSet *DoTerminals(U8 *_word,I64 idx) {
 	  ret->rule=rule;
 
 
-	    "%x,%s,%s\n",ADJECTIVE&ret->flags,rule->name,word->str;
           if(RulePost(ret,rule,ret->args->body,ret->args->cnt)) {
-	    "PASS:%x,%s,%s\n",ADJECTIVE&ret->flags,rule->name,word->str;
 	    all=ASTSetAdd(all,ret);
 	  } else {
 //	    ret->args

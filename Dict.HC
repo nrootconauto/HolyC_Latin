@@ -5,7 +5,8 @@ extern U8 *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL);
 extern U8 *GetBaseWord(U8 *word,I64 inst=0);
 extern U8 *GetWordString(U8 *word,I64 inst=0);
 U8 *json_file=__DIR__"/Latin.json",*index_file=__DIR__"/INDEX.TRIE";
-
+CTask *mem_task=Fs;
+CHashTable *word_strings=HashTableNew(1<<9);
 #define J_STR 1
 #define J_NUM 2
 #define J_ARRAY 3
@@ -593,6 +594,13 @@ loop:;
   return tmp;
 }
 U8 *GetWordString(U8 *word,I64 inst=0)  {
+  CHashGeneric *gen;
+  I64 idx=1;
+  while(gen=HashFind(word,word_strings,HTT_FRAME_PTR,idx)) {
+    if(inst==gen->user_data1)
+      return StrNew(gen->user_data0);
+    idx++;
+  }
   U8 *tmp=_GetWordString(word,inst);
   if(!tmp) {
     return NULL;
@@ -605,6 +613,12 @@ U8 *GetWordString(U8 *word,I64 inst=0)  {
   }
   ret[off++]=bo;
   Free(otmp);
+  gen=CAlloc(sizeof(CHashGeneric),mem_task);
+  gen->type=HTT_FRAME_PTR;
+  gen->str=StrNew(word,mem_task);
+  gen->user_data0=StrNew(ret,mem_task);
+  gen->user_data1=inst;
+  HashAdd(gen,word_strings);
   return ret;
 }
 U8 *GetBaseWord(U8 *word,I64 inst=0) {
@@ -674,7 +688,7 @@ U8 *SmallDefinition(U8 *def) {
       bptr=GetTranslation(want);
       Free(want);
       Free(def);
-      return bptr;
+      return bptr;
     }
     Free(want);
   }
@@ -790,7 +804,7 @@ loop:;
   goto loop;
 }
 U32 *GetNativeWord(U8 *have) {
-  U8 *raw=_GetWordString(have),*ptr;
+  U8 *raw=GetWordString(have),*ptr;
   U8 buf[STR_LEN];
   U32 *ret=NULL,c,idx,off;
   CJson *j=ParseJson(raw,NULL),*m,*head_templates;

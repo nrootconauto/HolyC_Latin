@@ -160,7 +160,7 @@ Bool MatchesFlags(I64 a,I64 b) {
       return FALSE;
   }
   if(a&IMPERATIVE) {
-    mask=SINGULAR|PLURAL|PASSIVE|IMPERATIVE;
+    mask=SINGULAR|PLURAL|PASSIVE|IMPERATIVE;
     return a&mask==b&mask;
   }
   if(a&(VERB|INFINITIVE)) {

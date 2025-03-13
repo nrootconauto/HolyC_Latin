@@ -61,7 +61,7 @@ next:;
   DCDel(dumb);
   return mw|(cy-ocy+12)<<32;
 }
-U0 WordTable(CDC *dc,U8 *word,I64 ox,I64 oy) {
+CDC *WordTable(U8 *word) {
   U8 *base=GetBaseWord(word),buf[STR_LEN];
   if(!base) return;
   U8 *word_str=GetWordString(base),*text;
@@ -70,9 +70,15 @@ U0 WordTable(CDC *dc,U8 *word,I64 ox,I64 oy) {
   I64Set *f=NULL;
   CJson *j=ParseJson(word_str),*forms,*form;
   CTrie *trie;
-  CDC*dummy=DCNew(1,1);
+  CDC*dummy=DCNew(I32_MAX,I32_MAX,Fs,TRUE),*dc;
+  I64 ox=I32_MAX/2,oy=I32_MAX/2;
   I64 x,y,x2,y2,use_flags;
   if(!j) goto en;
+  dummy->flags|=DCF_RECORD_EXTENTS;
+  dummy->min_x=I32_MAX/2;
+  dummy->min_y=I32_MAX/2;
+  dummy->max_x=I32_MAX/2;
+  dummy->max_y=I32_MAX/2;
   forms=GetJsonMember(j,"forms");
   if(forms) {
     for(idx=0;form=GetJsonMember(forms,StrPrint(buf,"%d",idx));idx++) {
@@ -213,6 +219,10 @@ skip:;
         }
       }
       if(!idx) {
+	dc=DCNew(dummy->max_x-dummy->min_x+1,dummy->max_y-dummy->min_y+1);
+        DCFill(dc,TRANSPARENT);
+        ox=I32_MAX/2-dummy->min_x;
+        oy=I32_MAX/2-dummy->min_y;
         DCDel(dummy);
         dummy=dc;
       }
@@ -223,28 +233,16 @@ skip:;
   JsonDel(j);
   Free(word_str);
   Free(base);
+  return dc;
 }
 U0 DocWordTable(CDoc *doc,U8 *word) {
-  CDC *dc=DCNew(I32_MAX,I32_MAX,Fs,TRUE),*dc2;
-  I64 w,h;
+  CDC *dc2;
   U8 *tmp;
-  dc->flags|=DCF_RECORD_EXTENTS;
-  dc->max_y=I32_MAX/2;
-  dc->max_x=I32_MAX/2;
-  dc->min_y=I32_MAX/2;
-  dc->min_x=I32_MAX/2;
-  WordTable(dc,word,I32_MAX/2,I32_MAX/2);
-  w=dc->max_y-dc->min_x+10;
-  h=dc->max_y-dc->min_y+10;
-  if(w<0||h<0)
-    return;
-  dc2=DCNew(w,h);
-  DCFill(dc2,TRANSPARENT);
-  WordTable(dc2,word,I32_MAX/2-dc->min_x,I32_MAX/2-dc->min_y);
+  dc2=WordTable(word);
   DocSprite(doc,tmp=DC2Sprite(dc2));
+  I64 h=dc2->height;
   Free(tmp);
   DCDel(dc2);
-  DCDel(dc);
   while((h-=8)>=0)
     "\n";
   "\n";
@@ -255,4 +253,8 @@ DocWordTable(DocPut,"amo");
 DocWordTable(DocPut,"video");
 DocWordTable(DocPut,"tego");
 DocWordTable(DocPut,"audio");
-//DocWordTable(DocPut,"puella");
+DocWordTable(DocPut,"puella");
+DocWordTable(DocPut,"ager");
+DocWordTable(DocPut,"rex");
+DocWordTable(DocPut,"manus");
+DocWordTable(DocPut,"res");
