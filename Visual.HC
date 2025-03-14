@@ -1,4 +1,4 @@
-Option(OPTf_BOUNDS_CHECK,1);
+//Option(OPTf_BOUNDS_CHECK,1);
 #exe {Cd(__DIR__);};;
 #include "Utils.HC";
 #include "RuleSet.HC";
@@ -1044,7 +1044,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
     ast=ParseSentenceJoin(tcnt,toks);
 "%x\n",ast;
     if(ast) {
-//	DumpAST(ast);
+	DumpAST(ast);
       dc=DrawSentence(ast,tcnt,toks);
 "
 
