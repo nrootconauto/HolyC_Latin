@@ -308,6 +308,11 @@ CJson *GetJsonMember(CJson *j,U8 *member,I64 type=-1) {
   return NULL;
 }
 I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
+  static I64 recur=0;
+  if(++recur>=5) {
+    --recur;
+    return 0;
+  }
   I64 flags=0,base_flags=0,idx3,idx2,idx;
   U8 dummy[STR_LEN];
   U8 *tmp,*wstr;
@@ -443,6 +448,7 @@ skip:;
       }
     }
   }
+  --recur;
   return flags|inflect_mask;
 }
 U0 MakeIndex(U8 *outname,U8 *in_name) {
@@ -624,6 +630,11 @@ U8 *GetWordString(U8 *word,I64 inst=0)  {
 U8 *GetBaseWord(U8 *word,I64 inst=0) {
   U8 *ws=GetWordString(word),*p;
   if(!ws) return NULL;
+  static I64 recur=0;
+  if(++recur>=5) {
+    --recur;
+    return NULL;
+  }
   U8 buf[STR_LEN];
   I64 idx,idx2;
   CJson *j=ParseJson(ws,NULL),*s0,*s,*f,*t;
@@ -637,6 +648,7 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
 	  if(t) {
 	    word=StrNew(t->str);
 	    JsonDel(j);  
+	    --recur;
 	    return word;
 	  }
         }
@@ -651,6 +663,7 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
 	      StrLastOcc(p,".")[0]=0;
 	    word=StrNew(p);
 	    JsonDel(j);
+	    --recur;
 	    return word;
 	  }
         }
@@ -659,6 +672,7 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
     }
   }
   JsonDel(j);
+  --recur;
   if(inst)
     return NULL;
   return StrNew(word);
@@ -716,6 +730,11 @@ U8 *SmallDefinition(U8 *def) {
 } 
 //Returns a long list of translations
 U8 *GetTranslations(U8 *word,Bool recurse=TRUE,I64 *_which=NULL) {
+  static I64 recur=0;
+  if(++recur>=5) {
+    --recur;
+    return NULL;
+  }
   I64 inst;
   U8 *str;
   if(!word) return NULL;
@@ -760,6 +779,7 @@ defacto:
   }
   best=DocSave(trans);
   DocDel(trans);
+  --recur;
   return StrUtil(best,SUF_REM_CTRL_CHARS);
 }
 //Your on your own(inst==-1 if to use default from CIndexBlk->translation_idx)
@@ -767,6 +787,7 @@ U8 *GetTranslation(U8 *word,Bool recurse=TRUE,Bool small=TRUE,I64 t_inst=-1) {
   if(t_inst<0)
     t_inst=GetWordDftTranslationIdx(word);
   U8 *trans=GetTranslations(word,recurse),*ret;
+  if(!trans) return NULL;
   I64 cnt=StrOcc(trans,'\n');
   while(ret=StrLastOcc(trans,"\n"))
     *ret=0;

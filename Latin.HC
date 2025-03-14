@@ -326,8 +326,9 @@ U0 InitDict0() {
   TrieAdd("namque",CONJUNCTION,"thus");
   TrieAdd("duo",ADJECTIVE,"two");
   TrieAdd("tres",ADJECTIVE,"three");
-  TrieAdd("septem",ADJECTIVE,"seven");
+  TrieAdd("quattuor",ADJECTIVE,"four");
   TrieAdd("quinque",ADJECTIVE,"five");
+  TrieAdd("septem",ADJECTIVE,"seven");
   TrieAdd("ego",PRONOUN|NOMITIVE|SINGULAR,"I");
   TrieAdd("qui",PRONOUN|NOMITIVE|SINGULAR|INTEROGITIVE,"who");
 }

@@ -1,4 +1,5 @@
-1#exe {Cd(__DIR__);};;
+Option(OPTf_BOUNDS_CHECK,1);
+#exe {Cd(__DIR__);};;
 #include "Utils.HC";
 #include "RuleSet.HC";
 #include "FileBMP.HC";
@@ -406,7 +407,6 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
     y=8;
     x=world->word_offsets[ast->word_idx];
     dc->color=color;
-
     x2=DrawSexyWord(NULL,17,x+1,y,ast->word,world->words[ast->word_idx]);
     x2=x-x2/2;
     DrawSexyWord(dc,17.,x2,y,ast->word,world->words[ast->word_idx]);
@@ -1044,7 +1044,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
     ast=ParseSentenceJoin(tcnt,toks);
 "%x\n",ast;
     if(ast) {
-	DumpAST(ast);
+//	DumpAST(ast);
       dc=DrawSentence(ast,tcnt,toks);
 "
 
@@ -1290,6 +1290,8 @@ DumpSentences(
 	"[duo primus] sunt visibilem cognitionem."
 	"[hoc tres postremus] sunt [directum cognitum]."
 	"[sensusque cogitareque meminisseque agnoscereque colligensque et reducere] sunt idem."
+	"haec importat Sensum animamque."
+	"[quattuor cognitiones sensitivorum] sunt [[sentientes allegationemque] iudiciaque et meminisse]."
 ,
 	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
         "So that I may have their Virtuees.\0" 
@@ -1306,6 +1308,8 @@ DumpSentences(
 	"The first 2 of them are seen knowledges.\0"
 	"The last 3 of them are unseen knowledges.\0"
 	"Senses,thinking,remembering,reducing and gathing are the seme.\0"
+	"These are from senses and mind.\0"
+	"The 4 classes of sensory knowledge are senses,speculation,judgement and recalling.\0"
 //"/WWW/index.DD"
 );//et [prohibere et]18
 #if 0
