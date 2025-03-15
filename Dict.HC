@@ -307,6 +307,12 @@ CJson *GetJsonMember(CJson *j,U8 *member,I64 type=-1) {
   }
   return NULL;
 }
+#define INFLECT_MASK (DECLENSION1|DECLENSION2|DECLENSION3|DECLENSION4|DECLENSION5| \
+	      CONJUGATION1| \
+	      CONJUGATION2| \
+	      CONJUGATION3| \
+	      CONJUGATION4| \
+	      NOUN|VERB|PARTICIPLE|INFINITIVE|PRONOUN)
 I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
   static I64 recur=0;
   if(++recur>=5) {
@@ -314,9 +320,11 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
     return 0;
   }
   I64 flags=0,base_flags=0,idx3,idx2,idx;
+  Bool use_new_flags=FALSE;
   U8 dummy[STR_LEN];
   U8 *tmp,*wstr;
   CJson *n,*f,*senses,*formof,*tags;
+  I64 inflect_mask=INFLECT_MASK;
   I64 added=0;
   if(n=GetJsonMember(j,"pos",J_STR)) {
     if(!StrICmp(n->str,"verb")) flags|=VERB;
@@ -333,16 +341,16 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
     if(idx3==0)
       senses=GetJsonMember(j,"senses",J_ARRAY);
     else if(idx3==1) {
-        if(tmp=GetBaseWord(word)) {
-	   wstr=GetWordString(tmp);
-	   if(wstr) {
- 	     JsonDel(j);
-	     j=ParseJson(wstr);
-	   }
- 	   Free(wstr);
-	   Free(tmp);
+      if(tmp=GetBaseWord(word)) {
+        wstr=GetWordString(tmp);
+        if(wstr) {
+	  JsonDel(j);
+	  j=ParseJson(wstr);
         }
         senses=GetJsonMember(j,"forms",J_ARRAY);
+        Free(wstr);
+        Free(tmp);
+      }
     }
     if(senses) {
       for(idx2=0;idx2!=senses->cnt;idx2++) {
@@ -354,11 +362,6 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	    if(StrICmp(word,formof->str))
 	      goto skip;
 	  }
-        I64 inflect_mask=DECLENSION1|DECLENSION2|DECLENSION3|DECLENSION4|DECLENSION5|
-	      CONJUGATION1|
-	      CONJUGATION2|
-	      CONJUGATION3|
-	      CONJUGATION4;
 //Can be forms of multiple things,just use 1st one?
         if(formof=GetJsonMember(n,"form_of",J_ARRAY)) {
 	  if(formof=GetJsonMember(formof,"0",J_NODE))
@@ -431,13 +434,24 @@ got_inflect:;
 	  }
 	  if(add) {
 	    flags|=inflect_mask;
-	    DbgPrint("ADD:%X,%X\n",flags,flags&VERB);
-	    if(flags&VERB&&flags&INFINITIVE)
+	    if(flags==inflect_mask&&BCnt(flags)==1) {
+	      DbgPrint("SKIP:%s,%X\n",f->str,flags);
+	      goto skip;
+	    }
+	    if(flags&INFINITIVE)
 //Nroot doesnt like this
 	      flags&=~VERB;
-	    if(flags&VERB&&flags&PARTICIPLE)
+//Only participles got declensions
+	    if(flags&(PARTICIPLE|
+		  DECLENSION1|
+		  DECLENSION2|
+		  DECLENSION3|
+		  DECLENSION4|
+		  DECLENSION5
+		  ))
 //Nroot doesnt like this either
 	      flags&=~VERB;
+	    DbgPrint("ADD:%d,%s,%X\n",idx3,f->str,flags);
 	    if(!TrieExists(word,flags)) {
 	      added++;
 	      DeclensionForWord(flags,TrieAdd(word,flags,trans));

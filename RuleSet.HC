@@ -102,6 +102,16 @@ I64 FlagsAcc(I64 argc,AST **argv) {
   }
   return or;
 } 
+I64 FlagsNom(I64 argc,AST **argv) {
+  I64 i=0;
+  AST *ast;
+  I64 or=NOMITIVE;
+  for(i=0;i!=argc;i++)  {
+    ast=argv[i];
+    or|=ast->flags;
+  }
+  return or;
+} 
 
 Bool NumberAgree(I64 argc,AST **argv) {
   I64 i=0;

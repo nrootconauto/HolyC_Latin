@@ -46,9 +46,9 @@ Noun@Noun[FlagsTransfer] NOUN -> Gerund@Gen;
 
 
 Partic@Partic NOUN = PARTICIPLE;
-Noun@Noun[FlagsTransfer] NOUN -> !Partic@Partic; (.1)
-Adj@Adj[FlagsTransfer] ADJECTIVE -> !Partic@Partic; (.3) //The "boiled" water
-Noun@Noun NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
+Noun@Noun[FlagsTransfer] NOUN -> !Partic@Partic; (.3)
+Adj@Adj[FlagsTransfer] ADJECTIVE -> !Partic@Partic; (.1) //The "boiled" water
+//Noun@Noun NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
 
 
 
@@ -61,7 +61,7 @@ Noun@Gen OF -> !Pron@Gen;
 Conj@Conj CONJUNCTION = CONJUNCTION;
 Noun@Noun(CaseAgree)[FlagsPlural] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;(1.5)
 
-Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCTION);(.9)
+Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCTION);(.9)
 
 Noun@Noun NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
 Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
@@ -85,8 +85,8 @@ Noun@Noun NOUN -> Adj@Adj !Noun@Noun;
 
 Noun@Noun NOUN = INFINITIVE;
 Infin@Infin NOUN = INFINITIVE;
-Noun@Noun[FlagsAcc] NOUN -> Infin@Infin; (.1) //I like "eating"
-Noun@Noun[FlagsNom] NOUN -> Infin@Infin; (.1) //I like "eating"
+Noun@Noun[FlagsAcc] NOUN -> Infin@Infin; //I like "eating"
+Noun@Noun[FlagsNom] NOUN -> Infin@Infin; //I like "eating"
 Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
 Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
 
