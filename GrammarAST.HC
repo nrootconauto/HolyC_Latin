@@ -131,6 +131,21 @@ AST *ASTClone(AST *orig) {
   ret->args=ASTSetAddAll(ret->args,ret->question);
   return ret;
 }
+Bool ASTCompatible(AST *a,AST *b) {
+  if(a->flags!=b->flags)
+    return FALSE;
+  if(a->start!=b->start||a->end!=b->end)
+    return FALSE;
+//Dumb hack,,name is first memboer
+/*
+ * class CRule{
+ *   U8 name[STR_LEN];
+ * };
+ */
+  if(StrCmp(a->rule,b->rule))
+    return FALSE;
+  return TRUE;
+}
 ASTSet *ASTSetClone(ASTSet *orig) {
   if(!orig) return NULL;
   ASTSet *ret=CAlloc(sizeof(ASTSet)+8*orig->cnt,mem_task);

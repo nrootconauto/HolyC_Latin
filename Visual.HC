@@ -260,7 +260,7 @@ I64 DrawWordInfo(CDC *dc,I64 x,I64 y,CTrie *word,Bool dummy=FALSE,U8 *text) {
   I64 ox=x;
   F64 sub=14.;
   if(dummy) dc=DCNew(1,1);
-  if(word->flags&(NOUN|PRONOUN|ADJECTIVE)) {
+  if(word->flags&(NOUN|PRONOUN|ADJECTIVE|PARTICIPLE)) {
     dc->color=GREEN;
     if(word->flags&MASCULINE) {
       x+=SexyGrPrintSize(dc,sub,x,y,"M");
@@ -1249,7 +1249,7 @@ DumpSentences(
 //	"[animus est juxta [diversum animos]] hac [tela tenet [diversum fila]."
 //	"[idem animi ] sunt [[omnia animos] in [diversum positum]]."
 //);
-//InteractView("decorum est pro patria mori");
+//InteractView("decorum est pro patria mori");
 //
 //InteractView("in principio [creavit Deus [caelum et  terram]]");
 //DumpSentences("in principio [creavit Deus [caelum et  terram]]");
@@ -1274,23 +1274,24 @@ DumpSentences(
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 DumpSentences(
-	"ingeniculo [dominum  liberandi qui fui [ nexionis vastatorem] et [sciendum omnia]]." // 
+	"ingeniculo [dominum  liberandi] qui fui [ nexionis vastatorem et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."
         "[iustus [fides et mos et cognitio]] sunt semitam."
 	"[[fides rei] reperire]  [es verum]  fidem."
 	"[hic fides] surgat per discendum."
-	" [[non animus animusque nexioque libertasque motusque] et dividere] componunt rem."
+	"[[non animus animusque nexioque libertasque motusque] et dividere] componunt rem."
 	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
-	"septem cognitiones colligunt rationem et sententiam."
-	"septem cognitiones colligunt [ causam descriptumque habensque et [locum  nixa] diuturnitatemque partitamque]."
-	"septem haec sunt [ existendum locumque numerumque  longitudinemque tempusque aetatemque et [cogitationem et comparandum]]."
+	"[septem cognitiones] colligunt rationem et sententiam."
+	"[septem cognitiones] colligunt [ causam descriptumque habensque et [locum  nixa] diuturnitatemque partitamque]."
+	"[septem haec] sunt [ existendum locumque numerumque  longitudinemque tempusque aetatemque et [cogitationem et comparandum]]."
 	"[quinque genus cognitionum] sunt sensum scriptumque inobservatumque divinationemque omnisciensque. "
 	"hoc sunt [duo [verum cognitionem] generum]."
 	"[duo primus] sunt visibilem cognitionem."
 	"[hoc tres postremus] sunt [directum cognitum]."
 	"[sensusque cogitareque meminisseque agnoscereque colligensque et reducere] sunt idem."
 	"haec importat Sensum animamque."
-	"[quattuor cognitiones sensitivorum] sunt [[sentientes allegationemque] iudiciaque et meminisse]."
+	"[quattuor  sensitivorum] sunt [[sentientes allegationemque] iudiciaque et meminisse]."
+	"[haec multa genera] sunt [[velocem occultataque et incelebrata et perpetua et oppositus]=Adj@Adj]."
 ,
 	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
         "So that I may have their Virtuees.\0" 
@@ -1309,6 +1310,7 @@ DumpSentences(
 	"Senses,thinking,remembering,reducing and gathing are the seme.\0"
 	"These are from senses and mind.\0"
 	"The 4 classes of sensory knowledge are senses,speculation,judgement and recalling.\0"
+	"More kinds are quick,hidden,uncelebrated,long-lasting and opposites.\0"
 //"/WWW/index.DD"
 );//et [prohibere et]18
 #if 0

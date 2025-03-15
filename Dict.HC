@@ -1,4 +1,4 @@
-#ifndef TrieAdd
+#ifndef TrieAdd
 extern U8 *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL);
 #endif
 #include "Utils.HC";
@@ -434,9 +434,12 @@ got_inflect:;
 	  }
 	  if(add) {
 	    flags|=inflect_mask;
-	    if(flags==inflect_mask&&BCnt(flags)==1) {
-	      DbgPrint("SKIP:%s,%X\n",f->str,flags);
-	      goto skip;
+//Make sure it has a case/number if noun/adjective/pronoun
+	    if(0&&flags&(NOUN|ADJECTIVE|PRONOUN|PARTICIPLE)) {
+	       if(!(flags&(
+		NOMITIVE|VOCATIVE|ACCUSATIVE|ABLATIVE|DATIVE|GENITIVE
+		)))
+		goto skip;
 	    }
 	    if(flags&INFINITIVE)
 //Nroot doesnt like this
@@ -514,7 +517,7 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
 //	  dummy.inst_flags[0]=GetWordFlags0(str->str,j,FALSE);
 	} else {
 	  if(dummy.inst_cnt<9) {
-	    dummy.inst_offsets[dummy.inst_cnt++]=small_ptr;
+	    dummy.inst_offsets[dummy.inst_cnt++]=small_ptr;
 	  }
 	}
 	TrimJson(j,"form_of", "word","expansion","glosses","tags","pos","form");

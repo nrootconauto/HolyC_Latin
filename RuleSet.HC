@@ -4,6 +4,16 @@
 #define RESULTS_FP "Results"
 CTask *grammar_task=Fs;
 I64 tmp_rule_idx=0;
+ASTSet *ASTSetAddSmart(ASTSet *set,AST *a) {
+  if(!set) return ASTSetAdd(set,a);
+  I64 cnt=set->cnt;
+  while(--cnt>=0)
+    if(ASTCompatible(a,set->body[cnt])) {
+      ASTDel(a);
+      return set;
+    }
+  return ASTSetAdd(set,a);
+}
 class CRule {
   U8 name[STR_LEN]; //Rule name or word name
   I64 raw_type;
@@ -47,7 +57,7 @@ I64 MemberNameToI64(U8 *str) {
   else
     return -1;
 }
-#define CASE_MASK (NOMITIVE|ACCUSATIVE|ABLATIVE|DATIVE|GENITIVE)
+#define CASE_MASK (NOMITIVE|ACCUSATIVE|ABLATIVE|DATIVE|VOCATIVE)
 #define NUMBER_MASK (PLURAL)
 I64 FlagsSingle(I64 argc,AST **argv) {
   I64 i=0;
@@ -64,6 +74,17 @@ I64 FlagsPlural(I64 argc,AST **argv) {
   I64 i=0;
   AST *ast;
   I64 or=PLURAL;
+  for(i=0;i!=argc;i++)  {
+    ast=argv[i];
+    if(ast->act_as_type==AST_NOUN)
+      or|=ast->flags;
+  }
+  return or;
+} 
+I64 FlagsPluralQue(I64 argc,AST **argv) {
+  I64 i=0;
+  AST *ast;
+  I64 or=PLURAL|CONJUNCTION2;
   for(i=0;i!=argc;i++)  {
     ast=argv[i];
     if(ast->act_as_type==AST_NOUN)
@@ -112,6 +133,35 @@ I64 FlagsNom(I64 argc,AST **argv) {
   }
   return or;
 } 
+
+Bool VerbAgree(I64 argc,AST **argv) {
+  I64 nom=FALSE,acc=FALSE;
+  I64 dat=FALSE,abl=FALSE;
+  I64 voc=FALSE;
+  I64 i;
+  AST*a;
+  for(i=0;i!=argc;i++)  {
+    a=argv[i];
+    if(a->flags&NOMITIVE)
+      if(nom++)
+	return FALSE;
+    if(a->flags&ACCUSATIVE)
+      if(acc++)
+	return FALSE;
+    if(a->flags&ABLATIVE)
+      if(abl++)
+	return FALSE;
+    if(a->flags&DATIVE)
+      if(dat++)
+	return FALSE;
+    if(a->flags&VOCATIVE)
+      if(voc++)
+	return FALSE;
+  }
+  return TRUE;
+}
+
+
 
 Bool NumberAgree(I64 argc,AST **argv) {
   I64 i=0;
@@ -512,7 +562,7 @@ Bool RulePost(AST *ast,CRule *rule,I64 *args,I64 arg_cnt) {
     ast->flags|=CallExtStr(rule->flags_fun,arg_cnt,args);
   return ret;
 }
-ASTSet *DoTerminals(U8 *_word,I64 idx) {
+ASTSet *DoTerminals(U8 *_word,I64 idx,U8 *force) {
   I64 i=rules_list->cnt;
   CRule *rule;
   CTrie *word;
@@ -520,6 +570,8 @@ ASTSet *DoTerminals(U8 *_word,I64 idx) {
   ASTSet *all=NULL;
   while(--i>=0) {
     rule=rules_list->body[i];
+    if(force&&StrCmp(force,rule->name))
+      goto skip;
     if(rule->is_word)
      if(word=GetWord(_word)) {
       while(word) {
@@ -562,10 +614,11 @@ ASTSet *DoTerminals(U8 *_word,I64 idx) {
         word=word->next;
       }
     }
+skip:;
   }
   return all;
 }
-I64 Next(U8 **words,I64 x,I64 cnt){
+I64 Next(U8 **words,I64 x,I64 cnt,Bool next=TRUE){
   I64 bracket_depth=0;
   if(!StrCmp(words[x],"[")) {
     bracket_depth=1;
@@ -580,12 +633,19 @@ I64 Next(U8 **words,I64 x,I64 cnt){
       } else
         x++;
     }
+fin:;
+    if(next&&x+2<=cnt) {
+      if(!StrCmp(words[x],"=")) {
+	x+=2;
+      }
+    }
     return x;
   } 
-  return x+1;
+  ++x;
+  goto fin;
 }
 I64 SubExprWidth(U8 **words,I64 x,I64 cnt) {
-  return Next(words,x,cnt)-x-2;
+  return Next(words,x,cnt,FALSE)-x-2;
 }
 ASTSet *Scan(U8 **words,ASTSet *add_to,CRule *r,U8 **matrix,I64 y,I64 cnt,I64 x=0,I64 ra=0,ASTSet *args=NULL) {
   I64 next;
@@ -598,23 +658,38 @@ ASTSet *Scan(U8 **words,ASTSet *add_to,CRule *r,U8 **matrix,I64 y,I64 cnt,I64 x=
   I64 rcnt=r->made_from->cnt,idx;
   I64 boundary,attempt;
   U8 *desired,*tmp2;
+  U8 *accept_rule=NULL;
   I64 repeat_cnt=0;
-  //Short circuit logic,if wanted input is longer than available items,just quit
+//Short circuit logic,if wanted input is longer than available items,just quit
   if(rcnt-ra>cnt-AbsI64(x))
     return add_to;
+//Check for word=Rule@Rule
+  if(AbsI64(x)<cnt&&AbsI64(x)-1>=0) {
+    if(!StrCmp(words[AbsI64(x)-1],"="))
+      return add_to;
+  }
+//Check for =Rule@Rule(rule forcing)
+  if(AbsI64(x)+2<=cnt) {
+    idx=Next(words,AbsI64(x),cnt,FALSE);
+    if(idx<cnt&&!StrCmp(words[idx],"=")) {
+      if(StrCmp(r->name,words[idx+1])) {
+        accept_rule=words[idx+1];
+      }
+    }
+  }
   if(ra>=rcnt) {
 pass:
     if(r->main_item_idx>=0) {
       tmp=args->body[r->main_item_idx];
       if(args->cnt>1) {
-	ret=CAlloc(sizeof(AST),mem_task);
-	ret->flags=tmp->flags;
-	ret->base_expression=ASTClone(tmp);
-	ret->args=NULL;
+        ret=CAlloc(sizeof(AST),mem_task);
+        ret->flags=tmp->flags;
+        ret->base_expression=ASTClone(tmp);
+        ret->args=NULL;
       } else
         ret=ASTClone(tmp);
     } else
-	Break;
+      Break;
     ret->prob=r->weight;
     ret->rule=r;
     ret->raw_type=ret->act_as_type=r->raw_type;
@@ -622,6 +697,12 @@ pass:
     ret->end=tmp->end;
 //DONT make an item have a single child,just "overshadow" it
     if(args->cnt==1) {
+//
+      //  Dumb Hack!!!
+      //
+      //  If we have velox=Adj@Adj,be sure to include "=Adj@Adj" in the ->end
+      //
+      ret->end=Next(words,ret->start,cnt);
     } else {
       tmp=args->body[0];
       ret->start=tmp->start;
@@ -642,13 +723,13 @@ MAKE SURE ARGUMNENTS DONT OVERLAP,use boundary.
         if(r->main_item_idx!=idx) {
 	  AddThingToAST(ASTClone(tmp),ret);
 	  ret->prob*=tmp->prob;
-	}
+        }
       }
     }
     if(!args) {
-      add_to=ASTSetAdd(add_to,ret);
+      add_to=ASTSetAddSmart(add_to,ret);
     } else if(RulePost(ret,r,args->body,ra)) {
-      add_to=ASTSetAdd(add_to,ret);
+      add_to=ASTSetAddSmart(add_to,ret);
     } else {
 fail:;
       ret->args=NULL;
@@ -661,6 +742,7 @@ fail:;
   if(x>=cnt)
     return add_to;
   cell=*MatrixPtr(matrix,x,y,cnt);
+//Check for ]
   if(!StrCmp(words[AbsI64(x)],"]"))
     return add_to;
   for(attempt=0;attempt!=2;attempt++) {
@@ -668,20 +750,6 @@ fail:;
     if(AbsI64(x)+attempt>=cnt)
       return add_to;
     cell=*MatrixPtr(matrix,AbsI64(x)+attempt,y,cnt);
-    if(cell)
-      for(idx=0;idx!=cell->cnt;idx++) {
-        tmp=cell->body[idx];
-//Dont repeat same rule
-        if(r==tmp->rule) {
-//Unless recursive
-	  if(!ra&&!StrCmp(r->name,desired)) {
-//All is good
-	  } else
-;//	    goto skip2;
-        }
-      }
-
-
     if(cell)
       for(idx=0;idx!=cell->cnt;idx++) {
         tmp=cell->body[idx];
@@ -698,9 +766,13 @@ fail:;
         } else
 	  tmp=ASTClone(tmp);
 
+        if(accept_rule) {
+	  if(StrCmp(accept_rule,tmp->rule->name))
+	    goto skip;
+        }
 
-       if(!StrCmp(desired,tmp->rule->name)) {
-    	  if(args)
+        if(!StrCmp(desired,tmp->rule->name)) {
+	  if(args)
 	    tmp2=I64SetAdd(MAllocIdent(args,mem_task),tmp);
 	  else
 	    tmp2=I64SetAdd(NULL,tmp);
@@ -710,7 +782,7 @@ fail:;
 	  if(old!=add_to) {
 	    repeat_cnt=FramePtr("RS.Added");
 	    FramePtrSet("RS.Added",repeat_cnt+1);
-	    if(1+repeat_cnt>=32) {
+	    if(1+repeat_cnt>=64) {
 	      ASTDel(tmp);
 	      goto fin;
 	    }
@@ -719,7 +791,7 @@ fail:;
 //Heres the deal,if we encounter a "[",that is the same as our rule,
         //Just use it("[Sentence]"  is the same as "Sentence")
         if(attempt&&r==tmp->rule) {
-	  add_to=ASTSetAdd(add_to,ASTClone(tmp));
+	  add_to=ASTSetAddSmart(add_to,ASTClone(tmp));
         }
         ASTDel(tmp);
 skip:;
@@ -740,13 +812,30 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
   I64 rc=rules_list->cnt,tries;
   I64 ri;
   I64 old_cnt;
+  Bool has_force;
+  U8 *force;
   for(x=0;x!=cnt;x++)
     for(y=0;y!=cnt;y++) {
       *MatrixPtr(matrix,x,y,cnt)=NULL;
     }
   for(x=cnt-1;x>=0;--x) {
+    has_force=FALSE;
     ptr=MatrixPtr(matrix,x,cnt-1,cnt);
-    *ptr=DoTerminals(words[x],x);
+    force=NULL;
+    if(x+2<=cnt) {
+      if(!StrCmp(words[x+1],"=")) {
+        force=words[x+2];
+        has_force=TRUE;
+      }
+    }
+    *ptr=DoTerminals(words[x],x,force);
+//If we force a rule,be sure to account for the distance of (=Forced@Rule)
+    if(has_force&&*ptr) {
+      for(y=ptr[0]->cnt;--y>=0;) {
+        old=ptr[0]->body[y];
+        old->end+=2; // =Rule
+      }
+    }
   }
 
   //tries is set to 2 to handle recursion,but not forever

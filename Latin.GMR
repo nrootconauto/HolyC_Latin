@@ -13,37 +13,17 @@ Noun@Noun[FlagsTransfer] NOUN -> Adj@Adj; (.99) //Substanive adjective is rarley
 Adverb@Adverb[FlagsTransfer] NOUN -> Adj@Adj; (.1) // Adjectives are like adverbs sometimes
 
 Det@Det ADJECTIVE = DETIRMINER;
+Noun@Noun NOUN = NOUN;
 Noun@Noun[FlagsTransfer] NOUN -> Det@Det; (.98)
 Noun@Noun(CaseAgree)[FlagsTransfer] NOUN -> !Det@Det Noun@Noun; (.99)
 Noun@Noun(CaseAgree)[FlagsTransfer] NOUN -> !Pron@Pron Noun@Noun; (.5)
 
 Pron@Inter QUESTION = INTEROGITIVE;
 Pron@Pron NOUN = PRONOUN;
-Pron@Nom NOUN = NOMITIVE,PRONOUN;
-Pron@Acc NOUN = ACCUSATIVE,PRONOUN;
-Pron@Gen OF = GENITIVE,PRONOUN;
-Pron@Dat NOUN = DATIVE,PRONOUN;
-Pron@Abl NOUN = ABLATIVE,PRONOUN;
 
-Noun@Nom NOUN = NOUN,NOMITIVE;
-Noun@Acc NOUN = NOUN,ACCUSATIVE;
-Noun@Abl NOUN = NOUN,ABLATIVE;
-Noun@Dat NOUN = NOUN,DATIVE;
-Noun@Nom NOUN -> Adj@Nom !Noun@Nom;
-Noun@Acc NOUN -> Adj@Acc !Noun@Acc;
-Noun@Gen OF = GENITIVE,NOUN;
-Noun@Gen OF -> !Noun@Gen Noun@Gen;
 
-Gerund@Nom NOUN = GERUND,NOMITIVE;
-Gerund@Acc NOUN = GERUND,ACCUSATIVE;
-Gerund@Abl NOUN = GERUND,ABLATIVE;
-Gerund@Dat NOUN = GERUND,DATIVE;
-Gerund@Gen OF = GENITIVE,GERUND;
-Noun@Noun[FlagsTransfer] NOUN -> Gerund@Nom;
-Noun@Noun[FlagsTransfer] NOUN -> Gerund@Acc;
-Noun@Noun[FlagsTransfer] NOUN -> Gerund@Dat;
-Noun@Noun[FlagsTransfer] NOUN -> Gerund@Abl;
-Noun@Noun[FlagsTransfer] NOUN -> Gerund@Gen;
+Gerund@Gerund NOUN = GERUND;
+Noun@Noun[FlagsTransfer] NOUN -> Gerund@Gerund;
 
 
 Partic@Partic NOUN = PARTICIPLE;
@@ -53,19 +33,17 @@ Adj@Adj[FlagsTransfer] ADJECTIVE -> !Partic@Partic; (.1) //The "boiled" water
 
 
 
-Noun@Nom NOUN -> !Pron@Nom;
-Noun@Acc NOUN -> !Pron@Acc;
-Noun@Dat NOUN -> !Pron@Dat;
-Noun@Abl NOUN -> !Pron@Abl;
-Noun@Gen OF -> !Pron@Gen;
+Noun@Noun [FlagsTransfer] NOUN -> !Pron@Pron;
 
 Conj@Conj CONJUNCTION = CONJUNCTION;
 Noun@Noun(CaseAgree)[FlagsPlural] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;(1.5)
 
 Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCTION);(.9)
 
-Noun@Noun NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
-Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
+Noun@Gen NOUN = NOUN,GENITIVE; 
+
+Noun@Noun[FlagsTransfer] NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
+Noun@Noun[FlagsTransfer] NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
 
 
 Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
@@ -77,20 +55,17 @@ Adverb@Adverb ADVERB = ADVERB;
 Prep@Prep WHERE = PREPOSITION;
 Verb@Verb VERB = VERB;
 Verb@Intran VERB = VERB,INTRANSITIVE;
-Noun@Noun NOUN -> !Noun@Nom;
-Noun@Noun NOUN -> !Pron@Inter; //I love Who I love
-Noun@Noun NOUN -> !Noun@Acc;
-Noun@Noun NOUN -> !Noun@Abl;
-Noun@Noun NOUN -> !Noun@Dat;
-Noun@Noun NOUN -> Adj@Adj !Noun@Noun;(.1)
+Noun@Noun NOUN -> Adj@Adj !Noun@Noun;(.001)
 Noun@Noun(CaseAgree) NOUN -> Adj@Adj !Noun@Noun;
 
 Noun@Noun NOUN = INFINITIVE;
 Infin@Infin NOUN = INFINITIVE;
 Noun@Noun[FlagsAcc] NOUN -> Infin@Infin; //I like "eating"
 Noun@Noun[FlagsNom] NOUN -> Infin@Infin; //I like "eating"
-Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
-Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
+Noun@Noun[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
+Noun@Noun[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
+Noun@Noun[FlagsNom] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
+Noun@Noun[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
 
 
 
@@ -128,16 +103,6 @@ Sent CLAUSE -> Sent(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.15) //Favor les
 
 //End
 
-
-//
-// The fact is "i ate potatoes"
-Verb@Is VERB = VERB,IS;
-Sent CLAUSE -> Noun@Noun !Verb@Is Sent;(.7)
-Sent CLAUSE -> Noun@Noun Noun@Noun; (.1) //Cats like dogs,and [dogs parrots]
-
-// Predicate nouns are nouns of same case connected by "IS"
-Sent (CaseAgree) CLAUSE -> Noun@Noun !Verb@Is Noun@Noun; (1.)
-
 //Appositive nouns agree in case  The "Dog Cage"
 Sent (CaseAgree)[FlagsAppositive] NOUN -> !Noun@Noun Noun@Noun; (.01)  //Less common than genitives
 
@@ -145,8 +110,8 @@ Sent (CaseAgree)[FlagsAppositive] NOUN -> !Noun@Noun Noun@Noun; (.01)  //Less co
 Verb@Verb(Intransitive) VERB -> !Verb@Verb Prep@Prep; (.7) //Favor explicit use of syntax
 
 //Gentives can be used with adjactives to "desirous of learning"
-Adj@Adj(CaseGen) ADJECTIVE -> !Adj@Adj Noun@Noun ; (.6) //Less common?
-Adj@Adj(CaseGen) ADJECTIVE -> Noun@Noun !Adj@Adj ; (1)
+Adj@Adj(CaseGen) ADJECTIVE -> !Adj@Adj Noun@Noun ; (.05) //Less common?
+Adj@Adj(CaseGen) ADJECTIVE -> Noun@Noun !Adj@Adj ; (.1)
 //
 
 
@@ -160,20 +125,20 @@ Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION)
 
 //End
 
-//
+//
 Noun@Noun[FlagsTransfer] NOUN -> !"non"(CONJUNCTION) Noun@Noun(NOUN);
 //
 
 Sent CLAUSE -> Noun@Noun !Verb@Verb Prep@Prep Noun@Noun(WHERE);
 
 
-Sent CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
-Sent(NumberAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
-Sent(Transitive) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
-Sent(Transitive) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;(1.1)
-Sent(NumberAgree) CLAUSE -> !Verb@Verb Noun@Noun;(1.)
-Sent(NumberAgree) CLAUSE -> !Verb@Verb;(.9)
-Sent(NumberAgree) CLAUSE -> !Conj@Conj Sent(CONJUNCTION);(.8)
+Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
+Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
+Sent(VerbAgree) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
+Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;(1.1)
+Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun;(1.)
+Sent CLAUSE -> !Verb@Verb;(.9)
+Sent CLAUSE -> !Conj@Conj Sent(CONJUNCTION);(.8)
 Sent(NumberAgree) CLAUSE -> Pron@Inter !Verb@Verb;(.8)
 Sent(Transitive) CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun Noun@Noun;(.85)
 Sent CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun;(1.)

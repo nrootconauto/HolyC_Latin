@@ -16,6 +16,7 @@ phase1:
     case '[':
     case ']':
     case ',':
+    case '=':
       tcnt++;
       str++;
       break;
@@ -44,6 +45,9 @@ phase2:
     start:
       case '[':
 	ret[tcnt]=StrNew("[");
+	break;
+      case '=':
+	ret[tcnt]=StrNew("=");
 	break;
       case ']':
 	ret[tcnt]=StrNew("]");

@@ -334,7 +334,7 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=1
     next=EndianU16(ends[idx]);
     RenderCon(dc,x,y,points+last,flags+last,next-last+1,scale);
     last=next+1;
-  }
+  }
   Free(opoints);
   Free(points);
   Free(flags);
@@ -738,8 +738,8 @@ TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21\n     21 S
 
 PressAKey;
 DCFill;
-/*TTF_RenderChr(gr.dc,200,175,f,'a',150);
-TTF_RenderChr(gr.dc,400,175,f,'b',250);
-TTF_RenderChr(gr.dc,200,375,f,'c',200);
-0	TTF_RenderChr(gr.dc,400,375,f,'d',250);*/
+TTF_RenderChr(gr.dc,200,175,font,'a',150);
+TTF_RenderChr(gr.dc,400,175,font,'b',250);
+TTF_RenderChr(gr.dc,200,375,font,'c',200);
+TTF_RenderChr(gr.dc,400,375,font,'d',250);
 #endif
