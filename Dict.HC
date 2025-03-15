@@ -454,6 +454,7 @@ got_inflect:;
 	    DbgPrint("ADD:%d,%s,%X\n",idx3,f->str,flags);
 	    if(!TrieExists(word,flags)) {
 	      added++;
+"%s,%x\n",word,flags;
 	      DeclensionForWord(flags,TrieAdd(word,flags,trans));
 	    }
 	  }
@@ -513,8 +514,7 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
 //	  dummy.inst_flags[0]=GetWordFlags0(str->str,j,FALSE);
 	} else {
 	  if(dummy.inst_cnt<9) {
-	    dummy.inst_offsets[dummy.inst_cnt]=small_ptr;
-//            dummy.inst_flags[dummy.inst_cnt++]=GetWordFlags0(str->str,j,FALSE);
+	    dummy.inst_offsets[dummy.inst_cnt++]=small_ptr;
 	  }
 	}
 	TrimJson(j,"form_of", "word","expansion","glosses","tags","pos","form");

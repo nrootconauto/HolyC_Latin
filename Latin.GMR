@@ -15,6 +15,7 @@ Adverb@Adverb[FlagsTransfer] NOUN -> Adj@Adj; (.1) // Adjectives are like adverb
 Det@Det ADJECTIVE = DETIRMINER;
 Noun@Noun[FlagsTransfer] NOUN -> Det@Det; (.98)
 Noun@Noun(CaseAgree)[FlagsTransfer] NOUN -> !Det@Det Noun@Noun; (.99)
+Noun@Noun(CaseAgree)[FlagsTransfer] NOUN -> !Pron@Pron Noun@Noun; (.5)
 
 Pron@Inter QUESTION = INTEROGITIVE;
 Pron@Pron NOUN = PRONOUN;
@@ -67,9 +68,9 @@ Noun@Noun NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
 Noun@Noun NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
 
 
-Noun@Noun(HasQueAtEndWithCase)[FlagsPlural] NOUN -> Noun@Noun !Noun@Noun; (2.0)
-Adj@Adj(HasQueAtEndWithCase)[FlagsPlural] ADJECTIVE -> Adj@Adj !Adj@Adj; (2.0)
-Verb@Verb(HasQueAtEnd)[FlagsPlural] VERB -> Verb@Verb !Verb@Verb; (2.0)
+Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
+Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (2.0)
+Verb@Verb(HasQueAtEnd)[FlagsPluralQue] VERB -> Verb@Verb(VERB) !Verb@Verb; (2.0)
 
 
 Adverb@Adverb ADVERB = ADVERB;
@@ -81,12 +82,13 @@ Noun@Noun NOUN -> !Pron@Inter; //I love Who I love
 Noun@Noun NOUN -> !Noun@Acc;
 Noun@Noun NOUN -> !Noun@Abl;
 Noun@Noun NOUN -> !Noun@Dat;
-Noun@Noun NOUN -> Adj@Adj !Noun@Noun;
+Noun@Noun NOUN -> Adj@Adj !Noun@Noun;(.1)
+Noun@Noun(CaseAgree) NOUN -> Adj@Adj !Noun@Noun;
 
 Noun@Noun NOUN = INFINITIVE;
 Infin@Infin NOUN = INFINITIVE;
 Noun@Noun[FlagsAcc] NOUN -> Infin@Infin; //I like "eating"
-Noun@Noun[FlagsNom] NOUN -> Infin@Infin; //I like "eating"
+Noun@Noun[FlagsNom] NOUN -> Infin@Infin; //I like "eating"
 Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
 Noun@Noun(CaseAcc)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
 
@@ -158,8 +160,7 @@ Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION)
 
 //End
 
-
-//
+//
 Noun@Noun[FlagsTransfer] NOUN -> !"non"(CONJUNCTION) Noun@Noun(NOUN);
 //
 
