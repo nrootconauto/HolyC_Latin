@@ -334,7 +334,7 @@ U0 TTF_RenderChrSimple(CDC *dc,I64 x,I64 y,U8 *data,I64 cnt,F64 ppem,F64 scale=1
     next=EndianU16(ends[idx]);
     RenderCon(dc,x,y,points+last,flags+last,next-last+1,scale);
     last=next+1;
-  }
+  }
   Free(opoints);
   Free(points);
   Free(flags);

@@ -249,7 +249,7 @@ U0 DocWordTable(CDoc *doc,U8 *word) {
 }
 DocClear;
 DocMax;
-DocWordTable(DocPut,"velox");
+DocWordTable(DocPut,"oppositus");
 DocWordTable(DocPut,"amo");
 DocWordTable(DocPut,"video");
 DocWordTable(DocPut,"tego");

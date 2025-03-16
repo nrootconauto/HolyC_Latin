@@ -572,11 +572,10 @@ conj:
 	  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)))
 	    goto use_middle;
 	  ast2=GetFirstConjPair(ast2);
-	  if(ast2->end-ast2->start>1) {
+	  if(ast2&&ast2->disp_node&&ast2->end-ast2->start>1) {
 	    use_handle_x=ast2->disp_node->handle_x;
 	    use_handle_y=ast2->disp_node->handle_y;
 	    goto have_handle;
-	    ;
 	  }
 	  use_handle_x=tmp->bound_l;
 	  use_handle_y=tmp->handle_left_y;
@@ -1041,7 +1040,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
       tcnt++;
     }
     ast=ParseSentenceJoin(tcnt,toks);
-"%x\n",ast;
+"((%x))\n",ast;
     if(ast) {
 	DumpAST(ast);
       dc=DrawSentence(ast,tcnt,toks);
@@ -1249,7 +1248,7 @@ DumpSentences(
 //	"[animus est juxta [diversum animos]] hac [tela tenet [diversum fila]."
 //	"[idem animi ] sunt [[omnia animos] in [diversum positum]]."
 //);
-//InteractView("decorum est pro patria mori");
+//InteractView("decorum est pro patria mori");
 //
 //InteractView("in principio [creavit Deus [caelum et  terram]]");
 //DumpSentences("in principio [creavit Deus [caelum et  terram]]");
@@ -1283,15 +1282,15 @@ DumpSentences(
 	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
 	"[septem cognitiones] colligunt rationem et sententiam."
 	"[septem cognitiones] colligunt [ causam descriptumque habensque et [locum  nixa] diuturnitatemque partitamque]."
-	"[septem haec] sunt [ existendum locumque numerumque  longitudinemque tempusque aetatemque et [cogitationem et comparandum]]."
-	"[quinque genus cognitionum] sunt sensum scriptumque inobservatumque divinationemque omnisciensque. "
+	"[septem haec] sunt [ existendum locum numerum  longitudinem tempus aetatemque et [cogitationem et comparandum]]."
+	"[quinque genus cognitionum] sunt sensum scriptum inobservatum divinationem omnisciensque. "
 	"hoc sunt [duo [verum cognitionem] generum]."
 	"[duo primus] sunt visibilem cognitionem."
 	"[hoc tres postremus] sunt [directum cognitum]."
 	"[sensusque cogitareque meminisseque agnoscereque colligensque et reducere] sunt idem."
 	"haec importat Sensum animamque."
 	"[quattuor  sensitivorum] sunt [[sentientes allegationemque] iudiciaque et meminisse]."
-	"[haec multa genera] sunt [[velocem occultataque et incelebrata et perpetua et oppositus]=Adj@Adj]."
+	"[haec multa genera] sunt [[velocem occultatam incelebratam  perpetua oppositamque]=Adj@Adj]=Noun@Noun."
 ,
 	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
         "So that I may have their Virtuees.\0" 
@@ -1330,4 +1329,4 @@ DumpSentences("manus.manuum.manui.manibus.manu");
 //5th Declension
 DumpSentences("res.res.re.rerum.rebus");
 #endif 
-#endif
+#endif	

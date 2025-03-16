@@ -106,6 +106,8 @@ AST *ASTClone(AST *orig) {
   AST *ret=CAlloc(sizeof(AST),mem_task);
   MemCpy(ret,orig,sizeof AST);
   ret->disp_node=NULL;
+  if(ret->base_expression)
+    ret->base_expression=ASTClone(ret->base_expression);
   ret->nomitive=ASTSetClone(ret->nomitive);
   ret->accusative=ASTSetClone(ret->accusative);
   ret->dative=ASTSetClone(ret->dative);
@@ -140,9 +142,9 @@ Bool ASTCompatible(AST *a,AST *b) {
 /*
  * class CRule{
  *   U8 name[STR_LEN];
- * };
+ * };
  */
-  if(StrCmp(a->rule,b->rule))
+  if(a->rule!=b->rule)
     return FALSE;
   return TRUE;
 }

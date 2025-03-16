@@ -4,12 +4,38 @@
 #define RESULTS_FP "Results"
 CTask *grammar_task=Fs;
 I64 tmp_rule_idx=0;
+ASTSet *ASTSetTrim(ASTSet *set) {
+  return set;
+  if(!set) return set;
+  Bool changed=FALSE;
+  I64 idx,idx2;
+  AST *a,*b;
+enter:;
+  for(idx=0;idx!=set->cnt;idx++)
+    for(idx2=0;idx2!=set->cnt;idx2++) {
+a=set->body[idx],b=set->body[idx2];
+      if(a!=b&&ASTCompatible(a,b)) {
+        if(a->prob>b->prob) {
+//Remove b from set
+	  MemCpy(&set->body[idx2],&set->body[idx2+1],8*(set->cnt-idx2-1));
+	  ASTDel(b);
+	  --set->cnt;
+	  goto enter;
+	}
+      }
+    }
+  return set;
+}
 ASTSet *ASTSetAddSmart(ASTSet *set,AST *a) {
   if(!set) return ASTSetAdd(set,a);
   I64 cnt=set->cnt;
+  AST *tmp;
   while(--cnt>=0)
-    if(ASTCompatible(a,set->body[cnt])) {
-      ASTDel(a);
+    if(ASTCompatible(a,tmp=set->body[cnt])) {
+      if(a->prob<tmp->prob||1)
+        ASTDel(a);
+      else
+        return ASTSetAdd(set,a);
       return set;
     }
   return ASTSetAdd(set,a);
@@ -479,10 +505,7 @@ U0 AddThingToAST(AST *have,AST *to,I64 where=-1) {
   to->args=I64SetAdd(to->args,have);
   switch(where) {
     case AST_NOUN:
-      if(have->flags&CASE_MASK==0) {
-	//???
-        to->nomitive=ASTSetAdd(to->nomitive,have);
-      } else if(have->flags&NOMITIVE){
+      if(have->flags&NOMITIVE){
 	to->flags|=NOMITIVE;
         to->nomitive=ASTSetAdd(to->nomitive,have);
       } else if(have->flags&ACCUSATIVE){
@@ -497,6 +520,10 @@ U0 AddThingToAST(AST *have,AST *to,I64 where=-1) {
       } else if(have->flags&GENITIVE){
 	to->flags|=GENITIVE;
         to->genitive=ASTSetAdd(to->genitive,have);
+      } else {
+//???? TODOvocative
+	to->flags|=NOMITIVE;
+        to->nomitive=ASTSetAdd(to->nomitive,have);
       }
       break;
     case AST_CONJUNCTION:
@@ -700,7 +727,7 @@ pass:
 //
       //  Dumb Hack!!!
       //
-      //  If we have velox=Adj@Adj,be sure to include "=Adj@Adj" in the ->end
+      //  If we have velox=Adj@Adj,be sure to include "=Adj@Adj" in the ->end
       //
       ret->end=Next(words,ret->start,cnt);
     } else {
@@ -726,9 +753,9 @@ MAKE SURE ARGUMNENTS DONT OVERLAP,use boundary.
         }
       }
     }
-    if(!args) {
-      add_to=ASTSetAddSmart(add_to,ret);
-    } else if(RulePost(ret,r,args->body,ra)) {
+    if(RulePost(ret,r,args->body,ra)) {
+      repeat_cnt=FramePtr("RS.Added");
+      FramePtrSet("RS.Added",repeat_cnt+1);
       add_to=ASTSetAddSmart(add_to,ret);
     } else {
 fail:;
@@ -779,13 +806,10 @@ fail:;
 	  old=add_to;
 	  add_to=Scan(words,add_to,r,matrix,y,cnt,tmp->end,ra+1,tmp2);
 	  Free(tmp2);
-	  if(old!=add_to) {
-	    repeat_cnt=FramePtr("RS.Added");
-	    FramePtrSet("RS.Added",repeat_cnt+1);
-	    if(1+repeat_cnt>=64) {
-	      ASTDel(tmp);
-	      goto fin;
-	    }
+	  repeat_cnt=FramePtr("RS.Added");
+	  if(repeat_cnt>=16) {
+	    ASTDel(tmp);
+	    goto fin;
 	  }
         }
 //Heres the deal,if we encounter a "[",that is the same as our rule,
@@ -850,6 +874,7 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
 	  new=Scan(words,MAllocIdent(*ptr),rule,matrix,y+1,cnt,-x);
 	  FramePtrDel("RS.Added");
 	  Free(*ptr);
+	  new=ASTSetTrim(new);
 	  *ptr=new;
         }
       }

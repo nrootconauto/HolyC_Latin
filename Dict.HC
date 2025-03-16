@@ -1,4 +1,4 @@
-#ifndef TrieAdd
+#ifndef TrieAdd
 extern U8 *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL);
 #endif
 #include "Utils.HC";
