@@ -4,7 +4,7 @@
 
 Adj@Adj ADJECTIVE = ADJECTIVE;
 Det@Det ADJECTIVE = DETIRMINER;
-
+
 
 Noun@Noun[FlagsTransfer] NOUN -> Adj@Adj; (.99) //Substanive adjective is rarley used
 Adverb@Adverb[FlagsTransfer] NOUN -> Adj@Adj; (.1) // Adjectives are like adverbs sometimes
@@ -85,7 +85,7 @@ Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;(.5)
 //
 // "In the begining",God created....
 //
-//Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;(.9)
+Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;(.9)
 //
 //  "((Walking by))...[he] saw a blind man"
 //  

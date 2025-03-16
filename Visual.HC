@@ -1,6 +1,6 @@
 #exe {Cd(__DIR__);};;
 #include "Utils.HC";
-#include "RuleSet.HC";
+#include "Annotate";
 #include "FileBMP.HC";
 U0 CalcBezier(CD3I32 *point,CD3I32*l,CD3I32 *cent,CD3I32 *r) {
   point->x=2.*cent->x-l->x/2.-r->x/2.;
@@ -619,6 +619,17 @@ have_handle:
     ret->handle_x=(ret->bound_r-ret->bound_l)/2.+ret->bound_l;
     ret->handle_y=ret->max_y+8;
   }
+
+  if(ast->number) {
+    dc->color=BLACK;
+    optr=MStrPrint("%d",ast->number);
+    GrTextBox3(dc,ret->handle_x-StrLen(optr)*4,ret->handle_y+4,0,optr);
+    ret->handle_y+=16;
+    Free(optr);
+  }
+
+
+
   if(!ret->connects) {
     ret->handle_left_x=ret->handle_x;
     ret->handle_left_y=ret->handle_y;
@@ -1043,6 +1054,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
 "((%x))\n",ast;
     if(ast) {
 	DumpAST(ast);
+	NumberAST(ast);
       dc=DrawSentence(ast,tcnt,toks);
 "
 

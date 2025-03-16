@@ -1,3 +1,5 @@
+#ifndef RULE_SET_HH
+#define RULE_SET_HH "Logos"
 #include "GrammarAST.HC"
 #define LIMIT_FP "GenCap"
 #define CNT_FP "GenCnt"
@@ -184,7 +186,7 @@ Bool VerbAgree(I64 argc,AST **argv) {
       if(voc++)
 	return FALSE;
   }
-  return TRUE;
+  return nom||acc||abl||dat||voc;
 }
 
 
@@ -922,3 +924,4 @@ AST *ParseSentence(...) {
 U8*rules=FileRead("Latin.GMR");
 ParseRules(rules);
 Free(rules);
+#endif

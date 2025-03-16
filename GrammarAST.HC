@@ -31,6 +31,8 @@ extern class CRule;
 class AST {
   CRule *rule;
   F64 prob,final_prob;
+  I64 number;
+  U8 *note;
   I64 raw_type,act_as_type;
   I64 flags; //From Latin.HC
   ASTSet *nomitive;
@@ -105,6 +107,7 @@ AST *ASTClone(AST *orig) {
   static I64 cnt=0;
   AST *ret=CAlloc(sizeof(AST),mem_task);
   MemCpy(ret,orig,sizeof AST);
+  ret->note=StrNew(ret->note);
   ret->disp_node=NULL;
   if(ret->base_expression)
     ret->base_expression=ASTClone(ret->base_expression);
@@ -180,6 +183,7 @@ U0 ASTDel(AST *a) {
   ASTSetDel(a->preposition);
   ASTSetDel(a->measurement);
   ASTSetDel(a->adverb);
+  Free(a->note);
   Free(a->args); //Present in other things
   MemSet(a,0xbe,sizeof AST);
   Free(a);
