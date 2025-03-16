@@ -457,7 +457,6 @@ got_inflect:;
 	    DbgPrint("ADD:%d,%s,%X\n",idx3,f->str,flags);
 	    if(!TrieExists(word,flags)) {
 	      added++;
-"%s,%x\n",word,flags;
 	      DeclensionForWord(flags,TrieAdd(word,flags,trans));
 	    }
 	  }
@@ -473,6 +472,8 @@ U0 MakeIndex(U8 *outname,U8 *in_name) {
   CIndexBlk dummy;
   I64 len;
   U8 *optr=FileRead(in_name,&len),*fptr,*ostr;
+  I64 lines,line;
+  line=0,lines=StrOcc(optr,'\n');
   U8 *small=CAlloc(len);
   I64 small_ptr=0;
   Bool new;
@@ -532,7 +533,12 @@ skip:;
     JsonDel(j);
     HeapCtrlDel(Fs->data_heap);
     Fs->data_heap=oc;
+    progress1_max=lines;
+    progress1=line++;
+    if(line&31==0)
+      Yield;
   } while(TRUE);
+  ProgressBarsRst;
   file->de.size=(sz/2)<<BLK_SIZE_BITS;
   FClose(file); //Flush to disk to avoid long ram buffering
   Free(optr);

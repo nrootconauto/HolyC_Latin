@@ -1278,7 +1278,7 @@ DumpSentences(
         "[iustus [fides et mos et cognitio]] sunt semitam."
 	"[[fides rei] reperire]  [es verum]  fidem."
 	"[hic fides] surgat per discendum."
-	"[[non animus animusque nexioque libertasque motusque] et dividere] componunt rem."
+	"[[non animus] animusque nexioque libertasque motusque et dividere] componunt rem."
 	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
 	"[septem cognitiones] colligunt rationem et sententiam."
 	"[septem cognitiones] colligunt [ causam descriptumque habensque et [locum  nixa] diuturnitatemque partitamque]."
