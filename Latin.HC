@@ -328,7 +328,9 @@ U0 InitDict0() {
   TrieAdd("tres",ADJECTIVE,"three");
   TrieAdd("quattuor",ADJECTIVE,"four");
   TrieAdd("quinque",ADJECTIVE,"five");
+  TrieAdd("sex",ADJECTIVE,"six");
   TrieAdd("septem",ADJECTIVE,"seven");
+  TrieAdd("duodecim",ADJECTIVE,"twelve");
   TrieAdd("ego",PRONOUN|NOMITIVE|SINGULAR,"I");
   TrieAdd("qui",PRONOUN|NOMITIVE|SINGULAR|INTEROGITIVE,"who");
 }

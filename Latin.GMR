@@ -41,7 +41,7 @@ Noun@Gen NOUN = NOUN,GENITIVE;
 
 Noun@Noun[FlagsTransfer] NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
 Noun@Noun[FlagsTransfer] NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
-Noun@Noun[FlagsTransfer] NOUN -> !Noun@Gen; (.09) //For verbs
+Noun@Noun[FlagsTransfer] NOUN -> !Noun@Gen; (.09) //For verbs
 
 
 Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
@@ -57,21 +57,30 @@ Noun@Noun NOUN -> Adj@Adj !Noun@Noun;(.001)
 Noun@Noun(CaseAgree) NOUN -> Adj@Adj !Noun@Noun;
 
 Noun@Noun NOUN = INFINITIVE;
-Infin@Infin NOUN = INFINITIVE;
-Noun@Noun[FlagsAcc] NOUN -> Infin@Infin; //I like "eating"
-Noun@Noun[FlagsNom] NOUN -> Infin@Infin; //I like "eating"
-Noun@Noun[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
-Noun@Noun[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
-Noun@Noun[FlagsNom] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
-Noun@Noun[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
+Infin@Infin VERB = INFINITIVE;
 
+Infin@Infin VERB -> Adverb@Adverb(ADVERB) !Infin@Infin;
+Infin@Infin VERB -> !Infin@Infin Adverb@Adverb(ADVERB);
+Infin@Infin VERB -> "non"(ADVERB) !Infin@Infin Adverb@Adverb(NOUN);
+
+
+Noun@Noun[FlagsAcc] VERB -> Infin@Infin; //I like "eating"
+Noun@Noun[FlagsNom] VERB -> Infin@Infin; //I like "eating"
+Noun@Noun[FlagsAcc] VERB -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
+Noun@Noun[FlagsAcc] VERB -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
+Noun@Noun[FlagsNom] VERB -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
+Noun@Noun[FlagsNom] VERB -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
+
+//I like "pigs eating carrots"
+Noun@Noun(VerbAgree)[FlagsNom] VERB -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NOUN);
+Noun@Noun(VerbAgree)[FlagsAcc] VERB -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NOUN);
 
 
 Noun@Noun NOUN -> Noun@Noun !Prep@Prep Noun@Noun(WHERE);(.6)
-Noun@Noun NOUN -> !Adj@Adj Prep@Prep Noun@Noun(WHERE);(.7) //sometimes adjective comes befoe preposition(with great care)
+Noun@Noun NOUN -> Adj@Adj !Prep@Prep Noun@Noun(WHERE);(.7) //sometimes adjective comes befoe preposition(with great care)
 Noun@Noun NOUN -> !Noun@Noun Adj@Adj; (.99)
 
-Verb@Verb VERB -> !Verb@Verb Prep@Prep(WHERE) Noun@Noun;
+Verb@Verb VERB -> Verb@Verb(VERB) !Prep@Prep Noun@Noun(WHERE);
 
 Verb@Verb VERB -> !Verb@Verb Adverb@Adverb;(.5)
 Verb@Verb VERB -> !Verb@Verb;
@@ -126,9 +135,6 @@ Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB) Adverb@Adverb(AD
 Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
 //
 
-Sent CLAUSE -> Noun@Noun !Verb@Verb Prep@Prep Noun@Noun(WHERE);
-
-
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
 Sent(VerbAgree) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
@@ -138,7 +144,7 @@ Sent CLAUSE -> !Verb@Verb;(.9)
 Sent CLAUSE -> !Conj@Conj Sent(CONJUNCTION);(.8)
 Sent(NumberAgree) CLAUSE -> Pron@Inter !Verb@Verb;(.8)
 Sent(Transitive) CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun Noun@Noun;(.85)
-Sent CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun;(1.)
+Sent(VerbAgree)  CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun;(1.)
 Sent CLAUSE -> Sent !Conj@Conj Sent;(1.)
 Sent CLAUSE -> !Adverb@Adverb Sent; (.1) //Now he [is] brave
 Sent CLAUSE -> Sent !Adverb@Adverb; (.5) //"I praise them all [at once]" dafuq?

@@ -1259,7 +1259,7 @@ DumpSentences(
 	"[corpus tenet diversum animos] quando [diversum positum existit]."*/
 //	"[animus est juxta [diversum animos]] hac [tela tenet [diversum fila]."
 //	"[idem animi ] sunt [[omnia animos] in [diversum positum]]."
-//);
+	//);
 //InteractView("decorum est pro patria mori");
 //
 //InteractView("in principio [creavit Deus [caelum et  terram]]");
@@ -1306,6 +1306,9 @@ DumpSentences(
 	"[haec multa genera] sunt [[velocem occultatam incelebratam  perpetua oppositamque]=Adj@Adj]=Noun@Noun."
 	"haec attributum sunt rerum."
 	"Metus solum es fusca rem."
+	"[[tongitio scripturarum]  praecedere [duo sensitivum  cognitionem]] sunt  duodecim partis."
+        "[divinatio pariendus] habet [res vivum caeleste infernaque]."
+        "[divinatio ex levare velamen] sunt en [hominibus  animalibusque] [sex  partes]  ."
 ,
 	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
         "So that I may have their Virtuees.\0" 
@@ -1327,6 +1330,9 @@ DumpSentences(
 	"More kinds are quick,hidden,uncelebrated,long-lasting and opposites.\0"
 	"These are the attributes of matter.\0"
 	"There is only fear of indistinct things.\0"
+	"Scriptural knowledge of the 2 kinds is of 12 subdivisions.\0"
+	"The divine knowledge at birth from sensory knowledge is  for hell and heaven creatures.\0"
+	"The divine knowledge from lifting the veil is  of 6 kinds(in humans and animals).\0"
 //"/WWW/index.DD"
 );//et [prohibere et]18
 #if 0

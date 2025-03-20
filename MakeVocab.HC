@@ -330,7 +330,7 @@ U0 WordDBPeenisumPoems(U8 *db,U8 *dirp="Peenisum") {
   DirTreeDel(dir);
   Free(dirp);
 }
-U8 *WordDBGetTranslation(U8 *db_name,U8 *word) {
+U8 *WordDBGetTranslation(U8 *db_name="Words.DB",U8 *word) {
   U8 *tmp=GetBaseWord(word);
   if(tmp)
      word=tmp;
@@ -365,7 +365,7 @@ if(!FileFind("Words.DB")) {
 }
 #if __CMD_LINE__
 //WordDBPeenisumPoems("Words.DB");
-/ordDBAssignTranslation("Words.DB");
+//WordDBAssignTranslation("Words.DB");
 "%s\n",WordDBGetTranslation("Words.DB","esca");
 //"%s\n",WordDBGetTranslation("Words.DB","plantaria");
 #endif

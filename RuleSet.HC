@@ -371,12 +371,11 @@ CRule *ParseFormula(CCmpCtrl *cc,CRule *rule) {
 	  LexExcept(cc,"Expected a valid member type at ");
         if(Lex(cc)!=')')
 	  LexExcept(cc,"Expected a ')' at ");
-        Lex(cc);
       } else 
 	LexExcept(cc,"Expected a '(NOUN/VERB/WHERE...)'");
 
       rule->made_from=I64SetAdd(rule->made_from,StrNew(r2->name),TRUE);
-      rule->raw_type=member_type;
+      r2->raw_type=member_type;
       rules_list=I64SetAdd(rules_list,r2);
       goto pass;
     }
