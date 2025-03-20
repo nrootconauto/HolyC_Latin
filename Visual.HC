@@ -1,6 +1,6 @@
 #exe {Cd(__DIR__);};;
-#include "Utils.HC";
-#include "Annotate";
+#include "Annotate.HC";
+#include "MakeVocab.HC";
 #include "FileBMP.HC";
 U0 CalcBezier(CD3I32 *point,CD3I32*l,CD3I32 *cent,CD3I32 *r) {
   point->x=2.*cent->x-l->x/2.-r->x/2.;
@@ -1280,15 +1280,16 @@ DumpSentences(
 //InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
 
 //Genesis 1
-//DumpSentences("in principio [creavit Deus [terram et caelum]]");
+DumpSentences("in principio [creavit Deus [terram et caelum]]");
 //John 9:1
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
+DumpSentences("[non habeam   inimicitias aliis]. [[res viventium] non habeat mecum inimicitias].","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
 DumpSentences(
 	"ingeniculo [dominum  liberandi] qui fui [ nexionis vastatorem et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."
         "[iustus [fides et mos et cognitio]] sunt semitam."
-	"[[fides rei] reperire]  [es verum]  fidem."
+	"[[fides rei] reperire]  es [verum  fidem]."
 	"[hic fides] surgat per discendum."
 	"[[non animus] animusque nexioque libertasque motusque et dividere] componunt rem."
 	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
@@ -1303,6 +1304,8 @@ DumpSentences(
 	"haec importat Sensum animamque."
 	"[quattuor  sensitivorum] sunt [[sentientes allegationemque] iudiciaque et meminisse]."
 	"[haec multa genera] sunt [[velocem occultatam incelebratam  perpetua oppositamque]=Adj@Adj]=Noun@Noun."
+	"haec attributum sunt rerum."
+	"Metus solum es fusca rem."
 ,
 	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
         "So that I may have their Virtuees.\0" 
@@ -1322,6 +1325,8 @@ DumpSentences(
 	"These are from senses and mind.\0"
 	"The 4 classes of sensory knowledge are senses,speculation,judgement and recalling.\0"
 	"More kinds are quick,hidden,uncelebrated,long-lasting and opposites.\0"
+	"These are the attributes of matter.\0"
+	"There is only fear of indistinct things.\0"
 //"/WWW/index.DD"
 );//et [prohibere et]18
 #if 0

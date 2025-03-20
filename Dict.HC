@@ -119,7 +119,7 @@ CJson *ParseJson(U8 *st,U8 **en=NULL) {
       st++;
       g=CAlloc(sizeof CHashGeneric);
       g->str=name;
-      g->type=HTT_WORD;
+      g->type=HTT_FRAME_PTR;
       g->user_data0=ParseJson(st,&st);
       HashAdd(g,ret->hash_table);
       st=StrFirstOcc(st,",}");
@@ -144,7 +144,7 @@ CJson *ParseJson(U8 *st,U8 **en=NULL) {
     while(*st!=']') {
       g=CAlloc(sizeof CHashGeneric);
       g->str=MStrPrint("%d",ret->cnt++);
-      g->type=HTT_DICT_WORD;
+      g->type=HTT_FRAME_PTR;
       g->user_data0=ParseJson(st,&st);
       HashAdd(g,ret->hash_table);
       st=StrFirstOcc(st,",]");

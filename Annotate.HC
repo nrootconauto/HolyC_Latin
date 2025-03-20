@@ -1,3 +1,5 @@
+#ifndef ANNOTATE
+#define ANNOTATE 21
 #include "RuleSet.HC";
 #define AST_NOUN 1
 #define AST_CONJUNCTION 2
@@ -56,6 +58,7 @@ U0 NumberAST0(AST *a,Bool real=FALSE) {
     else
       a->number=NextNumber;
     NumberASTSet(a->accusative,TRUE);
+    NumberASTSet(a->genitive,TRUE);
     NumberASTSet(a->dative,TRUE);
     NumberASTSet(a->ablative,TRUE);
   } else {
@@ -73,3 +76,4 @@ U0 NumberAST(AST *a) {
   NumberAST0(a);
   FramePtrDel("AST.Number");
 }
+#endif

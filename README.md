@@ -94,5 +94,7 @@ Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent; /*[In the begining],G
 
 # Credits
 
-![Mr Jerome](https://vulgate.org/ot/genesis_1.htm)
-![Latin dictionary dump form Wiktionary](https://kaikki.org/dictionary/Latin/).
+[Mr Jerome](https://vulgate.org/ot/genesis_1.htm)
+[Latin dictionary dump form Wiktionary](https://kaikki.org/dictionary/Latin/).
+[Romans for Priapuss](https://www.sacred-texts.com/cla/priap/).
+[sacredbible.org for Vulgate x Translation](https://sacredbible.org/index.htm)

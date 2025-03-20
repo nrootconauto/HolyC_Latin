@@ -41,6 +41,7 @@ Noun@Gen NOUN = NOUN,GENITIVE;
 
 Noun@Noun[FlagsTransfer] NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
 Noun@Noun[FlagsTransfer] NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
+Noun@Noun[FlagsTransfer] NOUN -> !Noun@Gen; (.09) //For verbs
 
 
 Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
@@ -71,9 +72,6 @@ Noun@Noun NOUN -> !Adj@Adj Prep@Prep Noun@Noun(WHERE);(.7) //sometimes adjective
 Noun@Noun NOUN -> !Noun@Noun Adj@Adj; (.99)
 
 Verb@Verb VERB -> !Verb@Verb Prep@Prep(WHERE) Noun@Noun;
-//Think [of him]
-Verb@Verb VERB -> !Verb@Verb Noun@Gen; (.1) //Favor "I ate the food of life" over "I (ate of food) for life")
-Verb@Verb VERB -> Noun@Gen !Verb@Verb; (.1)
 
 Verb@Verb VERB -> !Verb@Verb Adverb@Adverb;(.5)
 Verb@Verb VERB -> !Verb@Verb;
@@ -85,7 +83,7 @@ Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;(.5)
 //
 // "In the begining",God created....
 //
-Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;(.9)
+Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;(.9)
 //
 //  "((Walking by))...[he] saw a blind man"
 //  
@@ -124,6 +122,8 @@ Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION)
 
 //
 Noun@Noun[FlagsTransfer] NOUN -> !"non"(CONJUNCTION) Noun@Noun(NOUN);
+Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB) Adverb@Adverb(ADVERB);
+Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
 //
 
 Sent CLAUSE -> Noun@Noun !Verb@Verb Prep@Prep Noun@Noun(WHERE);

@@ -6,7 +6,7 @@ U8 *SkipWhitespace(U8 *s) {
     s++;
   return s;
 }
-U8 **TokenizeSentence(U8 *str,U8 **en=NULL) {
+U8 **TokenizeSentence(U8 *str,U8 **en=NULL,Bool include_punc=FALSE) {
   U8 *ostr=str;
   U8 **ret;
   I64 tcnt=0;
@@ -17,6 +17,7 @@ phase1:
     case ']':
     case ',':
     case '=':
+punc1:
       tcnt++;
       str++;
       break;
@@ -31,6 +32,8 @@ phase1:
     case '.':
     case ':':
     case ';':
+      if(include_punc)
+	goto punc1;
     case 0:
       goto phase2_st;
   }
@@ -73,6 +76,11 @@ phase2:
     case '.':
     case ':': 
     case ';':
+      if(include_punc) {
+	ret[tcnt++]=MStrPrint("%c",*str);
+	str++;
+	break;
+      }
      str++; //Ignore '.'
     case 0:
      goto fin;
@@ -103,9 +111,16 @@ I64 ReadUTF8(U8 *st,U8 **en=NULL) {
 }
 
 
-U8 Transliterate(U64 ch) {
+U64 Transliterate(U64 ch) {
 //https://en.wiktionary.org/wiki/Appendix:Unicode/Latin_Extended-A
   switch(ch) {
+    case 0x153:
+      ch='oe';
+      break;
+    case 0xe6:
+    case 0xc6:
+      ch='ae';
+      break;
     case 0x100 ... 0x105:
       ch='a';
       break;
@@ -166,4 +181,13 @@ U8 Transliterate(U64 ch) {
   return ch;
 }
 
+U8 *TransliterateStr(U8 *s) {
+  U8 *ret=MAlloc(2*StrLen(s)+1);
+  U64 c;
+  ret[0]=0;
+  while(c=ReadUTF8(s,&s)) {
+    CatPrint(ret,"%c",Transliterate(c));
+  }
+  return ret; 
+}
 #endif
