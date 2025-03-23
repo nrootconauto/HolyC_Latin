@@ -1,3 +1,5 @@
+#ifndef VISUAL_HH
+#define VISUAL_HH 21
 #exe {Cd(__DIR__);};;
 #include "Annotate.HC";
 #include "MakeVocab.HC";
@@ -103,7 +105,6 @@ U0 DisplayNodeDel(CDisplayNode *n) {
     while(--i>=0)
      DisplayNodeDel(n->connects->body[i]);
   }
-  Free(n);
 }
 CTrie *DisplayNodeGetHoverWord(CDisplayNode *n,I64 ms_x,I64 ms_y) {
   I64 i;
@@ -372,7 +373,7 @@ AST *GetLastConjPair(AST *ast) {
 }
 
 CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *max_h=NULL) {
-  CDisplayNode *ret=CAlloc(sizeof CDisplayNode),*tmp;
+  CDisplayNode *ret=GCCAlloc(sizeof CDisplayNode),*tmp;
   ret->ast=ast;
   ret->level=level;
   ASTSet *set;
@@ -643,8 +644,6 @@ have_handle:
     ret->handle_right_x=tmp->handle_right_x;
     ret->handle_right_y=tmp->handle_right_y;
   }
-  Free(set2);
-  Free(left_sides),Free(right_sides);
   dc->color=old_color2;
   ret->level=level;
   return ret;
@@ -682,14 +681,14 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
   CTrie **forms;
   AST *untainted=ASTClone(sentence);
   wc=ASTGetTrieWords(sentence,NULL);
-  forms=CAlloc(word_cnt*8);
+  forms=GCCAlloc(word_cnt*8);
   t.words=words;
   t.word_font_size=17;
   t.word_cnt=word_cnt;
   t.definition_font_size=14;
   ASTGetTrieWords(sentence,forms);
   t.xoff=0,t.yoff=0;
-  t.word_offsets=MAlloc(word_cnt*8);
+  t.word_offsets=GCCAlloc(word_cnt*8);
   t.max_y=0.;
   for(off=40,idx=0;idx!=word_cnt;idx++) {
     cw=0;
@@ -753,15 +752,13 @@ CDC *DrawSentence(AST*sentence,I64 word_cnt,U8 **words,I64 dwidth=I64_MAX,I64 *
     wrapped=dc;
   if(w) *w=dc->width;
   if(h) *h=dc->height;
-  Free(t.word_offsets);
-  Free(forms);
   ASTDel(untainted);
   return wrapped;
 }
 WinMax;
 U0 DumpSentence(...) {
   try {
-  I64 *dummy_stk=MAlloc(8*(1+argc));
+  I64 *dummy_stk=GCCAlloc(8*(1+argc));
   I64 w,h;
   CDC *dc;
   dummy_stk[0]=argc;
@@ -805,7 +802,6 @@ U0 DumpSentence(...) {
     DCDel(dc);
     ASTDel(sent);
   }
-  Free(dummy_stk);
   } catch PutExcept(FALSE);
 }
 public Bool WordTextBox(CDC *dc=0,I64 x1,I64 y1,U8 *s,I64 bg_color=YELLOW)
@@ -1280,9 +1276,11 @@ DumpSentences(
 //InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
 
 //Genesis 1
-DumpSentences("in principio [creavit Deus [terram et caelum]]");
+try DumpSentences("in principio [creavit Deus [terram et caelum]]");
+catch
+PutExcept(FALSE);
 //John 9:1
-//DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
+//DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 DumpSentences("[non habeam   inimicitias aliis]. [[res viventium] non habeat mecum inimicitias].","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
 DumpSentences(
@@ -1335,21 +1333,5 @@ DumpSentences(
 	"The divine knowledge from lifting the veil is  of 6 kinds(in humans and animals).\0"
 //"/WWW/index.DD"
 );//et [prohibere et]18
-#if 0
-DumpSentences("voco.vocabam.vocabo.vocavi.vocaveram.vocavero.vocor.vocabar.vocabor.vocas.vocemus.vocaremus.vocemur");
-DumpSentences("vocantis");
-//1st declension
-DumpSentences("rosa.rosae.rosae.rosarum.rosis.rosam.rosas");
-DumpSentences("bellum.bella.belli.bellorum.bellis");
-//2nd declension	
-DumpSentences("murus.muri.murorum.muro.murum.muris");
-DumpSentences("murus.muri.murorum.muro.murum.muris");
-//3rd declension
-DumpSentences("homo.homines.hominis.hominum.homini.hominibus");
-DumpSentences("hominem.homines.homine.hominibus.homines");
-//4th Declension
-DumpSentences("manus.manuum.manui.manibus.manu");
-//5th Declension
-DumpSentences("res.res.re.rerum.rebus");
-#endif 
 #endif	
+#endif

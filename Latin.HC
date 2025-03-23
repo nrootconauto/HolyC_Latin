@@ -20,7 +20,7 @@
 #define FUTURE (1<<14)
 #define CONJUNCTION (1<<15)
 #define VERB (1<<16)
-#define NOUN (1<<17)
+#define NOUN (1<<17)
 #define ADJECTIVE (1<<18)
 #define INFINITIVE (1<<19)
 #define PRONOUN (1<<20)
@@ -61,6 +61,7 @@
 #define INTRANSITIVE (1<<54)
 #define VOCATIVE (1<<55)
 #define NEGATIVE (1<<56)
+#define NUMBER (1<<57)
 class CDeclension:CQue {
   I64 flags;
   U64 set;
@@ -312,25 +313,24 @@ new:
         base=base->next;
       }
       base=TrieGet(word);
-      Free(copy);
+       Free(copy);
       return base;
     }
     Free(copy);
   }
-  DbgPrint("Unknown word %s\n",word);
   return NULL;
 }
 
 U0 InitDict0() {
   TrieAdd("nam",CONJUNCTION,"thus");
   TrieAdd("namque",CONJUNCTION,"thus");
-  TrieAdd("duo",ADJECTIVE,"two");
-  TrieAdd("tres",ADJECTIVE,"three");
-  TrieAdd("quattuor",ADJECTIVE,"four");
-  TrieAdd("quinque",ADJECTIVE,"five");
-  TrieAdd("sex",ADJECTIVE,"six");
-  TrieAdd("septem",ADJECTIVE,"seven");
-  TrieAdd("duodecim",ADJECTIVE,"twelve");
+  TrieAdd("duo",NUMBER,"two");
+  TrieAdd("tres",NUMBER,"three");
+  TrieAdd("quattuor",NUMBER,"four");
+  TrieAdd("quinque",NUMBER,"five");
+  TrieAdd("sex",NUMBER,"six");
+  TrieAdd("septem",NUMBER,"seven");
+  TrieAdd("duodecim",NUMBER,"twelve");
   TrieAdd("ego",PRONOUN|NOMITIVE|SINGULAR,"I");
   TrieAdd("qui",PRONOUN|NOMITIVE|SINGULAR|INTEROGITIVE,"who");
 }

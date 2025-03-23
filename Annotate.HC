@@ -26,15 +26,14 @@ I64 NextNumber() {
 extern U0 NumberAST0(AST *a,Bool real=FALSE);
 U0 NumberASTSet(ASTSet *a,Bool real=FALSE) {
   if(!a) return;
-  ASTSet *clone=MAllocIdent(a);
+  ASTSet *clone=GCMAllocIdent(a);
   QSortI64(clone->body,clone->cnt,&PosSort);
   I64 i;
   for(i=0;i!=clone->cnt;i++)
     NumberAST0(clone->body[i],real);
-  Free(clone); 
 }
 U0 NumberAST0(AST *a,Bool real=FALSE) {
-  ASTSet *clone=MAllocIdent(a->args);
+  ASTSet *clone=GCMAllocIdent(a->args);
   AST *have;
   Bool verb1,verb2;
   if(a->base_expression)
@@ -69,11 +68,10 @@ U0 NumberAST0(AST *a,Bool real=FALSE) {
     }
   }
 fin:
-  Free(clone);
 }
 U0 NumberAST(AST *a) {
   FramePtrAdd("AST.Number",1);
   NumberAST0(a);
   FramePtrDel("AST.Number");
 }
-#endif
+#endif

@@ -1,3 +1,5 @@
+#include "GarbageCollector.HC";
+
  //I must deposit a turd to the porcelain throne
 #include "Latin.HC";
 #include "Generator.HC";
@@ -61,7 +63,7 @@ I64Set *I64SetAdd(I64Set *dst,I64 a,Bool repeats=FALSE){
   I64Set *tmp;
   I64 i;
   if(!dst) {
-    dst=CAlloc(sizeof(ASTSet)+8,mem_task);
+    dst=GCCAlloc(sizeof(ASTSet)+8);
     dst->cnt=1;
     dst->body[0]=a;
     return dst;
@@ -71,27 +73,27 @@ I64Set *I64SetAdd(I64Set *dst,I64 a,Bool repeats=FALSE){
     if(dst->body[i]==a)
       return dst;
   }
-  tmp=CAlloc(sizeof(I64Set)+8*(dst->cnt+1),mem_task);
+  tmp=GCCAlloc(sizeof(I64Set)+8*(dst->cnt+1));
   tmp->cnt=dst->cnt+1;
   MemCpy(tmp->body,dst->body,dst->cnt*8);
   tmp->body[tmp->cnt-1]=a;
-  Free(dst);
+  GCFree(dst);
   return tmp;
 }
 ASTSet *ASTSetAdd(ASTSet *dst,AST *a) {
   if(!a) return dst;
   ASTSet *tmp;
   if(!dst) {
-    dst=CAlloc(sizeof(ASTSet)+8,mem_task);
+    dst=GCCAlloc(sizeof(ASTSet)+8);
     dst->cnt=1;
     dst->body[0]=a;
     return dst;
   }
-  tmp=CAlloc(sizeof(ASTSet)+8*(dst->cnt+1),mem_task);
+  tmp=GCCAlloc(sizeof(ASTSet)+8*(dst->cnt+1));
   tmp->cnt=dst->cnt+1;
   MemCpy(tmp->body,dst->body,dst->cnt*8);
   tmp->body[tmp->cnt-1]=a;
-  Free(dst);
+  GCFree(dst);
   return tmp;
 }
 ASTSet *ASTSetAddAll(ASTSet *a,ASTSet *b) {
@@ -105,9 +107,9 @@ ASTSet *ASTSetAddAll(ASTSet *a,ASTSet *b) {
 
 AST *ASTClone(AST *orig) {
   static I64 cnt=0;
-  AST *ret=CAlloc(sizeof(AST),mem_task);
+  AST *ret=GCCAlloc(sizeof(AST));
   MemCpy(ret,orig,sizeof AST);
-  ret->note=StrNew(ret->note);
+  ret->note=GCStrNew(ret->note);
   ret->disp_node=NULL;
   if(ret->base_expression)
     ret->base_expression=ASTClone(ret->base_expression);
@@ -153,11 +155,11 @@ Bool ASTCompatible(AST *a,AST *b) {
 }
 ASTSet *ASTSetClone(ASTSet *orig) {
   if(!orig) return NULL;
-  ASTSet *ret=CAlloc(sizeof(ASTSet)+8*orig->cnt,mem_task);
+  ASTSet *ret=GCCAlloc(sizeof(ASTSet)+8*orig->cnt);
   MemCpy(ret,orig,sizeof ASTSet);
   I64 cnt=orig->cnt;
   while(cnt--) {
-    ret->body[cnt]=ASTClone(orig->body[cnt]);
+    ret->body[cnt]=orig->body[cnt];
   }
   return ret;
 }
@@ -183,17 +185,17 @@ U0 ASTDel(AST *a) {
   ASTSetDel(a->preposition);
   ASTSetDel(a->measurement);
   ASTSetDel(a->adverb);
-  Free(a->note);
-  Free(a->args); //Present in other things
+  GCFree(a->note);
+  GCFree(a->args); //Present in other things
   MemSet(a,0xbe,sizeof AST);
-  Free(a);
+  GCFree(a);
 }
 U0 ASTSetDel(ASTSet *s) {
   if(!s) return;
   I64 cnt=s->cnt;
-  while(cnt--)
-    ASTDel(s->body[cnt]);
-  Free(s);
+//  while(cnt--)
+//    ASTDel(s->body[cnt]);
+  GCFree(s);
 }
 
 U0 DumpASTSet(ASTSet*s) {

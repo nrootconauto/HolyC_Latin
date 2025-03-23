@@ -63,7 +63,7 @@ next:;
 }
 CDC *WordTable(U8 *word) {
   U8 *base=GetBaseWord(word),buf[STR_LEN];
-  if(!base) return;
+  if(!base) return NULL;
   U8 *word_str=GetWordString(base),*text;
   CEntDim ent_max=0,tmp;
   I64 idx,idx2;
@@ -229,10 +229,7 @@ skip:;
     }
 
     en:;
-  Free(f);
   JsonDel(j);
-  Free(word_str);
-  Free(base);
   return dc;
 }
 U0 DocWordTable(CDoc *doc,U8 *word) {
@@ -249,8 +246,7 @@ U0 DocWordTable(CDoc *doc,U8 *word) {
 }
 DocClear;
 DocMax;
-DocWordTable(DocPut,"oppositus");
-DocWordTable(DocPut,"amo");
+DocWordTable(DocPut,"amo");
 DocWordTable(DocPut,"video");
 DocWordTable(DocPut,"tego");
 DocWordTable(DocPut,"audio");

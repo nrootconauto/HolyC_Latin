@@ -255,13 +255,16 @@ Bool CaseAgree(I64 argc,AST **argv) {
   while(i<argc) {
     ast=argv[i];
     if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE) {
+pass:;
       if(!cs) {
 	cs=ast->flags&mask;
-      } else  {
+//	if(!cs) //????
+//	  return FALSE;
+      } else {
 	if((ast->flags&mask)!=cs) {
 	  return FALSE;
 	}
-     }
+      }
     }
     i++;
   }
@@ -354,7 +357,7 @@ CRule *ParseFormula(CCmpCtrl *cc,CRule *rule) {
     member_type=-1;
     if(cc->token=='[') {
       Lex(cc);
-      r2=CAlloc(sizeof CRule);
+      r2=GCCAlloc(sizeof CRule);
       ParseFormula(cc,r2);
       StrPrint(r2->name,"!TMP.%d",tmp_rule_idx++);
       if(!r2)
@@ -392,7 +395,7 @@ CRule *ParseFormula(CCmpCtrl *cc,CRule *rule) {
     if(cc->token==TK_STR) {
       StrPrint(buf,"WR.%s",cc->cur_str);
       if(!FramePtr(buf)) {
-        r2=CAlloc(sizeof CRule);
+        r2=GCCAlloc(sizeof CRule);
 	r2->weight=1;
 	r2->is_word=1;
 	r2->word_flags=INVALID_PTR;
@@ -423,7 +426,7 @@ U0 ParseRules(U8 *text) {
   I64 s,member_type;
   Lex(cc);
   while(cc->token) {
-    rule=CAlloc(sizeof CRule);
+    rule=GCCAlloc(sizeof CRule);
     rule->weight=1;
 //Name
     if(cc->token!=TK_IDENT) 
@@ -604,7 +607,7 @@ ASTSet *DoTerminals(U8 *_word,I64 idx,U8 *force) {
      if(word=GetWord(_word)) {
       while(word) {
         if((word->flags&rule->word_flags==rule->word_flags)||!StrICmp(_word,rule->name)) {
-	  ret=CAlloc(sizeof(AST),mem_task);
+	  ret=GCCAlloc(sizeof(AST));
 	  ret->prob=rule->weight;
 	  ret->word_idx=idx;
 	  ret->act_as_type=AST_NOUN;
@@ -710,7 +713,7 @@ pass:
     if(r->main_item_idx>=0) {
       tmp=args->body[r->main_item_idx];
       if(args->cnt>1) {
-        ret=CAlloc(sizeof(AST),mem_task);
+        ret=GCCAlloc(sizeof(AST));
         ret->flags=tmp->flags;
         ret->base_expression=ASTClone(tmp);
         ret->args=NULL;
@@ -725,12 +728,14 @@ pass:
     ret->end=tmp->end;
 //DONT make an item have a single child,just "overshadow" it
     if(args->cnt==1) {
+	if(ret->start==ret->end+1) {
 //
       //  Dumb Hack!!!
       //
       //  If we have velox=Adj@Adj,be sure to include "=Adj@Adj" in the ->end
       //
       ret->end=Next(words,ret->start,cnt);
+      }
     } else {
       tmp=args->body[0];
       ret->start=tmp->start;
@@ -798,26 +803,24 @@ fail:;
 	  if(StrCmp(accept_rule,tmp->rule->name))
 	    goto skip;
         }
-
         if(!StrCmp(desired,tmp->rule->name)) {
 	  if(args)
-	    tmp2=I64SetAdd(MAllocIdent(args,mem_task),tmp);
+	    tmp2=I64SetAdd(GCMAllocIdent(args),tmp);
 	  else
 	    tmp2=I64SetAdd(NULL,tmp);
 	  old=add_to;
 	  add_to=Scan(words,add_to,r,matrix,y,cnt,tmp->end,ra+1,tmp2);
-	  Free(tmp2);
+	  GCFree(tmp2);
 	  repeat_cnt=FramePtr("RS.Added");
-	  if(repeat_cnt>=16) {
+	  if(repeat_cnt>=20) {
 	    ASTDel(tmp);
 	    goto fin;
 	  }
         }
 //Heres the deal,if we encounter a "[",that is the same as our rule,
         //Just use it("[Sentence]"  is the same as "Sentence")
-        if(attempt&&r==tmp->rule) {
+        if(attempt&&r==tmp->rule)
 	  add_to=ASTSetAddSmart(add_to,ASTClone(tmp));
-        }
         ASTDel(tmp);
 skip:;
       }
@@ -829,7 +832,7 @@ fin:;
   return add_to;
 }
 I64Set *PackratMatrix(U8 **words,I64 cnt) {
-  I64Set **matrix=CAlloc(sizeof(I64Set*)*cnt*cnt);
+  I64Set **matrix=GCCAlloc(sizeof(I64Set*)*cnt*cnt);
   ASTSet **ptr,*new;
   CRule *rule;
   AST *old;
@@ -845,7 +848,6 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
     }
   for(x=cnt-1;x>=0;--x) {
     has_force=FALSE;
-    ptr=MatrixPtr(matrix,x,cnt-1,cnt);
     force=NULL;
     if(x+2<=cnt) {
       if(!StrCmp(words[x+1],"=")) {
@@ -853,6 +855,7 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
         has_force=TRUE;
       }
     }
+    ptr=MatrixPtr(matrix,x,cnt-1,cnt);
     *ptr=DoTerminals(words[x],x,force);
 //If we force a rule,be sure to account for the distance of (=Forced@Rule)
     if(has_force&&*ptr) {
@@ -872,9 +875,9 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
         if(rule->made_from) {
 	  ptr=MatrixPtr(matrix,x,y+1,cnt);
 	  FramePtrAdd("RS.Added",0);
-	  new=Scan(words,MAllocIdent(*ptr),rule,matrix,y+1,cnt,-x);
+	  new=Scan(words,GCMAllocIdent(*ptr),rule,matrix,y+1,cnt,-x);
 	  FramePtrDel("RS.Added");
-	  Free(*ptr);
+	  GCFree(*ptr);
 	  new=ASTSetTrim(new);
 	  *ptr=new;
         }
@@ -883,7 +886,6 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
   }
 
   return matrix;
-
 }
 AST *ParseSentenceJoin(I64 argc,U8 **argv) {
   U8 **matrix=PackratMatrix(argv,argc);
@@ -913,7 +915,7 @@ AST *ParseSentenceJoin(I64 argc,U8 **argv) {
     if(cur)
       ASTSetDel(cur);
   }
-  Free(matrix);
+  GCFree(matrix);
   return ret;
 }
 AST *ParseSentence(...) {

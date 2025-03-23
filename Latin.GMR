@@ -2,8 +2,16 @@
 // Rule(FLAGS) is flags
 
 
+Num@Num ADJECTIVE = NUMBER; 
+
+Adj@Adj[FlagsAcc] ADJECTIVE -> Num@Num;
+Adj@Adj[FlagsNom] ADJECTIVE -> Num@Num;
+Noun@Noun NOUN -> Num@Num !Noun@Noun;
+
+
 Adj@Adj ADJECTIVE = ADJECTIVE;
 Det@Det ADJECTIVE = DETIRMINER;
+
 
 
 Noun@Noun[FlagsTransfer] NOUN -> Adj@Adj; (.99) //Substanive adjective is rarley used
@@ -28,8 +36,6 @@ Noun@Noun[FlagsTransfer] NOUN -> !Partic@Partic; (.3)
 Adj@Adj[FlagsTransfer] ADJECTIVE -> !Partic@Partic; (.1) //The "boiled" water
 //Noun@Noun NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
 
-
-
 Noun@Noun [FlagsTransfer] NOUN -> !Pron@Pron;
 
 Conj@Conj CONJUNCTION = CONJUNCTION;
@@ -53,34 +59,33 @@ Adverb@Adverb ADVERB = ADVERB;
 Prep@Prep WHERE = PREPOSITION;
 Verb@Verb VERB = VERB;
 Verb@Intran VERB = VERB,INTRANSITIVE;
-Noun@Noun NOUN -> Adj@Adj !Noun@Noun;(.001)
+Noun@Noun NOUN -> Adj@Adj !Noun@Noun;(.001)
 Noun@Noun(CaseAgree) NOUN -> Adj@Adj !Noun@Noun;
 
-Noun@Noun NOUN = INFINITIVE;
-Infin@Infin VERB = INFINITIVE;
+Infin@Infin NOUN = INFINITIVE;
 
-Infin@Infin VERB -> Adverb@Adverb(ADVERB) !Infin@Infin;
-Infin@Infin VERB -> !Infin@Infin Adverb@Adverb(ADVERB);
-Infin@Infin VERB -> "non"(ADVERB) !Infin@Infin Adverb@Adverb(NOUN);
+Infin@Infin NOUN -> Adverb@Adverb(ADVERB) !Infin@Infin;(.1)
+Infin@Infin NOUN -> !Infin@Infin Adverb@Adverb(ADVERB);(.1)
+Infin@Infin NOUN -> "non"(ADVERB) !Infin@Infin Adverb@Adverb(NOUN);(.1)
 
 
-Noun@Noun[FlagsAcc] VERB -> Infin@Infin; //I like "eating"
-Noun@Noun[FlagsNom] VERB -> Infin@Infin; //I like "eating"
-Noun@Noun[FlagsAcc] VERB -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
-Noun@Noun[FlagsAcc] VERB -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
-Noun@Noun[FlagsNom] VERB -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
-Noun@Noun[FlagsNom] VERB -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
+Noun@Noun[FlagsAcc] NOUN -> Infin@Infin; //I like "eating"
+Noun@Noun[FlagsNom] NOUN -> Infin@Infin; //I like "eating"
+Noun@Noun[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
+Noun@Noun[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
+Noun@Noun[FlagsNom] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
+Noun@Noun[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
 
 //I like "pigs eating carrots"
-Noun@Noun(VerbAgree)[FlagsNom] VERB -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NOUN);
-Noun@Noun(VerbAgree)[FlagsAcc] VERB -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NOUN);
+Noun@Noun(VerbAgree)[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NOUN);
+Noun@Noun(VerbAgree)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NOUN);
 
 
 Noun@Noun NOUN -> Noun@Noun !Prep@Prep Noun@Noun(WHERE);(.6)
 Noun@Noun NOUN -> Adj@Adj !Prep@Prep Noun@Noun(WHERE);(.7) //sometimes adjective comes befoe preposition(with great care)
 Noun@Noun NOUN -> !Noun@Noun Adj@Adj; (.99)
 
-Verb@Verb VERB -> Verb@Verb(VERB) !Prep@Prep Noun@Noun(WHERE);
+Verb@Verb VERB -> Verb@Verb(VERB) !Prep@Prep Noun@Noun(WHERE);
 
 Verb@Verb VERB -> !Verb@Verb Adverb@Adverb;(.5)
 Verb@Verb VERB -> !Verb@Verb;

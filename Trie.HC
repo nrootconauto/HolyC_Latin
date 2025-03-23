@@ -1,3 +1,5 @@
+#ifndef TRIE_HH
+#define TRIE_HH 21
 #define ALPHABET_SIZE 26
 CTask *trie_task = Fs;
 class CTrie {
@@ -61,3 +63,4 @@ CTrie *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL) {
   *ins_at = new;
   return new;
 }
+#endif

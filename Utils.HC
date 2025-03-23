@@ -1,3 +1,4 @@
+#include "GarabageCollector.HC";
 #ifndef UTILS_H
 #define UTILS_H 1
 // a b c NULL (NULL terminated),ends at end of input or '.'
@@ -190,4 +191,4 @@ U8 *TransliterateStr(U8 *s) {
   }
   return ret; 
 }
-#endif
+#endif
