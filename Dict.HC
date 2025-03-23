@@ -168,7 +168,7 @@ CJson *ParseJson(U8 *st,U8 **en=NULL) {
   if(!ret) throw('JSON');
   return ret;
 }
-U0 JsonDel(CJson *j) {
+U0 JsonDel(CJson *j) {
   I64 bucket;
   CHashGeneric *g;
   switch(j->type) {
@@ -316,18 +316,19 @@ CJson *GetJsonMember(CJson *j,U8 *member,I64 type=-1) {
 	      CONJUGATION3| \
 	      CONJUGATION4| \
 	      NOUN|VERB|PARTICIPLE|INFINITIVE|PRONOUN)
+#define CASE_MASK (NOMITIVE|ACCUSATIVE|ABLATIVE|DATIVE|GENITIVE|VOCATIVE)
 I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
   static I64 recur=0;
-  if(++recur>=5) {
+  if(++recur>=2) {
     --recur;
     return 0;
   }
-  I64 flags=0,base_flags=0,idx3,idx2,idx;
-  Bool use_new_flags=FALSE;
+  I64 flags=0,base_flags=0,idx3,idx2,idx,cs,new_flags;
   U8 dummy[STR_LEN];
+  Bool has_forms=FALSE;
   U8 *tmp,*wstr;
   CJson *n,*f,*senses,*formof,*tags;
-  I64 inflect_mask=INFLECT_MASK;
+  I64 inflect_mask=0;
   I64 added=0;
   if(n=GetJsonMember(j,"pos",J_STR)) {
     if(!StrICmp(n->str,"verb")) flags|=VERB;
@@ -340,20 +341,12 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
     else if(!StrICmp(n->str,"det")) flags|=DETIRMINER;
   }
   base_flags=flags;
+  has_forms=ToBool(GetJsonMember(j,"forms",J_ARRAY));
   for(idx3=0;idx3!=2;idx3++) {
     if(idx3==0)
       senses=GetJsonMember(j,"senses",J_ARRAY);
     else if(idx3==1) {
-      if(tmp=GetBaseWord(word)) {
-        wstr=GetWordString(tmp);
-        if(wstr) {
-	  JsonDel(j);
-	  j=ParseJson(wstr);
-        }
-        senses=GetJsonMember(j,"forms",J_ARRAY);
-        Free(wstr);
-        Free(tmp);
-      }
+      senses=GetJsonMember(j,"forms",J_ARRAY);
     }
     if(senses) {
       for(idx2=0;idx2!=senses->cnt;idx2++) {
@@ -364,25 +357,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	  if(formof=GetJsonMember(n,"form",J_STR)) {
 	    if(StrICmp(word,formof->str))
 	      goto skip;
-	  }
-//Can be forms of multiple things,just use 1st one?
-        if(formof=GetJsonMember(n,"form_of",J_ARRAY)) {
-	  if(formof=GetJsonMember(formof,"0",J_NODE))
-	    if(formof=GetJsonMember(formof,"word",J_STR)) {
-	      if(StrCmp(word,tmp=formof->str)) {
-	        wstr=GetWordString(tmp);
-	        if(wstr) {
-		  inflect_mask&=GetWordFlags0(tmp,formof=ParseJson(wstr),FALSE);
-		  JsonDel(formof);
-		  Free(wstr);
-	        }
-	        goto got_inflect;
-	      } 
-	    }
-        }
-        inflect_mask=0;
-got_inflect:;
-// If we arent adding,just grab all the flags
+	  }// If we arent adding,just grab all the flags
         if(add) flags=base_flags;
 
         if(n&&(n=GetJsonMember(n,"tags",J_ARRAY))) {
@@ -435,30 +410,49 @@ got_inflect:;
 	      DbgPrint("UNIMP:%s,%s,%x(%x)\n",f->str,word,flags|inflect_mask,old);
 	    }
 	  }
-	  if(add) {
-	    flags|=inflect_mask;
-//Make sure it has a case/number if noun/adjective/pronoun
-	    if(0&&flags&(NOUN|ADJECTIVE|PRONOUN|PARTICIPLE)) {
-	       if(!(flags&(
-		NOMITIVE|VOCATIVE|ACCUSATIVE|ABLATIVE|DATIVE|GENITIVE
-		)))
-		goto skip;
-	    }
-	    if(flags&INFINITIVE)
+	  if(flags&INFINITIVE)
 //Nroot doesnt like this
-	      flags&=~VERB;
+	    flags&=~VERB;
 //Only participles got declensions
-	    if(flags&(PARTICIPLE|
-		  DECLENSION1|
-		  DECLENSION2|
-		  DECLENSION3|
-		  DECLENSION4|
-		  DECLENSION5
-		  ))
+	  if(flags&(PARTICIPLE|
+	        DECLENSION1|
+	        DECLENSION2|
+	        DECLENSION3|
+	        DECLENSION4|
+	        DECLENSION5
+	        ))
 //Nroot doesnt like this either
-	      flags&=~VERB;
-	    DbgPrint("ADD:%d,%s,%X\n",idx3,f->str,flags);
+	    flags&=~VERB;
+//Take flags  from senses.
+	  if(idx3==0) {
+	    if(!idx2)
+	      base_flags|=flags;
+	    if(has_forms)
+		goto skip;
+	  }
+	  if(add) {
+	    if(BCnt(flags&(CASE_MASK))>1) {
+	      DbgPrint("CM_ADD:%d,%s,%X\n",idx3,f->str,flags);
+	      static I64 each[6]={
+	      NOMITIVE,
+		    ACCUSATIVE,
+		    ABLATIVE,
+		    DATIVE,
+		    GENITIVE,
+		    VOCATIVE
+		    };
+	      for(cs=0;cs!=6;cs++) {
+		new_flags=(flags&~CASE_MASK)|each[cs];
+	        if(!TrieExists(word,new_flags)&&flags&each[cs]) {
+		  added++;
+		  DeclensionForWord(new_flags,TrieAdd(word,new_flags,trans));
+	        }
+	      }
+	    } else
 	    if(!TrieExists(word,flags)) {
+	      if(flags&NOUN&&!(flags&CASE_MASK))
+		goto skip;
+	      DbgPrint("ADD:%d,%s,%X\n",idx3,f->str,flags);
 	      added++;
 	      DeclensionForWord(flags,TrieAdd(word,flags,trans));
 	    }

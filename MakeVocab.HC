@@ -1,5 +1,5 @@
-#ifndef BAYES_MODE 21
-#define BAYES_MODE
+#ifndef BAYES_MODE
+#define BAYES_MODE 21
 #exe{Cd(__DIR__);};
 #include "GrammarAST.HC";
 #include "Dict.HC";
@@ -14,8 +14,9 @@ class CFileHashTable {
 class CFileHashEntry {
   U64 ident;
   I64 value;
-  U32 next;
-  U8 name[124];
+  U64 flags;  // -8
+  U32 next; // -4
+  U8 name[128-4-8];
   U8 translation1[128];
   U8 translation2[128];
   U8 translation3[128];

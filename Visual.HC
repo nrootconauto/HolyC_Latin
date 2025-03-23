@@ -1274,13 +1274,12 @@ DumpSentences(
 //InteractView("[[spiritus Dei] ferebatur  super aquas]");
 //InteractView("Res sunt formamentis abditis.");
 //InteractView("et [praeteriens [vidit hominem caecum a nativitate]].");
-
 //Genesis 1
 try DumpSentences("in principio [creavit Deus [terram et caelum]]");
 catch
 PutExcept(FALSE);
 //John 9:1
-//DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
+//DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 DumpSentences("[non habeam   inimicitias aliis]. [[res viventium] non habeat mecum inimicitias].","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
 DumpSentences(
@@ -1294,7 +1293,7 @@ DumpSentences(
 	"[septem cognitiones] colligunt rationem et sententiam."
 	"[septem cognitiones] colligunt [ causam descriptumque habensque et [locum  nixa] diuturnitatemque partitamque]."
 	"[septem haec] sunt [ existendum locum numerum  longitudinem tempus aetatemque et [cogitationem et comparandum]]."
-	"[quinque genus cognitionum] sunt sensum scriptum inobservatum divinationem omnisciensque. "
+	"[quinque genus cognitionum] sunt [sensum scriptum inobservatum divinationem omnisciensque]. "
 	"hoc sunt [duo [verum cognitionem] generum]."
 	"[duo primus] sunt visibilem cognitionem."
 	"[hoc tres postremus] sunt [directum cognitum]."

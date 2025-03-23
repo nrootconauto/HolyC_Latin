@@ -194,7 +194,7 @@ U0 ASTSetDel(ASTSet *s) {
   if(!s) return;
   I64 cnt=s->cnt;
 //  while(cnt--)
-//    ASTDel(s->body[cnt]);
+//    ASTDel(s->body[cnt]);
   GCFree(s);
 }
 

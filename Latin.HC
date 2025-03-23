@@ -20,7 +20,7 @@
 #define FUTURE (1<<14)
 #define CONJUNCTION (1<<15)
 #define VERB (1<<16)
-#define NOUN (1<<17)
+#define NOUN (1<<17)
 #define ADJECTIVE (1<<18)
 #define INFINITIVE (1<<19)
 #define PRONOUN (1<<20)

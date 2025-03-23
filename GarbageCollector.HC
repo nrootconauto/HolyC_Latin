@@ -120,7 +120,7 @@ U0 GCTask(CTask *for_task) {
 
   while(TRUE) {
     gc_next=tS-old_tS+1.1;
-    Sleep(1000+(tS-old_tS)*1000.);
+    Sleep(1000+(tS-old_tS)*1000.);
     old_tS=tS;
     bucket=GC_MASK+1;
     while(--bucket>=0) {

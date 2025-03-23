@@ -246,7 +246,7 @@ U0 DocWordTable(CDoc *doc,U8 *word) {
 }
 DocClear;
 DocMax;
-DocWordTable(DocPut,"amo");
+DocWordTable(DocPut,"amo");
 DocWordTable(DocPut,"video");
 DocWordTable(DocPut,"tego");
 DocWordTable(DocPut,"audio");

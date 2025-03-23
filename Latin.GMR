@@ -59,7 +59,7 @@ Adverb@Adverb ADVERB = ADVERB;
 Prep@Prep WHERE = PREPOSITION;
 Verb@Verb VERB = VERB;
 Verb@Intran VERB = VERB,INTRANSITIVE;
-Noun@Noun NOUN -> Adj@Adj !Noun@Noun;(.001)
+Noun@Noun NOUN -> Adj@Adj !Noun@Noun;(.001)
 Noun@Noun(CaseAgree) NOUN -> Adj@Adj !Noun@Noun;
 
 Infin@Infin NOUN = INFINITIVE;
@@ -141,7 +141,7 @@ Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
 //
 
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
-Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
+Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
 Sent(VerbAgree) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun;(1.)

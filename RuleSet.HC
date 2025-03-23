@@ -28,19 +28,29 @@ a=set->body[idx],b=set->body[idx2];
     }
   return set;
 }
+I64 ASTScoreSortRev(AST *a,AST *b) {
+  if(b->prob>a->prob)
+    return 1;
+  if(b->prob<a->prob)
+    return -1;
+  return 0;
+} 
 ASTSet *ASTSetAddSmart(ASTSet *set,AST *a) {
   if(!set) return ASTSetAdd(set,a);
   I64 cnt=set->cnt;
   AST *tmp;
   while(--cnt>=0)
     if(ASTCompatible(a,tmp=set->body[cnt])) {
-      if(a->prob<tmp->prob||1)
+      if(a->prob<tmp->prob)
         ASTDel(a);
       else
-        return ASTSetAdd(set,a);
-      return set;
+        set=ASTSetAdd(set,a);
+      goto fin;
     }
-  return ASTSetAdd(set,a);
+  set=ASTSetAdd(set,a);
+fin:;
+  QSortI64(set->body,set->cnt,&ASTScoreSortRev);
+  return set;
 }
 class CRule {
   U8 name[STR_LEN]; //Rule name or word name
@@ -258,8 +268,9 @@ Bool CaseAgree(I64 argc,AST **argv) {
 pass:;
       if(!cs) {
 	cs=ast->flags&mask;
+
 //	if(!cs) //????
-//	  return FALSE;
+//	  return FALSE;
       } else {
 	if((ast->flags&mask)!=cs) {
 	  return FALSE;
@@ -587,8 +598,9 @@ I64Set **MatrixPtr(U8 **matrix,I64 x,I64 y,I64 cnt) {
 Bool RulePost(AST *ast,CRule *rule,I64 *args,I64 arg_cnt) {
   Bool ret=TRUE;
   if(rule->validate_fun)
-    if(!CallExtStr(rule->validate_fun,arg_cnt,args))
+    if(!CallExtStr(rule->validate_fun,arg_cnt,args)) {
       ret=FALSE;
+    }
   if(rule->flags_fun)
     ast->flags|=CallExtStr(rule->flags_fun,arg_cnt,args);
   return ret;
@@ -634,6 +646,14 @@ ASTSet *DoTerminals(U8 *_word,I64 idx,U8 *force) {
 	  ret->args=I64SetAdd(ret->args,ret);
 	  ret->rule=rule;
 
+	  if(ret->flags&VOCATIVE)
+	    ret->prob/=3.;
+	  if(ret->flags&ABLATIVE)
+	    ret->prob/=2.;
+	  if(ret->flags&DATIVE)
+	    ret->prob/=2.;
+	  if(ret->flags&GENITIVE)
+	    ret->prob/=2.;
 
           if(RulePost(ret,rule,ret->args->body,ret->args->cnt)) {
 	    all=ASTSetAdd(all,ret);
@@ -647,6 +667,8 @@ ASTSet *DoTerminals(U8 *_word,I64 idx,U8 *force) {
     }
 skip:;
   }
+  if(all)
+    QSortI64(all->body,all->cnt,&ASTScoreSortRev);
   return all;
 }
 I64 Next(U8 **words,I64 x,I64 cnt,Bool next=TRUE){
@@ -812,7 +834,7 @@ fail:;
 	  add_to=Scan(words,add_to,r,matrix,y,cnt,tmp->end,ra+1,tmp2);
 	  GCFree(tmp2);
 	  repeat_cnt=FramePtr("RS.Added");
-	  if(repeat_cnt>=20) {
+	  if(repeat_cnt>=16) {
 	    ASTDel(tmp);
 	    goto fin;
 	  }
