@@ -108,6 +108,36 @@ I64 FlagsSingle(I64 argc,AST **argv) {
   }
   return or;
 } 
+
+
+I64 FlagsPrep(I64 argc,AST **argv) {
+  I64 i=0;
+  AST *ast;
+  I64 or=0;
+  for(i=0;i!=argc;i++)  {
+    ast=argv[i];
+    if(ast->act_as_type==AST_WHERE)
+	break;
+    if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE)
+      or|=ast->flags;
+  }
+  return or;
+} 
+
+I64 FlagsConj(I64 argc,AST **argv) {
+  I64 i=0;
+  AST *ast;
+  I64 or=0;
+  for(i=0;i!=argc;i++)  {
+    ast=argv[i];
+    if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE)
+      or|=ast->flags;
+  }
+  return or|CONJUNCTION;
+} 
+
+
+
 I64 FlagsPlural(I64 argc,AST **argv) {
   I64 i=0;
   AST *ast;
@@ -602,7 +632,7 @@ Bool RulePost(AST *ast,CRule *rule,I64 *args,I64 arg_cnt) {
       ret=FALSE;
     }
   if(rule->flags_fun)
-    ast->flags|=CallExtStr(rule->flags_fun,arg_cnt,args);
+    ast->flags=CallExtStr(rule->flags_fun,arg_cnt,args);
   return ret;
 }
 ASTSet *DoTerminals(U8 *_word,I64 idx,U8 *force) {
@@ -656,7 +686,7 @@ ASTSet *DoTerminals(U8 *_word,I64 idx,U8 *force) {
 	    ret->prob/=2.;
 
           if(RulePost(ret,rule,ret->args->body,ret->args->cnt)) {
-	    all=ASTSetAdd(all,ret);
+	    all=ASTSetAddSmart(all,ret);
 	  } else {
 //	    ret->args
 //	    ASTDel(ret);

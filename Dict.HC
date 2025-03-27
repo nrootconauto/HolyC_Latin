@@ -554,7 +554,7 @@ I64 GetWordOffset(U8 *word,I64 inst=0) {
   StrPrint(buf,"JsonPos.%s",buf2);
   
   I64 v=DBValue(buf,,inst+1);
-  if(v==0)
+  if(v==0)
     return -1;
   return v;
 }

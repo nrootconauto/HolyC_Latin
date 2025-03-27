@@ -1282,7 +1282,7 @@ PutExcept(FALSE);
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 DumpSentences("[non habeam   inimicitias aliis]. [[res viventium] non habeat mecum inimicitias].","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
-DumpSentences(
+DumpSentences(
 	"ingeniculo [dominum  liberandi] qui fui [ nexionis vastatorem et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."
         "[iustus [fides et mos et cognitio]] sunt semitam."
@@ -1306,9 +1306,15 @@ DumpSentences("[non habeam   inimicitias aliis]. [[res viventium] non habeat mec
 	"[[tongitio scripturarum]  praecedere [duo sensitivum  cognitionem]] sunt  duodecim partis."
         "[divinatio pariendus] habet [res vivum caeleste infernaque]."
         "[divinatio ex levare velamen] sunt en [hominibus  animalibusque] [sex  partes]  ."
+	"lectio rei sunt [duo genera]."
+	"[differentia de [lectionem rei et divinationem]]  sunt [puritatem certumque]."
+	"[[lectio rei] divinatioque] dissidet [puritatem spatium scientem remque]."
+	"[[tongitio scripturarum] et [tongitio sensitivus]] tenent [[sex omnes res] et [non effatos]]."
+	"divinatio [tenet tantum] formam rei."
+	"[spatium lectionis rei] es [[res infiniti parvi ] e divinationem ] ."
 ,
 	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
-        "So that I may have their Virtuees.\0" 
+        "So that I may have their Virtuees.\0" 	
 	"Right Faith,Conduct and Knowledge are the path.\0"
 	"Belief in discovered substances is correct faith.\0"
 	"This faith is gotten through learning things.\0"
@@ -1330,6 +1336,10 @@ DumpSentences("[non habeam   inimicitias aliis]. [[res viventium] non habeat mec
 	"Scriptural knowledge of the 2 kinds is of 12 subdivisions.\0"
 	"The divine knowledge at birth from sensory knowledge is  for hell and heaven creatures.\0"
 	"The divine knowledge from lifting the veil is  of 6 kinds(in humans and animals).\0"
+	"There are 2 kinds of telepathy.\0"
+	"The difference of telepahy and prophecy are by purity and certianty.\0"
+	"The difference is purity,space,knower and things.\0"
+	"Prophecy has only the form of things.\0"
 //"/WWW/index.DD"
 );//et [prohibere et]18
 #endif	

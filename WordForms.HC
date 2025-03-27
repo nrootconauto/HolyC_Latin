@@ -14,7 +14,7 @@ CEntDim WordTableEntry(CDC *dc,I64 cx,I64 cy,I64Set *f,I64 flags) {
   CTrie dumbt;
   for(idx=0;idx!=f->cnt;idx++) {
     if(trie=GetWord(f->body[idx])) {
-      while(trie) {
+      while(trie) {
         if(trie->flags&flags==flags) {
 	  if(trie->flags&VERB&&(flags&IMPERATIVE^^trie->flags&IMPERATIVE)) {
 	     goto skip;

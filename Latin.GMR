@@ -33,7 +33,7 @@ Noun@Noun[FlagsTransfer] NOUN -> Gerund@Gerund;
 
 Partic@Partic NOUN = PARTICIPLE;
 Noun@Noun[FlagsTransfer] NOUN -> !Partic@Partic; (.3)
-Adj@Adj[FlagsTransfer] ADJECTIVE -> !Partic@Partic; (.1) //The "boiled" water
+Adj@Adj[FlagsTransfer] ADJECTIVE -> !Partic@Partic; (.9) //The "boiled" water
 //Noun@Noun NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
 
 Noun@Noun [FlagsTransfer] NOUN -> !Pron@Pron;
@@ -42,6 +42,7 @@ Conj@Conj CONJUNCTION = CONJUNCTION;
 Noun@Noun(CaseAgree)[FlagsPlural] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;(1.5)
 
 Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCTION);(.9)
+Adj@Adj(CaseAgree)[FlagsConj] ADJECTIVE -> Adj@Adj(CONJUNCTION) !Adj@Adj ;(1.1)
 
 Noun@Gen NOUN = NOUN,GENITIVE; 
 
@@ -81,8 +82,8 @@ Noun@Noun(VerbAgree)[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NO
 Noun@Noun(VerbAgree)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NOUN);
 
 
-Noun@Noun NOUN -> Noun@Noun !Prep@Prep Noun@Noun(WHERE);(.6)
-Noun@Noun NOUN -> Adj@Adj !Prep@Prep Noun@Noun(WHERE);(.7) //sometimes adjective comes befoe preposition(with great care)
+Noun@Noun[FlagsPrep] NOUN -> Noun@Noun !Prep@Prep Noun@Noun(WHERE);(.6)
+Noun@Noun[FlagsPrep] NOUN -> Adj@Adj !Prep@Prep Noun@Noun(WHERE);(.7) //sometimes adjective comes befoe preposition(with great care)
 Noun@Noun NOUN -> !Noun@Noun Adj@Adj; (.99)
 
 Verb@Verb VERB -> Verb@Verb(VERB) !Prep@Prep Noun@Noun(WHERE);
@@ -130,6 +131,7 @@ Sent(CaseAgree) CLAUSE -> Adj@Adj !Noun@Noun;(.1) //Favor lesser than explicit "
 
 // Quam is certified word for  comparsions
 Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> Noun@Noun(COMPARE) !"quam" Noun@Noun(COMPARE);(.6) //Favor comparions
+Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> ["tam"(WHERE) Noun@Noun](COMPARE) !"quam" Noun@Noun(COMPARE);(.6) //Favor comparions
 Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION); (1.) //et ea means "and too XXXX"
 
 //End
@@ -141,7 +143,7 @@ Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
 //
 
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
-Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
+Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
 Sent(VerbAgree) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun;(1.)

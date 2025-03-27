@@ -354,7 +354,7 @@ U0 WordDBPeenisumPoems(U8 *db,U8 *dirp="Peenisum") {
   DirTreeDel(dir);
   Free(dirp);
 }
-U8 *WordDBGetTranslation(U8 *db_name="Words.DB",U8 *word) {
+U8 *WordDBGetTranslation(U8 *db_name="Words.DB",U8 *word) {
   U8 *tmp=GetBaseWord(word);
   if(tmp)
      word=tmp;
