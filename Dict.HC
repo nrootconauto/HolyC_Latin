@@ -4,10 +4,10 @@
 #ifndef TrieAdd
 extern U8 *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL);
 #endif
-#include "Utils.HC";
+U8 *json_file="Latin.json";
 extern U8 *GetBaseWord(U8 *word,I64 inst=0);
 extern U8 *GetWordString(U8 *word,I64 inst=0);
-U8 *json_file=__DIR__"/Latin.json",*index_file=__DIR__"/INDEX.TRIE";
+#include "Utils.HC";
 CTask *mem_task=Fs;
 CHashTable *word_strings=HashTableNew(1<<9);
 #define J_STR 1
@@ -545,48 +545,22 @@ skip:;
   Free(small);
   Free(optr);
 }
+#include "MakeVocab.HC";
 
 I64 GetWordOffset(U8 *word,I64 inst=0) {
-  CFile *file=FOpen(index_file,"r");
-  U8 *ow=word;
-  CIndexBlk dummy;
-  I64 blk=0,idx,off=-1;
-  while(*word) {
-    idx=ToUpper(*word)-'A';
-    SubFBlkRead(file,&dummy,blk);    
-    if(!dummy.body[idx]) 
-      break;
-    blk=dummy.body[idx];
-    word++;
-  }
-  if(!*word)  {
-    SubFBlkRead(file,&dummy,blk);
-    off=dummy.inst_offsets[inst];
-    if(!off) off=-1;
-  }
-  FClose(file);
-  return off;
+  U8 buf[STR_LEN],buf2[STR_LEN];
+  StrCpy(buf2,word);
+  StrUtil(buf2,SUF_TO_LOWER);
+  StrPrint(buf,"JsonPos.%s",buf2);
+  
+  I64 v=DBValue(buf,,inst+1);
+  if(v==0)
+    return -1;
+  return v;
 }
 
 I64 GetWordDftTranslationIdx(U8 *word) {
-  CFile *file=FOpen(index_file,"r");
-  U8 *ow=word;
-  CIndexBlk dummy;
-  I64 blk=0,idx,off=0;
-  while(*word) {
-    idx=ToUpper(*word)-'A';
-    SubFBlkRead(file,&dummy,blk);    
-    if(!dummy.body[idx]) 
-      break;
-    blk=dummy.body[idx];
-    word++;
-  }
-  if(!*word)  {
-    SubFBlkRead(file,&dummy,blk);
-    off=dummy.translation_idx;
-  }
-  FClose(file);
-  return off;
+  return 0;
 }
 
 
@@ -611,17 +585,23 @@ loop:;
     off=off2+BLK_SIZE;
     buffer[bo]=0;
   }
-  if(!StrOcc(buffer,'\n')) {
+  //dumb hack
+  tmp=SkipWhitespace(buffer);
+  if(!StrOcc(tmp,'\n')) {
     goto loop;
-  } else *StrFirstOcc(buffer,"\n")=0;
+  } else *StrFirstOcc(tmp,"\n")=0;
   FClose(file);
-  tmp=StrNew(buffer);
+  tmp=StrNew(tmp);
   Free(buffer);
   return tmp;
 }
 U8 *GetWordString(U8 *word,I64 inst=0)  {
+  U8 tnam[STR_LEN],*fr;
+  StrPrint(tnam,"WS.%s,%d",word,inst);
   CHashGeneric *gen;
   I64 idx=1;
+  if(fr=FramePtr(tnam,mem_task))
+    return StrNew(fr);
   U8 *tmp=_GetWordString(word,inst);
   if(!tmp) {
     return NULL;
@@ -634,6 +614,7 @@ U8 *GetWordString(U8 *word,I64 inst=0)  {
   }
   ret[off++]=bo;
   Free(otmp);
+  FramePtrAdd(tnam,StrNew(ret,mem_task),mem_task);
   return ret;
 }
 U8 *GetBaseWord(U8 *word,I64 inst=0) {
@@ -705,16 +686,6 @@ U8 *SmallDefinition(U8 *def) {
   U8 buf[STR_LEN],*bptr=buf,*want;
   Bool changed=TRUE;
   I64 len1,len2;
-  def=StrNew(def); 
-  if(want=GetBaseWord(def)) {
-    if(StrCmp(want,def)) {
-      bptr=GetTranslation(want);
-      Free(want);
-      Free(def);
-      return bptr;
-    }
-    Free(want);
-  }
   while(changed) {
     changed=FALSE;
     U8 *first=StrFirstOcc(def,"("),*last;
@@ -871,43 +842,62 @@ fin:;
   return ret;
 }
 I64 SetWordDftTranslationIdx(U8 *word,I64 dft) {
-  CFile *file=FOpen(index_file,"w+");
-  U8 *ow=word,*trans;
-  CTrie *trie;
-  CIndexBlk dummy;
-  I64 blk=0,idx,off=0;
-  while(*word) {
-    idx=ToUpper(*word)-'A';
-    SubFBlkRead(file,&dummy,blk);    
-    if(!dummy.body[idx]) 
-      break;
-    blk=dummy.body[idx];
-    word++;
-  }
-  if(!*word)  {
-    SubFBlkRead(file,&dummy,blk);
-    dummy.translation_idx=dft;
-    SubFBlkWrite(file,&dummy,blk);
-  }
-  FClose(file);
-  trans=GetTranslation(ow,TRUE,FALSE,dft);
-  if(trie=TrieGet(ow)) {
-    while(trie&&trans) {
-      Free(trie->translation);
-      trie->translation=StrNew(trans,trie_task);
-      trie=trie->next;
-    }
-  }
-  Free(trans);
-  return off;
+  return 0;
 }
 
-if(!FileFind(__DIR__"/INDEX.TRIE",,0)) {
-  if(FileFind(__DIR__"/Latin.json.Z")) {
-    PopUpOk("I will generate the HolyC dictionary files(Grab a beer).\n  This may take a few minutess\n");
-    Copy(__DIR__"/Latin.json.Z",__DIR__"/Latin.json");
-    MakeIndex(__DIR__"/INDEX.TRIE",__DIR__"/Latin.json");
+//Use this instead of TrieGet,This will account for -ne -que suffixes
+CTrie *GetWord(U8 *word) {
+  if(!word) return NULL;
+  if(*word=='['||*word==']')
+    return NULL;
+  U8 *copy=NULL;
+  U8 *suffix=NULL,*prefix=NULL;
+  I64 add_flags=0;
+  LookUpWord(word);
+  CTrie *base=TrieGet(word),*added;
+  if(base) return base;
+  if(!StrNICmp(word,"in",2)) {
+    copy=StrNew(word+2);
+    if(base=GetWord(copy)) {
+      add_flags=NEGATIVE;
+      prefix="in";
+      goto new;
+    }
+    Free(copy);
   }
+  if(EndsWith(word,"ne")) {
+    copy=StrNew(word);
+    copy[StrLen(word)-2]=0;
+    LookUpWord(copy);
+    if(base=TrieGet(copy)) {
+      add_flags=INTEROGITIVE;
+      suffix="n\e";
+      goto new;
+    }
+    Free(copy);
+  }
+  if(EndsWith(word,"que")) {
+    copy=StrNew(word);
+    copy[StrLen(word)-3]=0;
+    add_flags=CONJUNCTION2;
+    suffix="que";
+new:
+    GetWord(copy);
+    if(base=TrieGet(copy)) {
+      while(base) {
+        added=TrieAdd(word,base->flags|add_flags,base->translation);
+	added->suffix=suffix;
+	added->prefix=prefix;
+	DeclensionForWord(base->flags|add_flags,added);
+        base=base->next;
+      }
+      base=TrieGet(word);
+       Free(copy);
+      return base;
+    }
+    Free(copy);
+  }
+  return NULL;
 }
 
 #endif

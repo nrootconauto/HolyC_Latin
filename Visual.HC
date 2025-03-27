@@ -1282,7 +1282,7 @@ PutExcept(FALSE);
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 DumpSentences("[non habeam   inimicitias aliis]. [[res viventium] non habeat mecum inimicitias].","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
-DumpSentences(
+DumpSentences(
 	"ingeniculo [dominum  liberandi] qui fui [ nexionis vastatorem et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."
         "[iustus [fides et mos et cognitio]] sunt semitam."

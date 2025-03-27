@@ -266,60 +266,6 @@ U0 InitLatin(U8 *file="Latin.INFLECTS") {
 }
 InitLatin;
 #include "Dict.HC";
-//Use this instead of TrieGet,This will account for -ne -que suffixes
-CTrie *GetWord(U8 *word) {
-  if(!word) return NULL;
-  if(*word=='['||*word==']')
-    return NULL;
-  U8 *copy=NULL;
-  U8 *suffix=NULL,*prefix=NULL;
-  I64 add_flags=0;
-  LookUpWord(word);
-  CTrie *base=TrieGet(word),*added;
-  if(base) return base;
-  if(!StrNICmp(word,"in",2)) {
-    copy=StrNew(word+2);
-    if(base=GetWord(copy)) {
-      add_flags=NEGATIVE;
-      prefix="in";
-      goto new;
-    }
-    Free(copy);
-  }
-  if(EndsWith(word,"ne")) {
-    copy=StrNew(word);
-    copy[StrLen(word)-2]=0;
-    LookUpWord(copy);
-    if(base=TrieGet(copy)) {
-      add_flags=INTEROGITIVE;
-      suffix="n\e";
-      goto new;
-    }
-    Free(copy);
-  }
-  if(EndsWith(word,"que")) {
-    copy=StrNew(word);
-    copy[StrLen(word)-3]=0;
-    add_flags=CONJUNCTION2;
-    suffix="que";
-new:
-    GetWord(copy);
-    if(base=TrieGet(copy)) {
-      while(base) {
-        added=TrieAdd(word,base->flags|add_flags,base->translation);
-	added->suffix=suffix;
-	added->prefix=prefix;
-	DeclensionForWord(base->flags|add_flags,added);
-        base=base->next;
-      }
-      base=TrieGet(word);
-       Free(copy);
-      return base;
-    }
-    Free(copy);
-  }
-  return NULL;
-}
 
 U0 InitDict0() {
   TrieAdd("nam",CONJUNCTION,"thus");

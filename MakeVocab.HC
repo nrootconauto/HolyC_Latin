@@ -2,7 +2,6 @@
 #define BAYES_MODE 21
 #exe{Cd(__DIR__);};
 #include "GrammarAST.HC";
-#include "Dict.HC";
 #define FILE_HASHTABLE_IDENT 'HTabbaTH'
 #define FILE_HASHENT_IDENT 'HEnttnEH'
 #define FILE_HASH_MASK 124
@@ -38,7 +37,7 @@ I64 FileNewHashTable(CFile *db,I64 at) {
   FBlkWrite(db,&hdr,at);
   return at;  
 }
-I64 FileHashGet(CFileHashEntry *ret,CFile *db,I64 table,U8 *name) {
+I64 FileHashGet(CFileHashEntry *ret,CFile *db,I64 table,U8 *name,I64 inst=1) {
   CFileHashTable hdr;
   CFileHashEntry ent;
   I64 new,where;
@@ -55,8 +54,10 @@ I64 FileHashGet(CFileHashEntry *ret,CFile *db,I64 table,U8 *name) {
 again:;
   FBlkRead(db,&ent,where);
   if(!StrCmp(name,ent.name)) {
-    FBlkRead(db,ret,where);
-    return where;
+    if(--inst==0) {
+      FBlkRead(db,ret,where);
+      return where;
+    }
   }
   if(!ent.next)
     return NULL;
@@ -171,14 +172,25 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   FClose(file);
 }
 U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
+  if(!FileFind(db)) {
+    CFileHashTable hdr;
+    MemSet(&hdr,0,sizeof CFileHashTable);
+    hdr.ident=FILE_HASHTABLE_IDENT;
+    FileWrite(db,&hdr,sizeof(CFileHashTable));
+  }
+  CFile *dbf=FOpen(db,"w+");
+  FileHashAdd(dbf,0,"DB.Version",1);
+  FClose(dbf);
   U8 *olatin=FileRead(latin_json_file),*ptr=olatin,*trans;
+  I64 lines=StrOcc(olatin,'\n'),line;
   CJson *j,*word,*s,*g,*ss,*gs;
   CHeapCtrl *hc,*old=Fs->data_heap;
-  I64 inst,sense,gloss;
+  I64 inst,sense,gloss,at;
   U8 buf[STR_LEN];
   try {
     while(TRUE) {
       Fs->data_heap=hc=HeapCtrlInit(NULL,Fs,0);
+      at=ptr-olatin;
       j=ParseJson(ptr,&ptr);
       Fs->data_heap=old;
       if(!j) {
@@ -186,6 +198,10 @@ U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
         break;
       }
       if(word=GetJsonMember(j,"word")) {
+        StrPrint(buf,"JsonPos.%s",word->str);
+	dbf=FOpen(db,"w+");
+	FileHashAdd(dbf,0,buf,at);
+        FClose(dbf);
         ss=GetJsonMember(j,"senses");
         if(ss)
 	  for(sense=0;s=GetJsonMember(ss,StrPrint(buf,"%d",sense));sense++) {
@@ -200,12 +216,16 @@ U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
 	  }
       }
       HeapCtrlDel(hc);
+      progress1_max=lines;
+      progress1=++line;
+      if(line&127==0) Yield;
     }
   } catch {
     HeapCtrlDel(hc);
     Fs->data_heap=old;
     PutExcept(TRUE);
   };
+  ProgressBarsRst;
   Free(olatin);
 }
 class CScorePair {
@@ -239,9 +259,11 @@ again1:
       StrCpy(best_word,"");
 
       FBlkRead(db,&roote,tmp);
+      if(StrOcc(roote.name,'.'))
+	goto next;
       FBlkRead(db,&child,roote.value);
       word1=ToF64(child.cnt)/all;
-	MemSet(scores,0,sizeof(CScorePair)*4);
+      MemSet(scores,0,sizeof(CScorePair)*4);
       for(j=0;j<FILE_HASH_MASK;j++) {
         if(tmp2=child.body[j]) {
 again2:;
@@ -249,7 +271,7 @@ again2:;
 	  if(FileHashGet(&tmpe,db,0,childe.name)){
 	    FBlkRead(db,&tmph,tmpe.value); //Read pointer of sub-hashtable
 	    word2=ToF64(tmph.cnt)/all;
-	  }
+	  } 
 	  prob=(word1*(ToF64(childe.value)/ToF64(roote.value)))/word2;// Bayes Theorem
 	  scores[3].score=prob;
 	  StrCpy(scores[3].word,tmpe.name);
@@ -266,6 +288,7 @@ again2:;
       FBlkWrite(db,&roote,tmp);
 
       Yield;
+next:;
       if(roote.next) {
         tmp=roote.next;
         goto again1;
@@ -331,7 +354,7 @@ U0 WordDBPeenisumPoems(U8 *db,U8 *dirp="Peenisum") {
   DirTreeDel(dir);
   Free(dirp);
 }
-U8 *WordDBGetTranslation(U8 *db_name="Words.DB",U8 *word) {
+U8 *WordDBGetTranslation(U8 *db_name="Words.DB",U8 *word) {
   U8 *tmp=GetBaseWord(word);
   if(tmp)
      word=tmp;
@@ -356,8 +379,30 @@ fin:
   FClose(f);
   return ret;
 }
+I64 DBVersion(U8 *db_name="Words.DB") {
+  CFile *db=FOpen(db_name,"r");
+  CFileHashEntry ent;
+  I64 ver=0;
+  if(FileHashGet(&ent,db,0,"DB.Version")) {
+    ver=ent.value;
+  }
+  FClose(db);
+  return ver;
+}
+I64 DBValue(U8 *w,U8 *db_name="Words.DB",I64 which=1) {
+  CFile *db=FOpen(db_name,"r");
+  CFileHashEntry ent;
+  I64 ver=0;
+  if(FileHashGet(&ent,db,0,w,which)) {
+    ver=ent.value;
+  }
+  FClose(db);
+  return ver;
+
+}
 //Del("Words3.DB");
-if(!FileFind("Words.DB")) {
+if(!FileFind("Words.DB")||DBVersion!=1) {
+  Del("Words.DB");
   WordDBFromDict("Words.DB","Latin.json");
   //WordDBVulgate("Words.DB","Genesis");
   //WordDBVulgate("Words.DB","Exodus");
