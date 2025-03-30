@@ -93,7 +93,7 @@ add:;
     next=where;
     hdr.body[hash]=new;
     goto add;
-  }
+  }
 }
 U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   if(!FileFind(db_name)) {
@@ -264,6 +264,8 @@ again1:
       FBlkRead(db,&roote,tmp);
       if(StrOcc(roote.name,'.'))
 	goto next;
+      if(StrOcc(roote.name,','))
+	goto next;
       FBlkRead(db,&child,roote.value);
       word1=ToF64(child.cnt)/all;
       MemSet(scores,0,sizeof(CScorePair)*4);
@@ -289,8 +291,6 @@ again2:;
       StrCpy(roote.translation2,scores[1].word);
       StrCpy(roote.translation3,scores[2].word);
       FBlkWrite(db,&roote,tmp);
-
-      Yield;
 next:;
       if(roote.next) {
         tmp=roote.next;
@@ -405,6 +405,8 @@ I64 DBValue(U8 *w,U8 *db_name="Words.DB",I64 which=1) {
 
 }
 //Del("Words3.DB");
+if(FileFind("Words.DB.Z"))
+  Unzip("Words.DB.Z");
 if(!FileFind("Words.DB")||DBVersion!=1) {
   Del("Words.DB");
   WordDBFromDict("Words.DB","Latin.json");

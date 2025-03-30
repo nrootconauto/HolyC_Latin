@@ -225,7 +225,7 @@ CDeclension *DeclensionForWord(I64 flags,CTrie *w) {
 }
 
 
-U0 InitLatin(U8 *file="Latin.INFLECTS") {
+U0 InitLatin(U8 *file="Latin.INFLECTS") {
   QueInit(&declensions);
   if(!FileFind(file))
     return ;

@@ -1305,12 +1305,13 @@ DumpSentences(
 	"[[tongitio scripturarum]  praecedere [duo sensitivum  cognitionem]] sunt  duodecim partis."
         "[divinatio pariendus] habet [res vivum caeleste infernaque]."
         "[divinatio ex levare velamen] sunt en [hominibus  animalibusque] [sex  partes]  ."
-	"lectio rei sunt [duo genera]."
+	"lectio rei sunt [duo genera]."
 	"[differentia de [lectionem rei et divinationem]]  sunt [puritatem certumque]."
 	"[[lectio rei] divinatioque] dissidet [puritatem spatium scientem remque]."
 	"[[tongitio scripturarum] et [tongitio sensitivus]] tenent [[sex omnes res] et [non effatos]]."
 	"divinatio [tenet tantum] formam rei."
-	"[spatium lectionis rei] es [[res infiniti parvi ] e divinationem ] ."
+	"[spatium lectionis rei] es [[res infiniti parvi] e divinationem ] ."
+        "omnisciens habet [[omnia res] et [eum stata]]."
 ,
 	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
         "So that I may have their Virtuees.\0" 	
@@ -1336,9 +1337,12 @@ DumpSentences(
 	"The divine knowledge at birth from sensory knowledge is  for hell and heaven creatures.\0"
 	"The divine knowledge from lifting the veil is  of 6 kinds(in humans and animals).\0"
 	"There are 2 kinds of telepathy.\0"
-	"The difference of telepahy and prophecy are by purity and certianty.\0"
+	"The difference of telepahy and divine knowledge are by purity and certianty.\0"
 	"The difference is purity,space,knower and things.\0"
-	"Prophecy has only the form of things.\0"
+	"The reach of sensory knowledge is the 6 substacnces and their states.\0"
+	"Divine knowledge has only the form of things.\0"
+	"The scope of telepathy is a really small part of divine knowledge.\0"
+	"Knowing all things uncludes their states too.\0"
 //"/WWW/index.DD"
 );//et [prohibere et]18
 #endif	
