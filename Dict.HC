@@ -545,15 +545,16 @@ skip:;
   Free(small);
   Free(optr);
 }
-#include "MakeVocab.HC";
-
+#ifndef DBValue
+extern I64 DBValue(U8 *word,U8 *db="Words.DB",I64 inst);
+#endif
 I64 GetWordOffset(U8 *word,I64 inst=0) {
   U8 buf[STR_LEN],buf2[STR_LEN];
   StrCpy(buf2,word);
   StrUtil(buf2,SUF_TO_LOWER);
-  StrPrint(buf,"JsonPos.%s",buf2);
+  StrPrint(buf,"JsonPos,%s",buf2);
   
-  I64 v=DBValue(buf,,inst+1);
+  I64 v=DBValue(buf,"Words.DB",inst+1);
   if(v==0)
     return -1;
   return v;
@@ -597,11 +598,7 @@ loop:;
 }
 U8 *GetWordString(U8 *word,I64 inst=0)  {
   U8 tnam[STR_LEN],*fr;
-  StrPrint(tnam,"WS.%s,%d",word,inst);
-  CHashGeneric *gen;
   I64 idx=1;
-  if(fr=FramePtr(tnam,mem_task))
-    return StrNew(fr);
   U8 *tmp=_GetWordString(word,inst);
   if(!tmp) {
     return NULL;
@@ -614,7 +611,6 @@ U8 *GetWordString(U8 *word,I64 inst=0)  {
   }
   ret[off++]=bo;
   Free(otmp);
-  FramePtrAdd(tnam,StrNew(ret,mem_task),mem_task);
   return ret;
 }
 U8 *GetBaseWord(U8 *word,I64 inst=0) {
@@ -639,6 +635,7 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
 	    word=StrNew(t->str);
 	    JsonDel(j);  
 	    --recur;
+	    PrintI(word,1);
 	    return word;
 	  }
         }
@@ -899,5 +896,6 @@ new:
   }
   return NULL;
 }
+#include "MakeVocab.HC";
 
 #endif

@@ -62,7 +62,7 @@ next:;
   return mw|(cy-ocy+12)<<32;
 }
 CDC *WordTable(U8 *word) {
-  U8 *base=GetBaseWord(word),buf[STR_LEN];
+  U8 *base=GetBaseWord(word),buf[STR_LEN];
   if(!base) return NULL;
   U8 *word_str=GetWordString(base),*text;
   CEntDim ent_max=0,tmp;

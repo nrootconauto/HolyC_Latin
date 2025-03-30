@@ -2,7 +2,6 @@
 #define VISUAL_HH 21
 #exe {Cd(__DIR__);};;
 #include "Annotate.HC";
-#include "MakeVocab.HC";
 #include "FileBMP.HC";
 U0 CalcBezier(CD3I32 *point,CD3I32*l,CD3I32 *cent,CD3I32 *r) {
   point->x=2.*cent->x-l->x/2.-r->x/2.;
@@ -1306,7 +1305,7 @@ DumpSentences(
 	"[[tongitio scripturarum]  praecedere [duo sensitivum  cognitionem]] sunt  duodecim partis."
         "[divinatio pariendus] habet [res vivum caeleste infernaque]."
         "[divinatio ex levare velamen] sunt en [hominibus  animalibusque] [sex  partes]  ."
-	"lectio rei sunt [duo genera]."
+	"lectio rei sunt [duo genera]."
 	"[differentia de [lectionem rei et divinationem]]  sunt [puritatem certumque]."
 	"[[lectio rei] divinatioque] dissidet [puritatem spatium scientem remque]."
 	"[[tongitio scripturarum] et [tongitio sensitivus]] tenent [[sex omnes res] et [non effatos]]."

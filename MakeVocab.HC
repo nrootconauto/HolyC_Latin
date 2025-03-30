@@ -67,7 +67,8 @@ again:;
 I64 FileHashAdd(CFile *db,I64 table,U8 *name,I64 value) {
   CFileHashTable hdr;
   CFileHashEntry ent;
-  I64 new,where,last;
+  I64 new,where;
+  I64 next=0;
   U64 hash=HashStr(name);
   FBlkRead(db,&hdr,table);
   if(hdr.ident!=FILE_HASHTABLE_IDENT) {
@@ -81,25 +82,18 @@ add:;
     FBlkWrite(db,&hdr,table);
     MemSet(&ent,0,BLK_SIZE);
     StrCpy(ent.name,name);
+    ent.next=next;
     ent.value=value;
     ent.ident=FILE_HASHENT_IDENT;
     FBlkWrite(db,&ent,new);
     return new;
   } else {
     FBlkRead(db,&ent,where);
-    last=where;
-    while(where=ent.next) {
-      FBlkRead(db,&ent,where);
-      if(ent.ident!=FILE_HASHENT_IDENT) {
-        throw('File4');
-      }
-      last=where;
-    }
     new=FileAllocateBlk(db);
-    ent.next=new;
-    FBlkWrite(db,&ent,last);
+    next=where;
+    hdr.body[hash]=new;
     goto add;
-  }
+  }
 }
 U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   if(!FileFind(db_name)) {
@@ -179,14 +173,17 @@ U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
     FileWrite(db,&hdr,sizeof(CFileHashTable));
   }
   CFile *dbf=FOpen(db,"w+");
-  FileHashAdd(dbf,0,"DB.Version",1);
+  FileHashAdd(dbf,0,"DB,Version",1);
   FClose(dbf);
   U8 *olatin=FileRead(latin_json_file),*ptr=olatin,*trans;
-  I64 lines=StrOcc(olatin,'\n'),line;
+  I64 lines=StrOcc(olatin,'\n'),line=0;
   CJson *j,*word,*s,*g,*ss,*gs;
   CHeapCtrl *hc,*old=Fs->data_heap;
   I64 inst,sense,gloss,at;
   U8 buf[STR_LEN];
+  I64 last_cnt=0;
+  F64 t=tS,per_sec=1.,ti=t;
+  progress1_t0=ti;
   try {
     while(TRUE) {
       Fs->data_heap=hc=HeapCtrlInit(NULL,Fs,0);
@@ -198,7 +195,7 @@ U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
         break;
       }
       if(word=GetJsonMember(j,"word")) {
-        StrPrint(buf,"JsonPos.%s",word->str);
+        StrPrint(buf,"JsonPos,%s",word->str);
 	dbf=FOpen(db,"w+");
 	FileHashAdd(dbf,0,buf,at);
         FClose(dbf);
@@ -218,7 +215,13 @@ U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
       HeapCtrlDel(hc);
       progress1_max=lines;
       progress1=++line;
-      if(line&127==0) Yield;
+      if(tS>1.+t) {
+        per_sec+=line-last_cnt;
+	per_sec/=2.;
+        progress1_tf=(lines-line)/per_sec+ti;
+	t=tS;
+	last_cnt=line;
+      }
     }
   } catch {
     HeapCtrlDel(hc);
@@ -383,7 +386,7 @@ I64 DBVersion(U8 *db_name="Words.DB") {
   CFile *db=FOpen(db_name,"r");
   CFileHashEntry ent;
   I64 ver=0;
-  if(FileHashGet(&ent,db,0,"DB.Version")) {
+  if(FileHashGet(&ent,db,0,"DB,Version")) {
     ver=ent.value;
   }
   FClose(db);
@@ -391,6 +394,7 @@ I64 DBVersion(U8 *db_name="Words.DB") {
 }
 I64 DBValue(U8 *w,U8 *db_name="Words.DB",I64 which=1) {
   CFile *db=FOpen(db_name,"r");
+  if(!db) return 0;
   CFileHashEntry ent;
   I64 ver=0;
   if(FileHashGet(&ent,db,0,w,which)) {
