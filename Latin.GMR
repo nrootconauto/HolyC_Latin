@@ -5,7 +5,7 @@
 Num@Num ADJECTIVE = NUMBER; 
 
 Adj@Adj[FlagsAcc] ADJECTIVE -> Num@Num;
-Adj@Adj[FlagsNom] ADJECTIVE -> Num@Num;
+Adj@Adj[FlagsNom] ADJECTIVE -> Num@Num;
 Noun@Noun NOUN -> Num@Num !Noun@Noun;
 
 
@@ -45,14 +45,18 @@ Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCT
 Adj@Adj(CaseAgree)[FlagsConj] ADJECTIVE -> Adj@Adj(CONJUNCTION) !Adj@Adj ;(1.1)
 
 Noun@Gen NOUN = NOUN,GENITIVE; 
+Noun@Gen NOUN = ADJECTIVE,GENITIVE; 
 
-Noun@Noun[FlagsTransfer] NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
-Noun@Noun[FlagsTransfer] NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
+Noun@Noun[FlagsTransferGen] NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
+Noun@Noun[FlagsTransferGen] NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
 Noun@Noun[FlagsTransfer] NOUN -> !Noun@Gen; (.09) //For verbs
+
+Noun@Gen(HasQueAtEnd)[FlagsPluralQue] NOUN -> Noun@Gen(NOUN) !Noun@Gen; (3.0)
+
 
 
 Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
-Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (2.0)
+Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (4.0)
 Verb@Verb(HasQueAtEnd)[FlagsPluralQue] VERB -> Verb@Verb(VERB) !Verb@Verb; (2.0)
 
 

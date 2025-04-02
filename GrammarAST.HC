@@ -208,9 +208,10 @@ U0 DumpAST(AST *a) {
   AST *t;
 //Dumb hack,rule name is first member.
   "RULE:%s\n",a->rule;
+  "FLAGS:%X\n",a->flags;
   DocPrint(DocPut(mem_task),"$$ID,4$$\n");
   if(a->word)
-    DocPrint(DocPut(mem_task),"(WORD%s,%d):",a->word->str,a->word_idx);
+    DocPrint(DocPut(mem_task),"(WORD%s,%d,%n):",a->word->str,a->word_idx,a->prob);
   else if(a->base_expression) {
     DocPrint(DocPut(mem_task),"BASE_EXPR:\n");
     DumpAST(a->base_expression);

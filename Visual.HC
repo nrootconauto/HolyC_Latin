@@ -1313,6 +1313,9 @@ DumpSentences(
 	"[spatium lectionis rei] es [[infinitum parvum res ] e divinationem ] ."
         "omnisciens habet simul [[omnia res] et [eum stata]]."
 	"[unum usque quattuor [genus cognitionis]] teneat [unus anima]."
+	"[[sensuum liberi divinationisque] cognitio] sit [cognitiones falsorum]."
+	"[falsum cognitionis] propter [indigentiam iudicii inter [falsa et veritates]] es dementem."
+	"[symbolicus vocalis compositum analyticus communis cetus directusque] sunt rationes."
 ,
 	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
         "So that I may have their Virtuees.\0" 	
@@ -1345,7 +1348,10 @@ DumpSentences(
 	"The scope of telepathy is a really small part of divine knowledge.\0"
 	"Knowing all things uncludes their states too(at once).\0"
 	"1 to 4 types of knowledge can be held by a soul.\0"
-//"/WWW/index.DD"
+	"Senory knowledge,scriptural knowledge and divination may be false knowledges.\0"
+	"False knowledge from a abscence of falsehood and reality is insaity.\0"
+	"Representation,words,composite,anayltical comman straight and specific are the positions.\0"
+//,"/WWW/index.DD"
 );//et [prohibere et]18
 #endif	
 #endif

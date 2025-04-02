@@ -141,14 +141,13 @@ I64 FlagsConj(I64 argc,AST **argv) {
 } 
 
 
-
 I64 FlagsPlural(I64 argc,AST **argv) {
   I64 i=0;
   AST *ast;
   I64 or=PLURAL;
   for(i=0;i!=argc;i++)  {
     ast=argv[i];
-    if(ast->act_as_type==AST_NOUN)
+    if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE)
       or|=ast->flags;
   }
   return or;
@@ -159,7 +158,7 @@ I64 FlagsPluralQue(I64 argc,AST **argv) {
   I64 or=PLURAL|CONJUNCTION2;
   for(i=0;i!=argc;i++)  {
     ast=argv[i];
-    if(ast->act_as_type==AST_NOUN)
+    if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE)
       or|=ast->flags;
   }
   return or;
@@ -185,6 +184,11 @@ I64 FlagsTransfer(I64 argc,AST **argv) {
   }
   return or;
 } 
+
+I64 FlagsTransferGen(I64 argc,I64 **argv) {
+  return FlagsTransfer(argc,argv)&~GENITIVE;
+}
+
 I64 FlagsAcc(I64 argc,AST **argv) {
   I64 i=0;
   AST *ast;
@@ -326,8 +330,9 @@ Bool HasQueAtEndWithCase(I64 argc,AST **argv) {
   if(!CaseAgree(argc,argv))
     return FALSE;
   AST *ast=argv[argc-1];
-  if(ast->flags&CONJUNCTION2)
+  if(ast->flags&CONJUNCTION2) {
     return TRUE;
+  }
   return ast->word&&ast->word->flags&CONJUNCTION2;
 }
 
@@ -550,7 +555,6 @@ U0 ParseRules(U8 *text) {
 U0 AddThingToAST(AST *have,AST *to,I64 where=-1) {
   if(where==-1)
     where=have->raw_type;
-  to->prob*=have->prob;
   to->args=I64SetAdd(to->args,have);
   switch(where) {
     case AST_NOUN:
@@ -850,8 +854,8 @@ MAKE SURE ARGUMNENTS DONT OVERLAP,use boundary.
         tmp=args->body[idx];
         if(r->main_item_idx!=idx) {
 	  AddThingToAST(ASTClone(tmp),ret);
-	  ret->prob*=tmp->prob;
         }
+	ret->prob*=tmp->prob;
       }
     }
     if(RulePost(ret,r,args->body,ra)) {
@@ -907,7 +911,7 @@ fail:;
 	  add_to=Scan(words,add_to,r,matrix,y,cnt,tmp->end,ra+1,tmp2);
 	  GCFree(tmp2);
 	  repeat_cnt=FramePtr("RS.Added");
-	  if(repeat_cnt>=32) {
+	  if(repeat_cnt>=21) {
 	    ASTDel(tmp);
 	    goto fin;
 	  }
