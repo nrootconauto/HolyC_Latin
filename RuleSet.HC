@@ -730,7 +730,46 @@ fin:;
 I64 SubExprWidth(U8 **words,I64 x,I64 cnt) {
   return Next(words,x,cnt,FALSE)-x-2;
 }
+Bool HasExpectedRulesAhead(U8 **words,CRule *r,U8 **matrix,I64 y,I64 cnt,I64 x=0,I64 ra=0) {
+  if(ra>=r->made_from->cnt)
+    return TRUE;
+  while(x<cnt) {
+    if(!StrCmp(words[x],"]"))
+      x++;
+    else
+      break;
+  }
+  if(cnt-x<r->made_from->cnt-ra)
+    return FALSE;
+  I64 idx;
+  I64Set *tested_offsets=NULL;
+  Bool has=FALSE;
+  ASTSet *as=*MatrixPtr(matrix,x,y,cnt);
+  AST *cur;
+  if(as)
+    for(idx=0;idx!=as->cnt;idx++) {
+//Rule name is first member of ->rule
+      cur=as->body[idx];
+      if(!StrCmp(r->made_from->body[ra],cur->rule)) {
+        if(!I64SetHasItem(tested_offsets,cur->end)) {
+	  tested_offsets=I64SetAdd(tested_offsets,cur->end);
+	  has|=HasExpectedRulesAhead(words,r,matrix,y,cnt,cur->end,ra+1);
+        }
+      }
+      if(has)
+        break;
+    }
+  GCFree(tested_offsets);
+  if(!has&&!StrCmp(words[x],"[")) {
+    has|=HasExpectedRulesAhead(words,r,matrix,y,cnt,x+1,ra);
+  }
+  return has;
+
+}
+
 ASTSet *Scan(U8 **words,ASTSet *add_to,CRule *r,U8 **matrix,I64 y,I64 cnt,I64 x=0,I64 ra=0,ASTSet *args=NULL) {
+  if(!HasExpectedRulesAhead(words,r,matrix,y,cnt,AbsI64(x),ra))
+    return add_to;
   I64 next;
   ASTSet *cell;
   AST *tmp,*ret;
