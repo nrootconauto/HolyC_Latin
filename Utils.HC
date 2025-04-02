@@ -177,7 +177,7 @@ U64 Transliterate(U64 ch) {
     if(!ch)
       return 0;
     if(!(31<=ch<=128))
-      ch='.';
+      ch=CH_SHIFT_SPACE;
   }
   return ch;
 }

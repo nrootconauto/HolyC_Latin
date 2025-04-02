@@ -43,8 +43,9 @@ ASTSet *ASTSetAddSmart(ASTSet *set,AST *a) {
     if(ASTCompatible(a,tmp=set->body[cnt])) {
       if(a->prob<tmp->prob)
         ASTDel(a);
-      else
-        set=ASTSetAdd(set,a);
+      else  {
+        set->body[cnt]=a;
+      }
       goto fin;
     }
   set=ASTSetAdd(set,a);
@@ -118,8 +119,11 @@ I64 FlagsPrep(I64 argc,AST **argv) {
     ast=argv[i];
     if(ast->act_as_type==AST_WHERE)
 	break;
-    if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE)
+    if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE) {
       or|=ast->flags;
+DumpAST(ast);
+"%x\n",or;
+    }
   }
   return or;
 } 
@@ -226,7 +230,7 @@ Bool VerbAgree(I64 argc,AST **argv) {
       if(voc++)
 	return FALSE;
   }
-  return nom||acc||abl||dat||voc;
+  return TRUE;
 }
 
 
@@ -903,7 +907,7 @@ fail:;
 	  add_to=Scan(words,add_to,r,matrix,y,cnt,tmp->end,ra+1,tmp2);
 	  GCFree(tmp2);
 	  repeat_cnt=FramePtr("RS.Added");
-	  if(repeat_cnt>=16) {
+	  if(repeat_cnt>=32) {
 	    ASTDel(tmp);
 	    goto fin;
 	  }

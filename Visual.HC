@@ -1310,8 +1310,9 @@ DumpSentences(
 	"[[lectio rei] divinatioque] dissidet [puritatem spatium scientem remque]."
 	"[[tongitio scripturarum] et [tongitio sensitivus]] tenent [[sex omnes res] et [non effatos]]."
 	"divinatio [tenet tantum] formam rei."
-	"[spatium lectionis rei] es [[res infiniti parvi] e divinationem ] ."
-        "omnisciens habet [[omnia res] et [eum stata]]."
+	"[spatium lectionis rei] es [[infinitum parvum res ] e divinationem ] ."
+        "omnisciens habet simul [[omnia res] et [eum stata]]."
+	"[unum usque quattuor [genus cognitionis]] teneat [unus anima]."
 ,
 	"I bow to the Lord of Liberation who is the destroyer of bondage and knower of all.\0"
         "So that I may have their Virtuees.\0" 	
@@ -1342,7 +1343,8 @@ DumpSentences(
 	"The reach of sensory knowledge is the 6 substacnces and their states.\0"
 	"Divine knowledge has only the form of things.\0"
 	"The scope of telepathy is a really small part of divine knowledge.\0"
-	"Knowing all things uncludes their states too.\0"
+	"Knowing all things uncludes their states too(at once).\0"
+	"1 to 4 types of knowledge can be held by a soul.\0"
 //"/WWW/index.DD"
 );//et [prohibere et]18
 #endif	

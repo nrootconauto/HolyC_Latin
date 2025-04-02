@@ -336,6 +336,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
     else if(!StrICmp(n->str,"adj")) flags|=ADJECTIVE;
     else if(!StrICmp(n->str,"conj")) flags|=CONJUNCTION;
     else if(!StrICmp(n->str,"prep")) flags|=PREPOSITION;
+    else if(!StrICmp(n->str,"num")) flags|=NUMBER;
     else if(!StrICmp(n->str,"adv")) flags|=ADVERB;
     else if(!StrICmp(n->str,"pron")) flags|=PRONOUN;
     else if(!StrICmp(n->str,"det")) flags|=DETIRMINER;
@@ -607,7 +608,8 @@ U8 *GetWordString(U8 *word,I64 inst=0)  {
   U8 bo,*ret=MAllocIdent(tmp);
   I64 off=0;
   while(bo=Transliterate(ReadUTF8(tmp,&tmp))) {
-    ret[off++]=bo;
+    if(CH_SHIFT_SPACE!=bo)
+      ret[off++]=bo;
   }
   ret[off++]=bo;
   Free(otmp);
@@ -889,7 +891,7 @@ new:
         base=base->next;
       }
       base=TrieGet(word);
-       Free(copy);
+      Free(copy);
       return base;
     }
     Free(copy);
