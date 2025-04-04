@@ -16,13 +16,11 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
   Free(line);
   dc->color=BLACK;
   I64 oline=FramePtr("Latin.top",t),line2;
-  for(line2=oline;line2<=(t->win_bottom-t->win_top)*8/line_height-oline-1;++line2) {
+  for(line2=oline;line2<=(t->win_bottom-t->win_top)*8/line_height+oline-1;++line2) {
     if (DocGoToLine(doc,line2) && doc->cur_entry->type_u8==DOCT_TEXT)
-      line=MStrPrint("%s ",doc->cur_entry->tag,mem_task); //Add a end of line space
-    else if(DocGoToLine(doc,line2) && doc->cur_entry->type_u8==DOCT_NEW_LINE)
-      line=StrNew("\n",mem_task);
-    else 
-      break;
+      line=MStrPrint("%s ",doc->cur_entry->tag); //Add a end of line space
+    else //We set DOCF_PLAIN_TEXT,so assume a newline
+      line=StrNew(" ");
     y=(line2-oline)*line_height;
     x=0;
     for(idx2=0;line[idx2];) {
@@ -35,9 +33,9 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
         } else
 	  x+=TTF_RenderText(dc,x,y,buf);
         idx2=en-line;
-      } else {
+      } else if(Bt(char_bmp_alpha_numeric,line[idx2])){
         len=0;
-        while(line[len+idx2]&&!Bt(char_bmp_white_space,line[len+idx2]))
+        while(line[len+idx2]&&Bt(char_bmp_alpha_numeric,line[len+idx2]))
 	  ++len;
         MemCpy(buf,line+idx2,len);
         buf[len]=0;
@@ -58,6 +56,16 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 	    x+=TTF_RenderText(dc,x,y,buf);
         }
         idx2+=len;
+      } else {
+        len=1;
+        buf[0]=line[idx2];
+        buf[len]=0;
+        dc->color=BLACK;
+        if(odoc->y==line2-1)
+	  x+=TTF_RenderText(dc,x,y,buf,,,odoc->x-idx2);
+        else
+	  x+=TTF_RenderText(dc,x,y,buf);
+	idx2+=len;
       }
     }
     Free(line);
@@ -68,39 +76,74 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 U0 LatinEd(U8 *file) {
   CDoc *doc=DocRead(file,DOCF_PLAIN_TEXT|DOCF_NO_CURSOR);
   DocClear;
-  I64 m,x,y;
-  FramePtrAdd("Latin.doc",doc);
+  I64 m,x,y,ww,wh,scroll,lc;
+  I64 oldz=ms.pos.z;
   FramePtrAdd("Latin.top",1);
+  FramePtrAdd("Latin.doc",doc);
   Fs->draw_it=&LatinEdDrawIt;
   while(TRUE) {
+    ww=(Fs->win_right-Fs->win_left)*8/line_height;
+    wh=(Fs->win_bottom-Fs->win_top)*8/line_height;
+    x=doc->x,y=doc->y;
+    DocBottom(doc);
+    lc=doc->y;
+    doc->x=x,doc->y=y;
+    DocRecalc(doc,RECALCt_FIND_CURSOR);
+    if(ms.pos.z!=oldz&&0) {
+      scroll=FramePtr("Latin.top");
+      scroll=ClampI64(scroll+ms.pos.z-oldz,1,MaxI64(1,lc-wh));
+      FramePtrSet("Latin.top",scroll);
+      oldz=ms.pos.z;
+    }
     while(m=ScanMsg(&x,&y)) {
       if(m==MSG_KEY_DOWN) {
-	if(x==CH_ESC)
+        if(x==CH_ESC)
 	  goto fin;
         if(!x) {
-	  if(y.u8[0]==SC_CURSOR_LEFT)
-	    EdCursorLeft(doc);
+	  if(y.u8[0]==SC_PAGE_DOWN) {
+	    x=wh;
+	    while(--x>=0)
+ 	     EdLineDown(doc);
+	  }
+	  if(y.u8[0]==SC_PAGE_UP) {
+	    x=wh;
+	    while(--x>=0)
+ 	     EdLineUp(doc);
+	  }
+	  if(y.u8[0]==SC_CURSOR_LEFT) {
+	    EdCursorLeft(doc,y);
+	  }
 	  if(y.u8[0]==SC_CURSOR_RIGHT) 
-	    EdCursorRight(doc);
+	    EdCursorRight(doc,y);
 	  if(y.u8[0]==SC_CURSOR_UP)
-	    EdLineUp(doc);
+	    EdLineUp(doc,y);
 	  if(y.u8[0]==SC_CURSOR_DOWN)
-	    EdLineDown(doc);
+	    EdLineDown(doc,y);
         } else if(x==CH_BACKSPACE) {
 	  EdCursorLeft(doc);
 	  EdCharDel(doc);
         } else if(Bt(char_bmp_displayable,x&0xffff)) {
-  	  EdCharIns(x,y,doc);
+	  EdCharIns(x,y,doc);
         } else if(x=='\n') {
-  	  EdCharIns(x,y,doc);
-	}
+	  EdCharIns(x,y,doc);
+        }
       }
     }
+    scroll=FramePtr("Latin.top");
+    ++doc->y;
+    if(scroll>doc->y||doc->y>=scroll+wh) {
+	if(doc->y<scroll)
+	  scroll=doc->y;
+	else
+	  scroll=MaxI64(1,doc->y-wh+1);
+      FramePtrSet("Latin.top",scroll);
+    }
+    --doc->y;
     Refresh;
   }
 fin:;
-  FramePtrDel("Latin.top");
   FramePtrDel("Latin.doc");
+  FramePtrDel("Latin.top");
   DocWrite(doc);
   DocDel(doc);
 }

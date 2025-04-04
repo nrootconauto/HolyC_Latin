@@ -698,6 +698,7 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
   F64 x,y,w,h;
   F64 scale_ratio=78.+scale;
   F64 lh;
+  I64 oty=ty;
   U8 *head=TTF_GetTablePtr('head',ttf_file);
   F64 ppem=EndianU16((head+18)(U16*)[0]);
   DCExtentsInit(ext);
@@ -735,7 +736,7 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
    }
   if(invert_ch_idx>=0) {
     to->color=ROP_XOR|YELLOW;
-    GrRect(to,tx+at_x/scale_ratio*scale,ty,at_ga.x/scale_ratio*scale,at_ga.y/scale_ratio*scale);
+    GrRect(to,tx+at_x/scale_ratio*scale,oty,at_ga.x/scale_ratio*scale,at_ga.y/scale_ratio*scale);
   }
   to->color=old;
   DCDel(ext);
