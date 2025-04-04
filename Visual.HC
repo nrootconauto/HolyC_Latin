@@ -1281,8 +1281,9 @@ PutExcept(FALSE);
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
 DumpSentences("[non habeam   inimicitias aliis]. [[res viventium] non habeat mecum inimicitias].","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
+DocMax;
 DumpSentences(
-	"ingeniculo [dominum  liberandi] qui fui [ nexionis vastatorem et [sciendum omnia]]." // 
+	"ingeniculo [dominum  liberandi] qui fui [ [nexionis vastatorem] et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."
         "[iustus [fides et mos et cognitio]] sunt semitam."
 	"[[fides rei] reperire]  es [verum  fidem]."
@@ -1328,7 +1329,7 @@ DumpSentences(
 	"The 7 Knowledges are gained by description,ownsership,cause,resting place,duration,and dividing.\0"
 	"These 7 are existence,location,number,measurement,time,timespan,thought at comparsion.\0"
 	"The 5 classifications of the knowledges are senses,scripture,unseen,divination and all-knowing.\0"
-	"These valid knowledges\0"
+	"These valid knowledges.\0"
 	"The first 2 of them are seen knowledges.\0"
 	"The last 3 of them are unseen knowledges.\0"
 	"Senses,thinking,remembering,reducing and gathing are the seme.\0"
@@ -1351,7 +1352,7 @@ DumpSentences(
 	"Senory knowledge,scriptural knowledge and divination may be false knowledges.\0"
 	"False knowledge from a abscence of falsehood and reality is insaity.\0"
 	"Representation,words,composite,anayltical comman straight and specific are the positions.\0"
-//,"/WWW/index.DD"
+//,"/WWW/Tattvarth1.DD"
 );//et [prohibere et]18
 #endif	
 #endif

@@ -642,22 +642,6 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
 	  }
         }
       }
-      if(f=GetJsonMember(s,"glosses",J_ARRAY)) {
-        if(f=GetJsonMember(f,StrPrint(buf,"%d",0),J_STR)) {
-	  if(p=StrIMatch(" of ",f->str)) {
-	    p+=StrLen(" of ");
-	    if(StrLastOcc(p,","))
-	      p=StrLastOcc(p,",")+1;
-	    if(StrLastOcc(p,"."))
-	      StrLastOcc(p,".")[0]=0;
-	    word=StrNew(p);
-	    JsonDel(j);
-	    --recur;
-	    return word;
-	  }
-        }
-      }
-
     }
   }
   JsonDel(j);
@@ -761,8 +745,13 @@ defacto:
   --recur;
   return StrUtil(best,SUF_REM_CTRL_CHARS);
 }
+#ifndef WordDBGetTranslation
+extern U8 *WordDBGetTranslation(U8 *db="Words.DB",U8*word,I64 inst=0);
+#endif
 //Your on your own(inst==-1 if to use default from CIndexBlk->translation_idx)
 U8 *GetTranslation(U8 *word,Bool recurse=TRUE,Bool small=TRUE,I64 t_inst=-1) {
+  if(small)
+    return WordDBGetTranslation("Words.DB",word,MaxI64(t_inst,0));
   if(t_inst<0)
     t_inst=GetWordDftTranslationIdx(word);
   U8 *trans=GetTranslations(word,recurse),*ret;

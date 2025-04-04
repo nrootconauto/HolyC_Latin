@@ -609,9 +609,9 @@ CGlAdvance TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc,F64 scale=16) {
   I64 g=TTF_UCToGlyph(file,uc);
   return TTF_RenderGl(dc,x,y,file,g,scale,NULL,NULL);
 }
-I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
+I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16,I64 invert_ch_idx=-1,I64 *inv_offset=NULL,CGlAdvance *inv_met=NULL) {
   CGlAdvance ga;
-  I64 ox=x;
+  I64 ox=x,idx=0;
   U8 *head=TTF_GetTablePtr('head',file);
   F64 ppem=EndianU16((head+18)(U16*)[0]);
   F64 aw;
@@ -622,6 +622,7 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
       TTF_HMetrics(0,file,NULL,NULL,&line_height);
       x=ox;
       y-=line_height/ppem*scale;
+      ga.x=0;
     } else if(*text!=' ') {
       ga=TTF_RenderChr(dc,x,y,file,*text,scale);
       x+=ga.x;
@@ -629,7 +630,12 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16) {
       ga=TTF_RenderChr(dumb,x,y,file,*text,scale);
       x+=ga.x;
     }
+    if(idx==invert_ch_idx) {
+      if(inv_offset) *inv_offset=x-ox-ga.x;
+      if(inv_offset) *inv_met=ga;
+    }
     x+=TTF_Kerning(file,text[0],text[1])/ppem*scale;
+    ++idx;
     text++;
   }
   DCDel(dumb);
@@ -681,13 +687,13 @@ I64 HintColor(CDC *from,F64 x,F64 y,F64 avg_hits,F64 width=1.,I64 color=BLACK) {
     
 }
 U8 *font=FileRead(__DIR__"/FiraFont/FiraSans-Regular.ttf");
-I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=font) {
+I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=font,I64 invert_ch_idx=-1) {
   U32 *str=CAlloc((1+StrLen(text))*4),c,i=0;
   CDC *ext=DCNew(I32_MAX,I32_MAX,Fs,TRUE);
   CDC *upscaled;
   F64 avg_hits=0;
   F64 x,y,w,h;
-  F64 scale_ratio=78.;
+  F64 scale_ratio=78.+scale;
   F64 lh;
   U8 *head=TTF_GetTablePtr('head',ttf_file);
   F64 ppem=EndianU16((head+18)(U16*)[0]);
@@ -695,7 +701,9 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
   for(i=0;c=ReadUTF8(text,&text);i++) {
     str[i]=c;
   }
-  TTF_RenderTextU32(ext,I32_MAX/2,I32_MAX/2,ttf_file,str,scale_ratio);
+  CGlAdvance at_ga;
+  I64 at_x=I32_MAX;
+  TTF_RenderTextU32(ext,I32_MAX/2,I32_MAX/2,ttf_file,str,scale_ratio,invert_ch_idx,&at_x,&at_ga);
   if (ext->min_x<=ext->max_x) {
     ext->min_x-=I32_MAX/2;
     ext->max_x-=I32_MAX/2;
@@ -722,6 +730,10 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
       if(to->color!=TRANSPARENT)
  	GrPlot(to,tx+x,ty+y);
    }
+  if(invert_ch_idx>=0) {
+    to->color=ROP_XOR|0xf;
+    GrRect(to,tx+at_x/scale_ratio*scale,ty,at_ga.x/scale_ratio*scale,at_ga.y/scale_ratio*scale);
+  }
   to->color=old;
   DCDel(ext);
   DCDel(upscaled);

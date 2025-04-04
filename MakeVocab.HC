@@ -20,6 +20,17 @@ class CFileHashEntry {
   U8 translation2[128];
   U8 translation3[128];
 };
+U0 DBInit(U8 *db_name) {
+  if(!FileFind(db_name)) {
+    CFileHashTable hdr['Z'-'A'+1];
+    MemSet(&hdr,0,sizeof(CFileHashTable)*26);
+    I64 i;
+    for(i=0;i!=26;i++)
+      hdr[i].ident=FILE_HASHTABLE_IDENT;
+    FileWrite(db_name,&hdr,sizeof(CFileHashTable)*26);
+  }
+}
+
 I64 FileAllocateBlk(CFile *db) {
   return db->de.size>>BLK_SIZE_BITS;
 }
@@ -42,6 +53,11 @@ I64 FileHashGet(CFileHashEntry *ret,CFile *db,I64 table,U8 *name,I64 inst=1) {
   CFileHashEntry ent;
   I64 new,where;
   U64 hash=HashStr(name);
+//Root table have A,B,C...Z entries
+  if(table==0) {
+    if('A'<=ToUpper(*name)<='Z')
+      table+=ToUpper(*name)-'A';
+  }
   FBlkRead(db,&hdr,table);
   if(hdr.ident!=FILE_HASHTABLE_IDENT) {
     throw('File2');
@@ -70,6 +86,11 @@ I64 FileHashAdd(CFile *db,I64 table,U8 *name,I64 value) {
   I64 new,where;
   I64 next=0;
   U64 hash=HashStr(name);
+//Root table have A,B,C...Z entries
+  if(table==0) {
+    if('A'<=ToUpper(*name)<='Z')
+      table+=ToUpper(*name)-'A';
+  }
   FBlkRead(db,&hdr,table);
   if(hdr.ident!=FILE_HASHTABLE_IDENT) {
     throw('File3');
@@ -96,12 +117,8 @@ add:;
   }
 }
 U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
-  if(!FileFind(db_name)) {
-    CFileHashTable hdr;
-    MemSet(&hdr,0,sizeof CFileHashTable);
-    hdr.ident=FILE_HASHTABLE_IDENT;
-    FileWrite(db_name,&hdr,sizeof(CFileHashTable));
-  }
+  DBInit(db_name);
+  CFileHashTable hdr;
   I64 i,j,reverse;
   U8 buf[STR_LEN];
   latin=TransliterateStr(latin);
@@ -113,7 +130,6 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   CFile *file=FOpen(db_name,"w+");
   CFileHashEntry ent; 
   I64 at,at2;
-  FBlkRead(file,&hdr,0);
   for(reverse=0;reverse!=2;reverse++) {
     if(reverse)
       SwapI64(&latint,&transt);
@@ -166,12 +182,7 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   FClose(file);
 }
 U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
-  if(!FileFind(db)) {
-    CFileHashTable hdr;
-    MemSet(&hdr,0,sizeof CFileHashTable);
-    hdr.ident=FILE_HASHTABLE_IDENT;
-    FileWrite(db,&hdr,sizeof(CFileHashTable));
-  }
+  DBInit(db);
   CFile *dbf=FOpen(db,"w+");
   FileHashAdd(dbf,0,"DB,Version",1);
   FClose(dbf);
@@ -253,51 +264,59 @@ U0 WordDBAssignTranslation(U8 *db_name) {
   F64 best_prob;
   CScorePair scores[4];
   I64 score_ptr;
+  I64 root_letter;
   U8 best_word[STR_LEN];
-  all=root.cnt;
-  for(i=0;i<FILE_HASH_MASK;i++) {
-    if(tmp=root.body[i]) {
+  all=0;
+  for(root_letter='A';root_letter<='Z';++root_letter) {
+    FBlkRead(db,&root,root_letter-'A');
+    all+=root.cnt;
+  }
+  for(root_letter='A';root_letter<='Z';++root_letter) {
+    FBlkRead(db,&root,root_letter-'A');
+    for(i=0;i<FILE_HASH_MASK;i++) {
+      if(tmp=root.body[i]) {
 again1:
-      best_prob=-1;
-      StrCpy(best_word,"");
+        best_prob=-1;
+        StrCpy(best_word,"");
 
-      FBlkRead(db,&roote,tmp);
-      if(StrOcc(roote.name,'.'))
-	goto next;
-      if(StrOcc(roote.name,','))
-	goto next;
-      FBlkRead(db,&child,roote.value);
-      word1=ToF64(child.cnt)/all;
-      MemSet(scores,0,sizeof(CScorePair)*4);
-      for(j=0;j<FILE_HASH_MASK;j++) {
-        if(tmp2=child.body[j]) {
+        FBlkRead(db,&roote,tmp);
+        if(StrOcc(roote.name,'.'))
+	  goto next;
+        if(StrOcc(roote.name,','))
+	  goto next;
+        FBlkRead(db,&child,roote.value);
+        word1=ToF64(child.cnt)/all;
+        MemSet(scores,0,sizeof(CScorePair)*4);
+        for(j=0;j<FILE_HASH_MASK;j++) {
+	  if(tmp2=child.body[j]) {
 again2:;
-	  FBlkRead(db,&childe,tmp2);
-	  if(FileHashGet(&tmpe,db,0,childe.name)){
-	    FBlkRead(db,&tmph,tmpe.value); //Read pointer of sub-hashtable
-	    word2=ToF64(tmph.cnt)/all;
-	  } 
-	  prob=(word1*(ToF64(childe.value)/ToF64(roote.value)))/word2;// Bayes Theorem
-	  scores[3].score=prob;
-	  StrCpy(scores[3].word,tmpe.name);
-	  QSort(scores,4,sizeof(CScorePair),&ScorePairCmpRev);
-	  if(childe.next) {
-	    tmp2=childe.next;
-	    goto again2;
+	    FBlkRead(db,&childe,tmp2);
+	    if(FileHashGet(&tmpe,db,0,childe.name)){
+	      FBlkRead(db,&tmph,tmpe.value); //Read pointer of sub-hashtable
+	      word2=ToF64(tmph.cnt)/all;
+	    } 
+	    prob=(word1*(ToF64(childe.value)/ToF64(roote.value)))/word2;// Bayes Theorem
+	    scores[3].score=prob;
+	    StrCpy(scores[3].word,tmpe.name);
+	    QSort(scores,4,sizeof(CScorePair),&ScorePairCmpRev);
+	    if(childe.next) {
+	      tmp2=childe.next;
+	      goto again2;
+	    }
 	  }
         }
-      }
-      StrCpy(roote.translation1,scores[0].word);
-      StrCpy(roote.translation2,scores[1].word);
-      StrCpy(roote.translation3,scores[2].word);
-      FBlkWrite(db,&roote,tmp);
+        StrCpy(roote.translation1,scores[0].word);
+        StrCpy(roote.translation2,scores[1].word);
+        StrCpy(roote.translation3,scores[2].word);
+        FBlkWrite(db,&roote,tmp);
 next:;
-      if(roote.next) {
-        tmp=roote.next;
-        goto again1;
+        if(roote.next) {
+	  tmp=roote.next;
+	  goto again1;
+        }
       }
-    }
 
+    }
   }
   FClose(db);
 }
@@ -357,7 +376,7 @@ U0 WordDBPeenisumPoems(U8 *db,U8 *dirp="Peenisum") {
   DirTreeDel(dir);
   Free(dirp);
 }
-U8 *WordDBGetTranslation(U8 *db_name="Words.DB",U8 *word) {
+U8 *WordDBGetTranslation(U8 *db_name="Words.DB",U8 *word,I64 which=0) {
   U8 *tmp=GetBaseWord(word);
   if(tmp)
      word=tmp;
@@ -371,17 +390,45 @@ U8 *WordDBGetTranslation(U8 *db_name="Words.DB",U8 *word) {
   if(!FileHashGet(&hent,f,0,word)) {
     goto fin;
   }
-  StrPrint(buf,"%s",hent.translation1);
-  if(hent.translation2[0])
-    CatPrint(buf,",%s",hent.translation2);
-  if(hent.translation3[0])
-    CatPrint(buf,",%s",hent.translation3);
-  ret=StrNew(buf);
+  if(which==0)
+    ret=MStrPrint("%s",hent.translation1);
+  else if(which==1&&hent.translation2[0])
+    ret=MStrPrint("%s",hent.translation2);
+  else if(which==2&&hent.translation3[0])
+    ret=MStrPrint("%s",hent.translation3);
+  else
+    ret=NULL;
 fin:
   Free(word);
   FClose(f);
   return ret;
 }
+U0 WordDBSetTranslation(U8 *db_name="Words.DB",U8 *word,U8 *trans,I64 which=0) {
+  U8 *tmp=GetBaseWord(word);
+  if(tmp)
+     word=tmp;
+  else
+    word=StrNew(word);
+  StrUtil(word,SUF_TO_LOWER);
+  CFile *f=FOpen(db_name,"w+");
+  I64 blk;
+  CFileHashEntry hent;
+  if(!(blk=FileHashGet(&hent,f,0,word)))
+    goto fin;
+  if(which==0)
+    StrCpy(hent.translation1,trans);
+  else if(which==1)
+    StrCpy(hent.translation2,trans);
+  else if(which==2)
+    StrCpy(hent.translation3,trans);
+  FBlkWrite(f,&hent,blk);
+"%s,%s,%d\n",word,trans,blk;
+fin:
+  Free(word);
+  FClose(f);
+}
+
+
 I64 DBVersion(U8 *db_name="Words.DB") {
   CFile *db=FOpen(db_name,"r");
   CFileHashEntry ent;
@@ -408,7 +455,6 @@ I64 DBValue(U8 *w,U8 *db_name="Words.DB",I64 which=1) {
 if(FileFind("Words.DB.Z"))
   Unzip("Words.DB.Z");
 if(!FileFind("Words.DB")||DBVersion!=1) {
-  Del("Words.DB");
   WordDBFromDict("Words.DB","Latin.json");
   //WordDBVulgate("Words.DB","Genesis");
   //WordDBVulgate("Words.DB","Exodus");
