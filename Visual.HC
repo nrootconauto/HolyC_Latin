@@ -163,12 +163,12 @@ I64 DistSort(AST *a,AST *b) {
   return AbsI64(a->word_idx-Fs->user_data)-AbsI64(b->word_idx-Fs->user_data);
 }
 #include "TrueType";
-I64 SexyGrPrintSize(CDC *dc,I64 size,I64 x,I64 y,U8 *fmt,...) {
+I64 SexyGrPrintSize(CDC *dc,I64 size,I64 x,I64 y,I64 cursor_pos,U8 *fmt,...) {
   Bool del=FALSE;
   if(dc==NULL)
    del=TRUE,dc=DCNew(1,1);
   fmt=StrPrintJoin(NULL,fmt,argc,argv);
-  I64 w=TTF_RenderText(dc,x,y,fmt,size);
+  I64 w=TTF_RenderText(dc,x,y,fmt,size,,cursor_pos);
   Free(fmt);
   if(del) DCDel(dc);
   return w;
@@ -194,7 +194,7 @@ I64 SliceUTF8(U8 *to,U8 *str,I64 len) {
   *to=0;
   return ptr;
 }
-I64 DrawSexyWord(CDC *dc,F64 fsize,I64 x,I64 y,CTrie *word,U8 *text) {
+I64 DrawSexyWord(CDC *dc,F64 fsize,I64 x,I64 y,CTrie *word,U8 *text,I64 cursor_pos=-1) {
   CDC *odc=dc;
   if(!dc) dc=DCNew(1,1);
   I64 ox=x;
@@ -217,38 +217,43 @@ I64 DrawSexyWord(CDC *dc,F64 fsize,I64 x,I64 y,CTrie *word,U8 *text) {
   if(padv) {
     dc->color=DKGRAY;
     ptr=SliceUTF8(buf,text,padv);
-    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    x+=SexyGrPrintSize(dc,fsize,x,y,cursor_pos,"%s",buf);
     text+=ptr;
+    cursor_pos-=ptr;
   }
   if(badv) {
     dc->color=inflect_color;
     ptr=SliceUTF8(buf,text,badv);
-    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    x+=SexyGrPrintSize(dc,fsize,x,y,cursor_pos,"%s",buf);
     text+=ptr;
+    cursor_pos-=ptr;
   }
   if(fadv) {
     dc->color=old_color;
     ptr=StrLenUTF8(text)-fadv-sadv;
     ptr=SliceUTF8(buf,text,ptr);
     text+=ptr;
-    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    x+=SexyGrPrintSize(dc,fsize,x,y,cursor_pos,"%s",buf);
+    cursor_pos-=ptr;
     dc->color=inflect_color;
     ptr=SliceUTF8(buf,text,fadv);
     text+=ptr;
-    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    x+=SexyGrPrintSize(dc,fsize,x,y,cursor_pos,"%s",buf);
+    cursor_pos-=ptr;
     dc->color=DKGRAY;
-    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",text);
+    x+=SexyGrPrintSize(dc,fsize,x,y,cursor_pos,"%s",text);
   } elseif(!sadv){
     dc->color=old_color;
-    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",text);
+    x+=SexyGrPrintSize(dc,fsize,x,y,cursor_pos,"%s",text);
   } else {
     ptr=StrLenUTF8(text)-sadv;
     ptr=SliceUTF8(buf,text,ptr);
     text+=ptr;
     dc->color=old_color;
-    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",buf);
+    x+=SexyGrPrintSize(dc,fsize,x,y,cursor_pos,"%s",buf);
+    cursor_pos-=ptr;
     dc->color=DKGRAY;
-    x+=SexyGrPrintSize(dc,fsize,x,y,"%s",text);
+    x+=SexyGrPrintSize(dc,fsize,x,y,cursor_pos,"%s",text);
   }
   dc->color=old_color;
   if(!odc) DCDel(dc);
@@ -263,62 +268,62 @@ I64 DrawWordInfo(CDC *dc,I64 x,I64 y,CTrie *word,Bool dummy=FALSE,U8 *text) {
   if(word->flags&(NOUN|PRONOUN|ADJECTIVE|PARTICIPLE)) {
     dc->color=GREEN;
     if(word->flags&MASCULINE) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"M");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"M");
     } else if(word->flags&FEMININE) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"F");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"F");
     } else if(word->flags&NEUTER) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"N");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"N");
     }
 
     dc->color=PURPLE;
     if(word->flags&COMPARATIVE) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"Comp");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"Comp");
     } else if(word->flags&COMPARATIVE) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"Sup");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"Sup");
     }
     if(word->flags&NOMITIVE) {
       dc->color=LTGREEN;
-      x+=SexyGrPrintSize(dc,sub,x,y,"N");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"N");
     } else if(word->flags&ACCUSATIVE) {
       dc->color=LTRED;
-      x+=SexyGrPrintSize(dc,sub,x,y,"A");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"A");
     } else if(word->flags&GENITIVE) {
       dc->color=LTCYAN;
-      x+=SexyGrPrintSize(dc,sub,x,y,"G");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"G");
     } else if(word->flags&ABLATIVE) {
       dc->color=LTBLUE;
-      x+=SexyGrPrintSize(dc,sub,x,y,"Ab");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"Ab");
     } else if(word->flags&VOCATIVE) {
       dc->color=LTPURPLE;
-      x+=SexyGrPrintSize(dc,sub,x,y,"Vo");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"Vo");
     }
 
 _p_cnt:
     dc->color=RED;
     if(word->flags&_3P) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"3");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"3");
     } else if(word->flags&_2P) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"2");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"2");
     } else if(word->flags&_1P) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"1");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"1");
     }
 
     dc->color=BLACK;
     if(word->flags&PLURAL) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"P");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"P");
     } else {
-      x+=SexyGrPrintSize(dc,sub,x,y,"S");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"S");
     }
   } else if(word->flags&VERB) {
     dc->color=BLUE;
     if(word->flags&IMPERFECT) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"Imp");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"Imp");
     } else if(word->flags&FUTURE) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"Fut");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"Fut");
     } else if(word->flags&PERFECT) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"Per");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"Per");
     } else if(word->flags&PLUPERFECT) {
-      x+=SexyGrPrintSize(dc,sub,x,y,"Plu");
+      x+=SexyGrPrintSize(dc,sub,x,y,-1,"Plu");
     }
     goto _p_cnt;
   }

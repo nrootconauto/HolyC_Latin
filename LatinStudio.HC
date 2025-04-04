@@ -2,9 +2,10 @@
 F64 line_height=25;
 U0 LatinEdDrawIt(CTask *t,CDC *dc) {
   CGlAdvance ga;
-  U8 *line;
-  I64 idx,y;
-  F64 x,w;
+  U8 *line,buf[STR_LEN],*en;
+  I64 idx,y,idx2,len;
+  F64 x,w,ox;
+  CTrie *word;
   CDoc *doc=FramePtr("Latin.doc",t),*odoc=doc;
   CDC *dummy=DCNew(1,1);
   if(!doc)
@@ -24,18 +25,48 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
       break;
     y=(line2-oline)*line_height;
     x=0;
-    if(line2-oline==odoc->y)
-      TTF_RenderText(dc,x,y,line,,,odoc->x);
-    else
-      TTF_RenderText(dc,x,y,line,,,-1);
+    for(idx2=0;line[idx2];) {
+      en=SkipWhitespace(line+idx2);
+      if(en!=line+idx2) {
+        MemCpy(buf,line+idx2,len=en-&line[idx2]);
+        buf[len]=0;
+        if(odoc->y==line2-1) {
+	  x+=TTF_RenderText(dc,x,y,buf,,,odoc->x-idx2);
+        } else
+	  x+=TTF_RenderText(dc,x,y,buf);
+        idx2=en-line;
+      } else {
+        len=0;
+        while(line[len+idx2]&&!Bt(char_bmp_white_space,line[len+idx2]))
+	  ++len;
+        MemCpy(buf,line+idx2,len);
+        buf[len]=0;
+        if(word=GetWord(buf)) {
+	  dc->color=GREEN;
+	  ox=x;
+	  if(odoc->y==line2-1)
+	    x+=DrawSexyWord(dc,16.,x,y,word,buf,odoc->x-idx2);
+	  else
+	    x+=DrawSexyWord(dc,16.,x,y,word,buf);
+	  w=DrawWordInfo(dc,0,0,word,TRUE,buf);
+	  DrawWordInfo(dc,(x-ox)/2.+ox-w/2.,y+16.,word,FALSE,buf);
+        } else {
+	  dc->color=LTRED;
+	  if(odoc->y==line2-1)
+	    x+=TTF_RenderText(dc,x,y,buf,,,odoc->x-idx2);
+	  else
+	    x+=TTF_RenderText(dc,x,y,buf);
+        }
+        idx2+=len;
+      }
+    }
     Free(line);
   }
   DCDel(dummy);
   DocDel(doc);
 }
 U0 LatinEd(U8 *file) {
-  CDoc *doc=DocNew(file);
-  doc->flags|=DOCF_PLAIN_TEXT|DOCF_NO_CURSOR;
+  CDoc *doc=DocRead(file,DOCF_PLAIN_TEXT|DOCF_NO_CURSOR);
   DocClear;
   I64 m,x,y;
   FramePtrAdd("Latin.doc",doc);

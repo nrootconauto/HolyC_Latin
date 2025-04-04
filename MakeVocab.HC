@@ -376,7 +376,8 @@ U0 WordDBPeenisumPoems(U8 *db,U8 *dirp="Peenisum") {
   DirTreeDel(dir);
   Free(dirp);
 }
-U8 *WordDBGetTranslation(U8 *db_name="Words.DB",U8 *word,I64 which=0) {
+U8 *WordDBGetTranslation(U8 *db_name=__DIR__"/Words.DB",U8 *word,I64 which=0) {
+PrintI(db_name,111);
   U8 *tmp=GetBaseWord(word);
   if(tmp)
      word=tmp;
@@ -403,7 +404,7 @@ fin:
   FClose(f);
   return ret;
 }
-U0 WordDBSetTranslation(U8 *db_name="Words.DB",U8 *word,U8 *trans,I64 which=0) {
+U0 WordDBSetTranslation(U8 *db_name=__DIR__"/Words.DB",U8 *word,U8 *trans,I64 which=0) {
   U8 *tmp=GetBaseWord(word);
   if(tmp)
      word=tmp;
@@ -429,7 +430,7 @@ fin:
 }
 
 
-I64 DBVersion(U8 *db_name="Words.DB") {
+I64 DBVersion(U8 *db_name=__DIR__"/Words.DB") {
   CFile *db=FOpen(db_name,"r");
   CFileHashEntry ent;
   I64 ver=0;
@@ -439,7 +440,7 @@ I64 DBVersion(U8 *db_name="Words.DB") {
   FClose(db);
   return ver;
 }
-I64 DBValue(U8 *w,U8 *db_name="Words.DB",I64 which=1) {
+I64 DBValue(U8 *w,U8 *db_name=__DIR__"/Words.DB",I64 which=1) {
   CFile *db=FOpen(db_name,"r");
   if(!db) return 0;
   CFileHashEntry ent;
@@ -452,19 +453,19 @@ I64 DBValue(U8 *w,U8 *db_name="Words.DB",I64 which=1) {
 
 }
 //Del("Words3.DB");
-if(FileFind("Words.DB.Z"))
-  Unzip("Words.DB.Z");
-if(!FileFind("Words.DB")||DBVersion!=1) {
-  WordDBFromDict("Words.DB","Latin.json");
-  //WordDBVulgate("Words.DB","Genesis");
-  //WordDBVulgate("Words.DB","Exodus");
-  WordDBPeenisumPoems("Words.DB");
-  WordDBAssignTranslation("Words.DB");
+if(FileFind(__DIR__"/Words.DB.Z"))
+  Unzip(__DIR__"/Words.DB.Z");
+if(!FileFind(__DIR__"/Words.DB")||DBVersion!=1) {
+  WordDBFromDict(__DIR__"/Words.DB","Latin.json");
+  //WordDBVulgate(__DIR__"/Words.DB"","Genesis");
+  //WordDBVulgate(__DIR__"/Words.DB"","Exodus");
+  WordDBPeenisumPoems(__DIR__"/Words.DB");
+  WordDBAssignTranslation(__DIR__"/Words.DB");
 }
 #if __CMD_LINE__
-//WordDBPeenisumPoems("Words.DB");
-//WordDBAssignTranslation("Words.DB");
-"%s\n",WordDBGetTranslation("Words.DB","esca");
-//"%s\n",WordDBGetTranslation("Words.DB","plantaria");
+//WordDBPeenisumPoems(__DIR__"/Words.DB");
+//WordDBAssignTranslation(__DIR__"/Words.DB");
+"%s\n",WordDBGetTranslation(__DIR__"/Words.DB","esca");
+//"%s\n",WordDBGetTranslation(__DIR__"/Words.DB"","plantaria");
 #endif
 #endif

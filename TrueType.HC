@@ -627,7 +627,10 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16,I64 in
       ga=TTF_RenderChr(dc,x,y,file,*text,scale);
       x+=ga.x;
     } else  {
-      ga=TTF_RenderChr(dumb,x,y,file,*text,scale);
+      if(dc->flags&DCF_RECORD_EXTENTS)
+        ga=TTF_RenderChr(dc,x,y,file,*text,scale);
+      else
+        ga=TTF_RenderChr(dumb,x,y,file,*text,scale);
       x+=ga.x;
     }
     if(idx==invert_ch_idx) {
@@ -731,7 +734,7 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
  	GrPlot(to,tx+x,ty+y);
    }
   if(invert_ch_idx>=0) {
-    to->color=ROP_XOR|0xf;
+    to->color=ROP_XOR|YELLOW;
     GrRect(to,tx+at_x/scale_ratio*scale,ty,at_ga.x/scale_ratio*scale,at_ga.y/scale_ratio*scale);
   }
   to->color=old;
@@ -751,7 +754,7 @@ TTF_RenderText(gr.dc,0,300,"They don't ask for ID cuz they know im 21\n     21 S
 PressAKey;
 DCFill;
 TTF_RenderChr(gr.dc,200,175,font,'a',150);
-TTF_RenderChr(gr.dc,400,175,font,'b',250);
+TTF_RenderChr(gr.dc,400,175,font,'i',250);
 TTF_RenderChr(gr.dc,200,375,font,'c',200);
 TTF_RenderChr(gr.dc,400,375,font,'d',250);
 #endif

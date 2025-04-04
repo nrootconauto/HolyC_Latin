@@ -4,7 +4,7 @@
 #ifndef TrieAdd
 extern U8 *TrieAdd(U8 *name, I64 flags = 0, U8 *translation = NULL);
 #endif
-U8 *json_file="Latin.json";
+U8 *json_file=__DIR__"/Latin.json";
 extern U8 *GetBaseWord(U8 *word,I64 inst=0);
 extern U8 *GetWordString(U8 *word,I64 inst=0);
 #include "Utils.HC";
@@ -547,7 +547,7 @@ skip:;
   Free(optr);
 }
 #ifndef DBValue
-extern I64 DBValue(U8 *word,U8 *db="Words.DB",I64 inst);
+extern I64 DBValue(U8 *word,U8 *db=__DIR__"/Words.DB",I64 inst);
 #endif
 I64 GetWordOffset(U8 *word,I64 inst=0) {
   U8 buf[STR_LEN],buf2[STR_LEN];
@@ -555,7 +555,7 @@ I64 GetWordOffset(U8 *word,I64 inst=0) {
   StrUtil(buf2,SUF_TO_LOWER);
   StrPrint(buf,"JsonPos,%s",buf2);
   
-  I64 v=DBValue(buf,"Words.DB",inst+1);
+  I64 v=DBValue(buf,,inst+1);
   if(v==0)
     return -1;
   return v;
@@ -637,7 +637,6 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
 	    word=StrNew(t->str);
 	    JsonDel(j);  
 	    --recur;
-	    PrintI(word,1);
 	    return word;
 	  }
         }
@@ -746,12 +745,12 @@ defacto:
   return StrUtil(best,SUF_REM_CTRL_CHARS);
 }
 #ifndef WordDBGetTranslation
-extern U8 *WordDBGetTranslation(U8 *db="Words.DB",U8*word,I64 inst=0);
+extern U8 *WordDBGetTranslation(U8 *db=__DIR__"/Words.DB",U8*word,I64 inst=0);
 #endif
 //Your on your own(inst==-1 if to use default from CIndexBlk->translation_idx)
 U8 *GetTranslation(U8 *word,Bool recurse=TRUE,Bool small=TRUE,I64 t_inst=-1) {
   if(small)
-    return WordDBGetTranslation("Words.DB",word,MaxI64(t_inst,0));
+    return WordDBGetTranslation(,word,MaxI64(t_inst,0));
   if(t_inst<0)
     t_inst=GetWordDftTranslationIdx(word);
   U8 *trans=GetTranslations(word,recurse),*ret;
