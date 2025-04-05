@@ -154,6 +154,7 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
   CGlAdvance ga;
   U8 *line,buf[STR_LEN],*en;
   I64 idx,y,idx2,len;
+  CCursorFind *cf=FramePtr("Latin.cursor_find",t);
   F64 x,w,ox;
   CTrie *word;
   CDoc *doc=FramePtr("Latin.doc",t),*odoc=doc;
@@ -172,6 +173,14 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
     else //We set DOCF_PLAIN_TEXT,so assume a newline
       line=StrNew(" ");
     y=(line2-oline)*line_height;
+    if(cf) {
+      if(y<=cf->y<=y+line_height) {
+	TTF_RenderText(dummy,0,y,line,,,odoc->x-idx2,cf);
+	cf->user_data=line2-1;
+	FramePtrDel("Latin.cursor_find",t);
+	cf=NULL;
+      }
+    }
     x=0;
     for(idx2=0;line[idx2];) {
       en=SkipWhitespace(line+idx2);
@@ -232,6 +241,7 @@ U0 LatinEd(U8 *file) {
   U8 *line,buf[STR_LEN];
   FramePtrAdd("Latin.top",1);
   FramePtrAdd("Latin.doc",doc);
+  CCursorFind cf;
   Fs->draw_it=&LatinEdDrawIt;
   while(TRUE) {
     ww=(Fs->win_right-Fs->win_left)*8/line_height;
@@ -248,8 +258,27 @@ U0 LatinEd(U8 *file) {
       oldz=ms.pos.z;
     }
     while(m=ScanMsg(&x,&y)) {
+      if(m==MSG_MS_L_DOWN) {
+	cf.x=x;
+	cf.y=y;
+	cf.found_ch_idx=doc->x;
+        cf.user_data=doc->y;
+	FramePtrAdd("Latin.cursor_find",&cf);
+        Refresh;
+        doc->y=cf.user_data;
+	doc->x=cf.found_ch_idx;
+	DocRecalc(doc,RECALCt_FIND_CURSOR);
+      }
       if(m==MSG_MS_R_DOWN) {
-//TODO find clicked word
+	cf.x=x;
+	cf.y=y;
+	cf.found_ch_idx=doc->x;
+        cf.user_data=doc->y;
+	FramePtrAdd("Latin.cursor_find",&cf);
+        Refresh;
+        doc->y=cf.user_data;
+	doc->x=cf.found_ch_idx;
+	DocRecalc(doc,RECALCt_FIND_CURSOR);
 //Open word form
 	if(doc->cur_entry->type_u8==DOCT_TEXT) {
 	  x=doc->x;

@@ -609,17 +609,25 @@ CGlAdvance TTF_RenderChr(CDC *dc,I64 x,I64 y,U8 *file,I64 uc,F64 scale=16) {
   I64 g=TTF_UCToGlyph(file,uc);
   return TTF_RenderGl(dc,x,y,file,g,scale,NULL,NULL);
 }
-I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16,I64 invert_ch_idx=-1,I64 *inv_offset=NULL,CGlAdvance *inv_met=NULL) {
+class CCursorFind {
+  F64 x,y;
+  F64 best_dist;
+  I64 found_ch_idx; //Filled in by TTF_RenderText
+  I64 user_data;
+};
+
+I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16,I64 invert_ch_idx=-1,I64 *inv_offset=NULL,CGlAdvance *inv_met=NULL,CCursorFind *cursor_find=NULL) {
   CGlAdvance ga;
-  I64 ox=x,idx=0;
+  I64 ox=x,idx=0,last_x;
   U8 *head=TTF_GetTablePtr('head',file);
   F64 ppem=EndianU16((head+18)(U16*)[0]);
-  F64 aw;
+  F64 aw,dist;
   CDC*dumb=DCNew(1,1);
   F64 line_height;
+  TTF_HMetrics(0,file,NULL,NULL,&line_height);
   while(*text) {
+    last_x=x;
     if(*text=='\n') {
-      TTF_HMetrics(0,file,NULL,NULL,&line_height);
       x=ox;
       y-=line_height/ppem*scale;
       ga.x=0;
@@ -638,6 +646,22 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16,I64 in
       if(inv_offset) *inv_met=ga;
     }
     x+=TTF_Kerning(file,text[0],text[1])/ppem*scale;
+    if(cursor_find) {
+      if(last_x<=cursor_find->x<=x) {
+        if(y<=cursor_find->y<=y-line_height/ppem*scale) {
+	  cursor_find->best_dist=0;
+	  cursor_find->found_ch_idx=idx;
+	  goto found;
+        }
+      }
+      dist=Sqrt(Sqr((x+last_x)/2.-cursor_find->x)+
+	    Sqr(y-line_height/ppem*scale/2.-cursor_find->y));
+      if(dist<cursor_find->best_dist) {
+        cursor_find->best_dist=dist;
+        cursor_find->found_ch_idx=idx;
+      }
+found:; 
+    }
     ++idx;
     text++;
   }
@@ -690,7 +714,7 @@ I64 HintColor(CDC *from,F64 x,F64 y,F64 avg_hits,F64 width=1.,I64 color=BLACK) {
     
 }
 U8 *font=FileRead(__DIR__"/FiraFont/FiraSans-Regular.ttf");
-I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=font,I64 invert_ch_idx=-1) {
+I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=font,I64 invert_ch_idx=-1,CCursorFind *find_cursor=NULL) {
   U32 *str=CAlloc((1+StrLen(text))*4),c,i=0;
   CDC *ext=DCNew(I32_MAX,I32_MAX,Fs,TRUE);
   CDC *upscaled;
@@ -718,7 +742,16 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
   }
   upscaled=DCNew(6+(w=ext->max_x-ext->min_x+2),6+(h=ext->max_y-ext->min_y+2));
   DCFill(upscaled,TRANSPARENT);
-  F64 rw=TTF_RenderTextU32(upscaled,3-ext->min_x,3-ext->min_y,ttf_file,str,scale_ratio);
+  if(find_cursor) {
+    find_cursor->x-=tx;
+    find_cursor->y-=ty;
+    find_cursor->x/=scale;
+    find_cursor->y/=scale;
+    find_cursor->x*=scale_ratio;
+    find_cursor->y*=scale_ratio;
+    find_cursor->best_dist=scale_ratio`3.*100.;
+  }
+  F64 rw=TTF_RenderTextU32(upscaled,3-ext->min_x,3-ext->min_y,ttf_file,str,scale_ratio,,,,find_cursor);
   OddEven(upscaled);
   TTF_HMetrics(0,ttf_file,NULL,NULL,&lh);
   tx-=-ext->min_x*scale/scale_ratio;
@@ -732,7 +765,7 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
     for(y=0;y<h;y++) {
       to->color=HintColor(upscaled,x*scale_ratio/scale,y*scale_ratio/scale,avg_hits,scale_ratio/scale,old);
       if(to->color!=TRANSPARENT)
- 	GrPlot(to,tx+x,ty+y);
+	GrPlot(to,tx+x,ty+y);
    }
   if(invert_ch_idx>=0) {
     to->color=ROP_XOR|YELLOW;

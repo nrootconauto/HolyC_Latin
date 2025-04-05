@@ -1,6 +1,6 @@
 #ifndef VISUAL_HH
 #define VISUAL_HH 21
-#exe {Cd(__DIR__);};;
+#exe {Cd(__DIR__);};
 #include "Annotate.HC";
 #include "FileBMP.HC";
 U0 CalcBezier(CD3I32 *point,CD3I32*l,CD3I32 *cent,CD3I32 *r) {
