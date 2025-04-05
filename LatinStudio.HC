@@ -1,5 +1,155 @@
-#include "Visual.HC";
+#include "WordForms.HC";
 F64 line_height=25;
+class CNounForm {
+  Bool plural format "$$CB,\"Plural\"$$\n";
+  I64 case format "$$LS,D=\"DF_CASES\"$$\n";
+};
+class CVerbForm {
+  I64 tense format "$$LS,D=\"DF_TENSES\"$$\n";
+  I64 person format "$$LS,D=\"DF_PERSON\"$$\n";
+  Bool passive format "$$CB,\"Active\"$$\n";
+  Bool plural format "$$CB,\"Plural\"$$\n";
+  Bool subj format "$$CB,\"Subjunctive\"$$\n";
+};
+I64 DFCaseToFlags(I64 a)  {
+  switch(a) {
+    case 0:
+	return NOMITIVE;
+    case:
+	return ACCUSATIVE;
+    case:
+	return DATIVE;
+    case:
+	return ABLATIVE;
+    case:
+	return GENITIVE;
+    case:
+	return VOCATIVE;
+  }
+  return 0;
+}
+I64 DFTenseToFlags(I64 a)  {
+  switch(a) {
+    case 0:
+	return PRESENT;
+    case:
+	return IMPERFECT;
+    case:
+	return FUTURE;
+    case:
+	return PERFECT;
+    case:
+	return PLUPERFECT;
+    case:
+	return FUTURE|PERFECT;
+  }
+  return 0;
+}
+I64 DFPersonToFlags(I64 a)  {
+  switch(a) {
+    case 0:
+	return _1P;
+    case :
+	return _2P;
+    case :
+	return _3P;
+  }
+  return 0;
+}
+I64 FlagsToDFCase(I64 fl)  {
+  I64 a=DefineCnt("DF_CASES"),f;
+  while(--a>=0) {
+    f=DFCaseToFlags(a);
+    if(f&fl==f)
+      return a;
+  }
+  return 0;
+}
+I64 FlagsToDFTense(I64 fl)  {
+  I64 a=DefineCnt("DF_TENSES"),f;
+  while(--a>=0) {
+    f=DFTenseToFlags(a);
+    if(f&fl==f)
+      return a;
+  }
+  return 0;
+}
+I64 FlagsToDFPerson(I64 fl)  {
+  I64 a=DefineCnt("DF_PERSON"),f;
+  while(--a>=0) {
+    f=DFPersonToFlags(a);
+    if(f&fl==f)
+      return a;
+  }
+  return 0;
+}
+CTrie *ChooseWordForm(CTrie *word) {
+  U8 *base_word=GetBaseWord(word->str);
+  U8 *ws=GetWordString(base_word),buf[STR_LEN];
+  CJson *j=ParseJson(ws),*forms,*form;
+  CTrie *have;
+  I64 idx2,f,idx;
+  CVerbForm verb;
+  CNounFormnoun;
+  I64 want;
+  if(word->flags&VERB) {
+    verb.plural=ToBool(word->flags&PLURAL);
+    verb.subj=ToBool(word->flags&SUBJUNCTIVE);
+    verb.passive=ToBool(word->flags&PASSIVE);
+    verb.tense=FlagsToDFTense(word->flags);
+    verb.person=FlagsToDFPerson(word->flags);
+    PopUpForm(&verb);
+    want=(verb.plural*PLURAL)|DFTenseToFlags(verb.tense);
+    want|=verb.subj*SUBJUNCTIVE;
+    want|=verb.passive*PASSIVE;
+    want|=DFPersonToFlags(verb.person);
+  }
+  if(word->flags&(NOUN|PARTICIPLE|ADJECTIVE)) {
+    noun.plural=ToBool(word->flags&PLURAL);
+    noun.case=FlagsToDFCase(word->flags);
+    PopUpForm(&noun);
+    want=(noun.plural*PLURAL)|DFCaseToFlags(noun.case);
+  }
+  forms=GetJsonMember(j,"forms");
+  if(forms) {
+    for(idx=0;form=GetJsonMember(forms,StrPrint(buf,"%d",idx));idx++) {
+      if(GetJsonMember(form,"form",J_STR)) {
+        have=GetWord(GetJsonMember(form,"form")->str);
+	if(have) {
+	  f=have->flags;
+	  if(want&f!=want)
+	    goto skip;
+	  if(word->flags&(NOUN|VERB|ADJECTIVE|PARTICIPLE)
+		!=f&(NOUN|VERB|ADJECTIVE|PARTICIPLE))
+	    goto skip;
+          if(want&PLURAL^^f&PLURAL)
+	    goto skip;
+          if(want&SUBJUNCTIVE^^f&SUBJUNCTIVE)
+	    goto skip;
+          if(want&PASSIVE^^f&PASSIVE)
+	    goto skip;
+//Account for FUTURE|PERFECT
+          if(want&(PERFECT|FUTURE)!=f&(FUTURE|PERFECT))
+	    goto skip;
+	  goto fin;
+	}
+skip:;
+      }
+    }
+  }
+  have=NULL;
+fin:
+  Free(ws);
+  JsonDel(j);
+  Free(base_word);
+  return have;
+}
+U0 Init() {
+  DefineLstLoad("DF_CASES","Nomitive\0Accusative\0Dative\0Ablative\0Genitive\0Vocative\0");
+  DefineLstLoad("DF_TENSES","Present\0Imperfect\0Future\0Perfect\0Pluperfect\0FutPer\0");
+  DefineLstLoad("DF_PERSON","1st_Person\02nd_Person\03rd_Person\0");
+}
+Init;
 U0 LatinEdDrawIt(CTask *t,CDC *dc) {
   CGlAdvance ga;
   U8 *line,buf[STR_LEN],*en;
@@ -76,8 +226,10 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 U0 LatinEd(U8 *file) {
   CDoc *doc=DocRead(file,DOCF_PLAIN_TEXT|DOCF_NO_CURSOR);
   DocClear;
-  I64 m,x,y,ww,wh,scroll,lc;
+  I64 m,x,y,ww,wh,scroll,lc,len;
   I64 oldz=ms.pos.z;
+  CTrie *trie;
+  U8 *line,buf[STR_LEN];
   FramePtrAdd("Latin.top",1);
   FramePtrAdd("Latin.doc",doc);
   Fs->draw_it=&LatinEdDrawIt;
@@ -96,6 +248,38 @@ U0 LatinEd(U8 *file) {
       oldz=ms.pos.z;
     }
     while(m=ScanMsg(&x,&y)) {
+      if(m==MSG_MS_R_DOWN) {
+//TODO find clicked word
+//Open word form
+	if(doc->cur_entry->type_u8==DOCT_TEXT) {
+	  x=doc->x;
+	  line=doc->cur_entry->tag;
+	  if(Bt(char_bmp_alpha_numeric,line[x])) {
+	    while(x>=0&&Bt(char_bmp_alpha_numeric,line[x])) {
+	      --x;
+	    }
+	    ++x;
+	    len=0;
+	    while(line[x+len]&&Bt(char_bmp_alpha_numeric,line[x+len])) {
+	      buf[len]=line[x+len];
+	      ++len;
+	    }
+	    buf[len]=0;
+	    if(trie=GetWord(buf)) {
+	      trie=ChooseWordForm(trie);
+	      if(trie) {
+	        doc->x=x;
+		DocRecalc(doc,RECALCt_FIND_CURSOR);
+//Delete word
+		while(--len>=0) {
+		  EdCharDel(doc);
+	        }
+		DocPrint(doc,"%s",trie->str);
+	      }
+	    }
+	  }
+	}
+      }
       if(m==MSG_KEY_DOWN) {
         if(x==CH_ESC)
 	  goto fin;

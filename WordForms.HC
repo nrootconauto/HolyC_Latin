@@ -244,6 +244,7 @@ U0 DocWordTable(CDoc *doc,U8 *word) {
     "\n";
   "\n";
 }
+#if __CMD_LINE__
 DocClear;
 DocMax;
 DocWordTable(DocPut,"amo");
@@ -255,3 +256,4 @@ DocWordTable(DocPut,"ager");
 DocWordTable(DocPut,"rex");
 DocWordTable(DocPut,"manus");
 DocWordTable(DocPut,"res");
+#endif

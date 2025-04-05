@@ -745,7 +745,7 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
   return Ceil(rw);
 }
 #if __CMD_LINE__
-Cd(__DIR__);;;
+Cd(__DIR__);
 DCFill;
 WinMax;
 DocClear;
