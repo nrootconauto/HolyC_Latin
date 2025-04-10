@@ -127,7 +127,7 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   U8 **transt=TokenizeSentence(trans,NULL,TRUE),*tword;
   Free(latin);
   Free(trans);
-  CFile *file=FOpen(db_name,"w+");
+  CFile *file=db_name;
   CFileHashEntry ent; 
   I64 at,at2;
   for(reverse=0;reverse!=2;reverse++) {
@@ -179,7 +179,6 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
     Free(transt[i]);
   Free(latint);
   Free(transt);
-  FClose(file);
 }
 U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
   DBInit(db);
@@ -195,21 +194,22 @@ U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
   I64 last_cnt=0;
   F64 t=tS,per_sec=1.,ti=t;
   progress1_t0=ti;
+	dbf=FOpen(db,"w+");
   try {
     while(TRUE) {
-      Fs->data_heap=hc=HeapCtrlInit(NULL,Fs,0);
+
+Fs->data_heap=hc=HeapCtrlInit(NULL,Fs,0);
+
       at=ptr-olatin;
       j=ParseJson(ptr,&ptr);
-      Fs->data_heap=old;
+Fs->data_heap=old;
       if(!j) {
         HeapCtrlDel(hc);
         break;
       }
       if(word=GetJsonMember(j,"word")) {
         StrPrint(buf,"JsonPos,%s",word->str);
-	dbf=FOpen(db,"w+");
 	FileHashAdd(dbf,0,buf,at);
-        FClose(dbf);
         ss=GetJsonMember(j,"senses");
         if(ss)
 	  for(sense=0;s=GetJsonMember(ss,StrPrint(buf,"%d",sense));sense++) {
@@ -217,19 +217,18 @@ U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
 	    if(gs)
 	      for(gloss=0;g=GetJsonMember(gs,StrPrint(buf,"%d",gloss));gloss++) {
 	        if(g->type==J_STR) {
-		  MakeWordPairsDB(db,word->str,g->str);
+		  MakeWordPairsDB(dbf,word->str,g->str);
 	        }
 	      }
 	    break; //Only do first sense.
 	  }
       }
       HeapCtrlDel(hc);
-      progress1_max=lines;
-      progress1=++line;
+      "\r%d/%d",progress1=++line,progress1_max=lines;
       if(tS>1.+t) {
         per_sec+=line-last_cnt;
 	per_sec/=2.;
-        progress1_tf=(lines-line)/per_sec+ti;
+        "\r====> %f\n",progress1_tf=(lines-line)/per_sec+ti;
 	t=tS;
 	last_cnt=line;
       }
@@ -239,6 +238,7 @@ U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
     Fs->data_heap=old;
     PutExcept(TRUE);
   };
+        FClose(dbf);
   ProgressBarsRst;
   Free(olatin);
 }
@@ -338,6 +338,7 @@ U8 *BibleVerseVulgate(U8 *book,I64 chap,I64 verse,U8 *vpath="Vulgate/Vulgate.DD"
 U0 WordDBVulgate(U8 *db,U8 *book="Genesis") { 
   I64 i,k;
   U8 *latin,*trans;
+db=FOpen(db,"w+");
   for(i=1;TRUE;i++) {
     for(k=1;TRUE;k++) {
       latin=BibleVerseVulgate(book,i,k,"Vulgate/Vulgate.DD");
@@ -354,6 +355,7 @@ U0 WordDBVulgate(U8 *db,U8 *book="Genesis") {
     if(k==1)
       break;
   }
+FClose(db);
 }
 //Poems to the Pee Pee God(?),writen by Priapus
 U0 WordDBPeenisumPoems(U8 *db,U8 *dirp="Peenisum") {
@@ -361,6 +363,7 @@ U0 WordDBPeenisumPoems(U8 *db,U8 *dirp="Peenisum") {
   CDirEntry *dir=FilesFind(dirp,FUF_JUST_FILES),*e;
   I64 l;
   U8 *latin,*tran;
+db=FOpen(db,"w+");
   for(e=dir;e;e=e->next) {
     for(l=1;TRUE;l+=2) {
       latin=DocLineRead(e->full_name,l);
@@ -373,6 +376,7 @@ U0 WordDBPeenisumPoems(U8 *db,U8 *dirp="Peenisum") {
       Free(latin),Free(tran);
     }
   }
+FClose(db);
   DirTreeDel(dir);
   Free(dirp);
 }
@@ -466,6 +470,6 @@ if(!FileFind(__DIR__"/Words.DB")||DBVersion!=1) {
 //WordDBPeenisumPoems(__DIR__"/Words.DB");
 //WordDBAssignTranslation(__DIR__"/Words.DB");
 "%s\n",WordDBGetTranslation(__DIR__"/Words.DB","esca");
-//"%s\n",WordDBGetTranslation(__DIR__"/Words.DB"","plantaria");
+"%s\n",WordDBGetTranslation(__DIR__"/Words.DB","plantaria");
 #endif
 #endif
