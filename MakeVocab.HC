@@ -2,23 +2,23 @@
 #define BAYES_MODE 21
 #exe{Cd(__DIR__);};
 #include "GrammarAST.HC";
-#define FILE_HASHTABLE_IDENT 'HTabbaTH'
-#define FILE_HASHENT_IDENT 'HEnttnEH'
-#define FILE_HASH_MASK 124
+#define FILE_HASHTABLE_IDENT 'HTab'
+#define FILE_HASHENT_IDENT 'HEnt'
+#define FILE_HASH_MASK 62
 class CFileHashTable {
-  U64 ident;
-  U64 cnt;
-  U32 body[124];
-};
+  U32 ident;
+  U32 cnt;
+  U32 body[62];
+}; //BLK_SIZE/2
 class CFileHashEntry {
-  U64 ident;
-  I64 value;
-  U64 flags;  // -8
-  U32 next; // -4
-  U8 name[128-4-8];
-  U8 translation1[128];
-  U8 translation2[128];
-  U8 translation3[128];
+  U32 ident;
+  U32 value;
+  U32 next;
+  U64 flags;
+  U8 name[59];
+  U8 translation1[59];
+  U8 translation2[59];
+  U8 translation3[59];
 };
 U0 DBInit(U8 *db_name) {
   if(!FileFind(db_name)) {
@@ -31,21 +31,47 @@ U0 DBInit(U8 *db_name) {
   }
 }
 
+U0 FHalfBlkWrite(CFile *db,U8 *data,I64 blk) {
+  U8 full[BLK_SIZE];
+  MemSet(full,0,BLK_SIZE);
+  FBlkRead(db,full,blk>>1);
+  if(blk&1)
+    MemCpy(full+BLK_SIZE/2,data,BLK_SIZE/2);
+  else
+    MemCpy(full,data,BLK_SIZE/2);
+  FBlkWrite(db,full,blk>>1);
+}
+U0 FHalfBlkRead(CFile *db,U8 *data,I64 blk) {
+  U8 full[BLK_SIZE];
+  FBlkRead(db,full,blk>>1);
+  if(blk&1)
+    MemCpy(data,full+BLK_SIZE/2,BLK_SIZE/2);
+  else
+    MemCpy(data,full,BLK_SIZE/2);
+}
+
+
 I64 FileAllocateBlk(CFile *db) {
-  return db->de.size>>BLK_SIZE_BITS;
+  I64 final=db->de.size>>BLK_SIZE_BITS;
+  if(!final) return 0;
+  U32 dumb[BLK_SIZE/4];
+  FHalfBlkRead(db,dumb,final>>1+1);
+  if(dumb[0]==0)
+    return final<<1+1;
+  return final<<1;
 }
 I64 FileIncHashTableCnt(CFile *db,I64 at) {
   CFileHashTable hdr;
-  FBlkRead(db,&hdr,at);
+  FHalfBlkRead(db,&hdr,at);
   hdr.cnt++;
-  FBlkWrite(db,&hdr,at);
+  FHalfBlkWrite(db,&hdr,at);
   return at;
 }
 I64 FileNewHashTable(CFile *db,I64 at) {
   CFileHashTable hdr;
   MemSet(&hdr,0,sizeof CFileHashTable);
   hdr.ident=FILE_HASHTABLE_IDENT;
-  FBlkWrite(db,&hdr,at);
+  FHalfBlkWrite(db,&hdr,at);
   return at;  
 }
 I64 FileHashGet(CFileHashEntry *ret,CFile *db,I64 table,U8 *name,I64 inst=1) {
@@ -58,7 +84,7 @@ I64 FileHashGet(CFileHashEntry *ret,CFile *db,I64 table,U8 *name,I64 inst=1) {
     if('A'<=ToUpper(*name)<='Z')
       table+=ToUpper(*name)-'A';
   }
-  FBlkRead(db,&hdr,table);
+  FHalfBlkRead(db,&hdr,table);
   if(hdr.ident!=FILE_HASHTABLE_IDENT) {
     throw('File2');
   }
@@ -68,10 +94,10 @@ I64 FileHashGet(CFileHashEntry *ret,CFile *db,I64 table,U8 *name,I64 inst=1) {
     return NULL;
   }
 again:;
-  FBlkRead(db,&ent,where);
+  FHalfBlkRead(db,&ent,where);
   if(!StrCmp(name,ent.name)) {
     if(--inst==0) {
-      FBlkRead(db,ret,where);
+      FHalfBlkRead(db,ret,where);
       return where;
     }
   }
@@ -91,7 +117,7 @@ I64 FileHashAdd(CFile *db,I64 table,U8 *name,I64 value) {
     if('A'<=ToUpper(*name)<='Z')
       table+=ToUpper(*name)-'A';
   }
-  FBlkRead(db,&hdr,table);
+  FHalfBlkRead(db,&hdr,table);
   if(hdr.ident!=FILE_HASHTABLE_IDENT) {
     throw('File3');
   }
@@ -100,22 +126,22 @@ I64 FileHashAdd(CFile *db,I64 table,U8 *name,I64 value) {
     new=FileAllocateBlk(db);
     hdr.body[hash]=new;
 add:;
-    FBlkWrite(db,&hdr,table);
+    FHalfBlkWrite(db,&hdr,table);
     MemSet(&ent,0,BLK_SIZE);
     StrCpy(ent.name,name);
     ent.next=next;
     ent.value=value;
     ent.ident=FILE_HASHENT_IDENT;
-    FBlkWrite(db,&ent,new);
+    FHalfBlkWrite(db,&ent,new);
     return new;
   } else {
-    FBlkRead(db,&ent,where);
+    FHalfBlkRead(db,&ent,where);
     new=FileAllocateBlk(db);
     next=where;
     hdr.body[hash]=new;
     goto add;
   }
-}
+}
 U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   DBInit(db_name);
   CFileHashTable hdr;
@@ -153,19 +179,19 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
 		FileIncHashTableCnt(file,0);
 	    if(!FileHashGet(&ent,file,0,lword)) {
 	      at=FileHashAdd(file,0,lword,0);
-	      FBlkRead(file,&ent,at);
+	      FHalfBlkRead(file,&ent,at);
 	      ent.value=FileNewHashTable(file,FileAllocateBlk(file));
-	      FBlkWrite(file,&ent,at);
+	      FHalfBlkWrite(file,&ent,at);
 	    }
 	    at=ent.value;
 	    if(!(at2=FileHashGet(&ent,file,at,tword))) {
 	      at2=FileHashAdd(file,at,tword,0);
-	      FBlkRead(file,&ent,at2);
+	      FHalfBlkRead(file,&ent,at2);
 	    }
             FileIncHashTableCnt(file,at);
-	    FBlkRead(file,&ent,at2);
+	    FHalfBlkRead(file,&ent,at2);
 	    ent.value++;
-	    FBlkWrite(file,&ent,at2);
+	    FHalfBlkWrite(file,&ent,at2);
 	  }
           Free(tword);
         }
@@ -259,7 +285,7 @@ U0 WordDBAssignTranslation(U8 *db_name) {
   I64 i,j,tmp,tmp2;
   CFileHashTable root,child,tmph;
   CFileHashEntry roote,childe,tmpe;
-  FBlkRead(db,&root,0);
+  FHalfBlkRead(db,&root,0);
   F64 all,word1,word2,prob;
   F64 best_prob;
   CScorePair scores[4];
@@ -268,31 +294,31 @@ U0 WordDBAssignTranslation(U8 *db_name) {
   U8 best_word[STR_LEN];
   all=0;
   for(root_letter='A';root_letter<='Z';++root_letter) {
-    FBlkRead(db,&root,root_letter-'A');
+    FHalfBlkRead(db,&root,root_letter-'A');
     all+=root.cnt;
   }
   for(root_letter='A';root_letter<='Z';++root_letter) {
-    FBlkRead(db,&root,root_letter-'A');
+    FHalfBlkRead(db,&root,root_letter-'A');
     for(i=0;i<FILE_HASH_MASK;i++) {
       if(tmp=root.body[i]) {
 again1:
         best_prob=-1;
         StrCpy(best_word,"");
 
-        FBlkRead(db,&roote,tmp);
+        FHalfBlkRead(db,&roote,tmp);
         if(StrOcc(roote.name,'.'))
 	  goto next;
         if(StrOcc(roote.name,','))
 	  goto next;
-        FBlkRead(db,&child,roote.value);
+        FHalfBlkRead(db,&child,roote.value);
         word1=ToF64(child.cnt)/all;
         MemSet(scores,0,sizeof(CScorePair)*4);
         for(j=0;j<FILE_HASH_MASK;j++) {
 	  if(tmp2=child.body[j]) {
 again2:;
-	    FBlkRead(db,&childe,tmp2);
+	    FHalfBlkRead(db,&childe,tmp2);
 	    if(FileHashGet(&tmpe,db,0,childe.name)){
-	      FBlkRead(db,&tmph,tmpe.value); //Read pointer of sub-hashtable
+	      FHalfBlkRead(db,&tmph,tmpe.value); //Read pointer of sub-hashtable
 	      word2=ToF64(tmph.cnt)/all;
 	    } 
 	    prob=(word1*(ToF64(childe.value)/ToF64(roote.value)))/word2;// Bayes Theorem
@@ -308,7 +334,7 @@ again2:;
         StrCpy(roote.translation1,scores[0].word);
         StrCpy(roote.translation2,scores[1].word);
         StrCpy(roote.translation3,scores[2].word);
-        FBlkWrite(db,&roote,tmp);
+        FHalfBlkWrite(db,&roote,tmp);
 next:;
         if(roote.next) {
 	  tmp=roote.next;
@@ -422,7 +448,7 @@ U0 WordDBSetTranslation(U8 *db_name=__DIR__"/Words.DB",U8 *word,U8 *trans,I64 wh
     StrCpy(hent.translation2,trans);
   else if(which==2)
     StrCpy(hent.translation3,trans);
-  FBlkWrite(f,&hent,blk);
+  FHalfBlkWrite(f,&hent,blk);
 "%s,%s,%d\n",word,trans,blk;
 fin:
   Free(word);
@@ -457,6 +483,7 @@ if(FileFind(__DIR__"/Words.DB.Z"))
   Unzip(__DIR__"/Words.DB.Z");
 if(!FileFind(__DIR__"/Words.DB")||DBVersion!=1) {
   WordDBFromDict(__DIR__"/Words.DB","Latin.json");
+Break;
   //WordDBVulgate(__DIR__"/Words.DB"","Genesis");
   //WordDBVulgate(__DIR__"/Words.DB"","Exodus");
   WordDBPeenisumPoems(__DIR__"/Words.DB");
