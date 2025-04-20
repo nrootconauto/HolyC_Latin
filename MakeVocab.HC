@@ -9,7 +9,7 @@ class CFileHashTable {
   U32 ident;
   U32 cnt;
   U32 body[62];
-}; //BLK_SIZE/2
+}; //BLK_SIZE/2
 class CFileHashEntry {
   U32 ident;
   U32 value;
@@ -55,9 +55,9 @@ I64 FileAllocateBlk(CFile *db) {
   I64 final=db->de.size>>BLK_SIZE_BITS;
   if(!final) return 0;
   U32 dumb[BLK_SIZE/4];
-  FHalfBlkRead(db,dumb,final>>1+1);
+  FHalfBlkRead(db,dumb,final<<1-1);
   if(dumb[0]==0)
-    return final<<1+1;
+    return final<<1-1;
   return final<<1;
 }
 I64 FileIncHashTableCnt(CFile *db,I64 at) {
@@ -127,7 +127,7 @@ I64 FileHashAdd(CFile *db,I64 table,U8 *name,I64 value) {
     hdr.body[hash]=new;
 add:;
     FHalfBlkWrite(db,&hdr,table);
-    MemSet(&ent,0,BLK_SIZE);
+    MemSet(&ent,0,BLK_SIZE/2);
     StrCpy(ent.name,name);
     ent.next=next;
     ent.value=value;
@@ -141,7 +141,7 @@ add:;
     hdr.body[hash]=new;
     goto add;
   }
-}
+}
 U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   DBInit(db_name);
   CFileHashTable hdr;
@@ -208,11 +208,14 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   FClose(file);
 }
 U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
+PrintI(latin_json_file,1);
   DBInit(db);
   CFile *dbf=FOpen(db,"w+");
   FileHashAdd(dbf,0,"DB,Version",1);
   FClose(dbf);
+PrintI(latin_json_file,1);
   U8 *olatin=FileRead(latin_json_file),*ptr=olatin,*trans;
+PrintI("o",olatin);
   I64 lines=StrOcc(olatin,'\n'),line=0;
   CJson *j,*word,*s,*g,*ss,*gs;
   CHeapCtrl *hc,*old=Fs->data_heap;
@@ -482,8 +485,7 @@ I64 DBValue(U8 *w,U8 *db_name=__DIR__"/Words.DB",I64 which=1) {
 if(FileFind(__DIR__"/Words.DB.Z"))
   Unzip(__DIR__"/Words.DB.Z");
 if(!FileFind(__DIR__"/Words.DB")||DBVersion!=1) {
-  WordDBFromDict(__DIR__"/Words.DB","Latin.json");
-Break;
+  WordDBFromDict(__DIR__"/Words.DB",__DIR__"/Latin.json");
   //WordDBVulgate(__DIR__"/Words.DB"","Genesis");
   //WordDBVulgate(__DIR__"/Words.DB"","Exodus");
   WordDBPeenisumPoems(__DIR__"/Words.DB");
