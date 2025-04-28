@@ -5,6 +5,29 @@
 #define FILE_HASHTABLE_IDENT 'HTab'
 #define FILE_HASHENT_IDENT 'HEnt'
 #define FILE_HASH_MASK 62
+Bool IsNothingWord(U8 *a) {
+  if(!StrICmp(a,"And")) return TRUE;
+  if(!StrICmp(a,"but")) return TRUE;
+  if(!StrICmp(a,"a")) return TRUE;
+  if(!StrICmp(a,"it")) return TRUE;
+  if(!StrICmp(a,"is")) return TRUE;
+  if(!StrICmp(a,"was")) return TRUE;
+  if(!StrICmp(a,"he")) return TRUE;
+  if(!StrICmp(a,"she")) return TRUE;
+  if(!StrICmp(a,"we")) return TRUE;
+  if(!StrICmp(a,"which")) return TRUE;
+  if(!StrICmp(a,"who")) return TRUE;
+  if(!StrICmp(a,"are")) return TRUE;
+  if(!StrICmp(a,"the")) return TRUE;
+  if(!StrICmp(a,"that")) return TRUE;
+  if(!StrICmp(a,"they")) return TRUE;
+  if(!StrICmp(a,"this")) return TRUE;
+  if(!StrICmp(a,"these")) return TRUE;
+  if(!StrICmp(a,"not")) return TRUE;
+  if(!StrICmp(a,"all")) return TRUE;
+  if(!StrICmp(a,"each")) return TRUE;
+  return FALSE;
+}
 class CFileHashTable {
   U32 ident;
   U32 cnt;
@@ -162,16 +185,22 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
       lword=latint[i];
       if(!reverse)
         lword=GetBaseWord(lword);
-      else
+      else {
         lword=StrNew(lword);
+        if(IsNothingWord(lword))
+	  goto skipl;
+      }
       if(lword&&!StrICmp(latint[i],lword)) {
 	StrUtil(lword,SUF_TO_LOWER);
         for(j=0;transt[j];j++) {
 	  tword=transt[j];
 	  if(reverse)
 	    tword=GetBaseWord(tword);
-	  else
+	  else {
 	    tword=StrNew(tword);
+	    if(IsNothingWord(tword))
+		goto skipt;
+          }
 	  if(tword&&!StrICmp(transt[j],tword)) {
 	    StrUtil(tword,SUF_TO_LOWER);
 	    if(!reverse)
@@ -192,9 +221,11 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
 	    ent.value++;
 	    FHalfBlkWrite(file,&ent,at2);
 	  }
+skipt:;
           Free(tword);
         }
       }
+skipl:;
       Free(lword);
     }
   }
@@ -483,6 +514,9 @@ I64 DBValue(U8 *w,U8 *db_name=__DIR__"/Words.DB",I64 which=1) {
 //Del("Words3.DB");
 if(FileFind(__DIR__"/Words.DB.Z"))
   Unzip(__DIR__"/Words.DB.Z");
+if(FileFind(__DIR__"/Latin.json.Z"))
+  Unzip(__DIR__"/Latin.json.Z");
+gc_enable=FALSE;
 if(!FileFind(__DIR__"/Words.DB")||DBVersion!=1) {
   WordDBFromDict(__DIR__"/Words.DB",__DIR__"/Latin.json");
   //WordDBVulgate(__DIR__"/Words.DB"","Genesis");
@@ -490,6 +524,7 @@ if(!FileFind(__DIR__"/Words.DB")||DBVersion!=1) {
   WordDBPeenisumPoems(__DIR__"/Words.DB");
   WordDBAssignTranslation(__DIR__"/Words.DB");
 }
+gc_enable=TRUE;
 #if __CMD_LINE__
 //WordDBPeenisumPoems(__DIR__"/Words.DB");
 //WordDBAssignTranslation(__DIR__"/Words.DB");

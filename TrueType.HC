@@ -109,26 +109,27 @@ F64 ColorDist(I64 c,CBGR48 want) {
 I64 HintColor(CDC *from,I64 x,I64 y,F64 width=1.,I64 color=BLACK) {
   F64 hits=0;
   width=Ceil(width);
-  CBGR48 colors[COLORS_NUM];
   U8 *data;
+  CBGR48 colors[COLORS_NUM];
   GrPaletteGet(colors);
   I64 c;
   I64 _x,_y;
   I64 iwidth=width;
   I64 sum=0,total=0;
 
-//Black(0) and transparent(0xff)
-//0x100 is roughly 2*0xff
-//sum and reduce
+  //Black(0) and transparent(0xff)
+  //0x100 is roughly 2*0xff
+  //sum and reduce
   for(_y=0;_y<width;_y++) {
-    data=&from->body[(y+_y)*from->width_internal+x];
     for(_x=0;_x<width;_x++) {
-      sum+=*data;
-      ++data;
-      total+=0xff;
+      c=GrPeek(from,x+_x,y+_y);
+      if(c>=0) {
+        sum+=(c!=0xff);
+        total++;
+      }
     }
   }
-  F64 percent=1.-sum/ToF64(total);
+  F64 percent=sum/ToF64(total);
   CBGR48 want;
   want.r=colors[color].r*percent+colors[WHITE].r*(1.-percent);
   want.g=colors[color].g*percent+colors[WHITE].g*(1.-percent);
@@ -146,7 +147,7 @@ I64 HintColor(CDC *from,I64 x,I64 y,F64 width=1.,I64 color=BLACK) {
   if(c==WHITE)
     return TRANSPARENT;
   return c;
-    
+
 }
 CDC*ScaleDown(CDC *in,F64 scale,I64 color) {
   I64 w=in->width*scale,x;
@@ -731,6 +732,7 @@ class CCursorFind {
   F64 best_dist;
   I64 found_ch_idx; //Filled in by TTF_RenderText
   I64 user_data;
+  I64 found_ch_offset;
 };
 
 I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16,I64 invert_ch_idx=-1,I64 *inv_offset=NULL,CGlAdvance *inv_met=NULL,CCursorFind *cursor_find=NULL) {
@@ -767,7 +769,7 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16,I64 in
       if(last_x<=cursor_find->x<=x) {
         if(y<=cursor_find->y<=y-line_height/ppem*scale) {
 	  cursor_find->best_dist=0;
-	  cursor_find->found_ch_idx=idx;
+	  cursor_find->found_ch_idx=idx+cursor_find->found_ch_offset;
 	  goto found;
         }
       }
@@ -775,7 +777,7 @@ I64 TTF_RenderTextU32(CDC *dc,I64 x,I64 y,U8 *file,U32 *text,F64 scale=16,I64 in
 	    Sqr(y-line_height/ppem*scale/2.-cursor_find->y));
       if(dist<cursor_find->best_dist) {
         cursor_find->best_dist=dist;
-        cursor_find->found_ch_idx=idx;
+        cursor_find->found_ch_idx=idx+cursor_find->found_ch_offset;
       }
 found:; 
     }
@@ -799,13 +801,12 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
     str[i]=c;
   }
   CGlAdvance at_ga;
+  CCursorFind clone;
   I64 at_x=I32_MAX;
   if(find_cursor) {
-    find_cursor->x-=tx;
-    find_cursor->y-=ty;
-    find_cursor->best_dist=scale`3.*100.;
+    MemCpy(&clone,find_cursor,sizeof(CCursorFind));
   }
-  F64 rw=TTF_RenderTextU32(to,tx,ty+4,ttf_file,str,scale,invert_ch_idx,&at_x,&at_ga,find_cursor);
+  F64 rw=TTF_RenderTextU32(to,tx,ty+4,ttf_file,str,scale,invert_ch_idx,&at_x,&at_ga,&clone);
   TTF_HMetrics(0,ttf_file,NULL,NULL,&lh);
   I64 old=to->color;
   if(invert_ch_idx>=0) {
@@ -813,6 +814,8 @@ I64 TTF_RenderText(CDC *to,I64 tx,I64 ty,U32 *text,F64 scale=16,U8 *ttf_file=fon
     GrRect(to,tx+at_x,oty-8,at_ga.x,at_ga.y);
   }
   to->color=old;
+  if(find_cursor&&clone.best_dist<find_cursor->best_dist)
+    find_cursor->best_dist=clone.best_dist,find_cursor->found_ch_idx=clone.found_ch_idx;
   Free(str);
   return Ceil(rw);
 }

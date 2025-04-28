@@ -110,7 +110,9 @@ U0 ScanAllMem(CTask *for_task,U8 *head2,Bool(*scan)(U8*,I64)) {
     next=gc_to_check.next;
   }
 }
+Bool gc_enable=TRUE;
 U0 GCTask(CTask *for_task) {
+  if(!gc_enable) return;
   U8 **flat;
   I64 len;
   Bool repeat;

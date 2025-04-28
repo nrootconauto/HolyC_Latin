@@ -202,6 +202,7 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
   Free(line);
   dc->color=BLACK;
   I64 oline=FramePtr("Latin.top",t),line2;
+  FramePtrDel("Latin.cursor_find",t);
   for(line2=oline;line2<=(t->win_bottom-t->win_top)*8/line_height+oline-1;++line2) {
     if (DocGoToLine(doc,line2) && doc->cur_entry->type_u8==DOCT_TEXT)
       line=MStrPrint("%s ",doc->cur_entry->tag); //Add a end of line space
@@ -210,10 +211,7 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
     y=(line2-oline)*line_height;
     if(cf) {
       if(y<=cf->y<=y+line_height) {
-	TTF_RenderText(dummy,0,y,line,,,odoc->x-idx2,cf);
 	cf->user_data=line2-1;
-	FramePtrDel("Latin.cursor_find",t);
-	cf=NULL;
       }
     }
     x=0;
@@ -225,7 +223,7 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
         if(odoc->y==line2-1) {
 	  x+=TTF_RenderText(dc,x,y,buf,,,odoc->x-idx2);
         } else
-	  x+=TTF_RenderText(dc,x,y,buf);
+	  x+=TTF_RenderText(dc,x,y,buf,,,,cf);
         idx2=en-line;
       } else if(Bt(char_bmp_alpha_numeric,line[idx2])){
         len=0;
@@ -233,6 +231,10 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 	  ++len;
         MemCpy(buf,line+idx2,len);
         buf[len]=0;
+        if(cf&&cf->user_data==line2-1) {
+	  cf->found_ch_offset=idx2;
+          TTF_RenderText(dummy,x,y,buf,,,,cf);
+	}
         if(word=GetWord(buf)) {
 	  dc->color=GREEN;
 	  ox=x;
@@ -311,6 +313,7 @@ U0 LatinEd(U8 *file) {
         cf.y=y;
         cf.found_ch_idx=doc->x;
         cf.user_data=doc->y;
+        cf.best_dist=I16_MAX*I16_MAX;
         FramePtrAdd("Latin.cursor_find",&cf);
         Refresh;
         doc->y=cf.user_data;
