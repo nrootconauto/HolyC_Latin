@@ -39,7 +39,7 @@ Adj@Adj[FlagsTransfer] ADJECTIVE -> !Partic@Partic; (.9) //The "boiled" water
 Noun@Noun [FlagsTransfer] NOUN -> !Pron@Pron;
 
 Conj@Conj CONJUNCTION = CONJUNCTION;
-Noun@Noun(CaseAgree)[FlagsPlural] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;(1.5)
+Noun@Noun(CaseAgree)[FlagsConj] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;(1.5)
 
 Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCTION);(.9)
 Adj@Adj(CaseAgree)[FlagsConj] ADJECTIVE -> Adj@Adj(CONJUNCTION) !Adj@Adj ;(1.1)
@@ -55,8 +55,8 @@ Noun@Gen(HasQueAtEnd)[FlagsPluralQue] NOUN -> Noun@Gen(NOUN) !Noun@Gen; (3.0)
 
 
 
-Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
-Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (4.0)
+Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
+Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (4.0)
 Verb@Verb(HasQueAtEnd)[FlagsPluralQue] VERB -> Verb@Verb(VERB) !Verb@Verb; (2.0)
 
 
@@ -98,6 +98,12 @@ Verb@Verb VERB -> !Verb@Verb;
 Verb@Verb VERB -> Verb@Verb(CONJUNCTION) !Conj@Conj Verb@Verb(CONJUNCTION); (.7)
 
 Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;(.5)
+
+//
+// Dumb hack,conjunctions can become before the verb they affect(Vulgate Genesis 1:2)
+//
+// (The earth) *autem* erat (empty and void)
+Verb@Verb VERB -> Conj@Conj(CONJUNCTION) !Verb@Verb;(.1)
 
 //
 // "In the begining",God created....

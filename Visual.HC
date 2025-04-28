@@ -330,6 +330,14 @@ _p_cnt:
   if(dummy) DCDel(dc);
   return x-ox;
 }
+//Only group nouns with nouns and verbs with verbs
+Bool IsOfSomeType(AST *a,AST *b) {
+  if(a->flags&VERB^^b->flags&VERB)
+    return FALSE;
+  if(a->flags&(NOUN|ADJECTIVE)^^b->flags&(NOUN|ADJECTIVE))
+    return FALSE;
+  return TRUE;
+}
 //Used for grouping togheter conjunctions
 AST *GetFirstConjPair(AST *ast) {
   I64 min=I64_MAX,idx;
@@ -349,7 +357,7 @@ AST *GetFirstConjPair(AST *ast) {
     }
   }
   if(ast!=best)
-	return GetFirstConjPair(best);
+    return GetFirstConjPair(best);
   return best;
 }
 //Used for grouping togheter conjunctions
@@ -372,7 +380,7 @@ AST *GetLastConjPair(AST *ast) {
     }
   }
   if(ast!=best)
-	return GetLastConjPair(best);
+    return GetLastConjPair(best);
   return best;
 }
 
@@ -555,15 +563,8 @@ conj:
         bound_r=ast->base_expression->end;
         ast2=set->body[idx];
 //Ignore "[","]"
-        if(ast2->end==bound_l) {
-	  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)))
-	    goto use_middle;
+        if(ast2->end==bound_l&&IsOfSomeType(ast,ast2)) {
 	  ast2=GetLastConjPair(ast2);
-	  if(ast2->end-ast2->start>1) {
-	    use_handle_x=ast2->disp_node->handle_x;
-	    use_handle_y=ast2->disp_node->handle_y;
-	    goto have_handle;
-	  }
 	  while(0<=bound_l<world->word_cnt) {
 	    if(StrCmp(world->words[bound_l],"["))
 	      break;
@@ -573,15 +574,8 @@ conj:
 	  use_handle_y=tmp->handle_right_y;
 	  use_x=world->word_offsets[bound_l];
 	  use_y=use_handle_y;
-        } else if(set->body[idx]->start==bound_r) {
-	  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)))
-	    goto use_middle;
+        } else if(set->body[idx]->start==bound_r&&IsOfSomeType(ast,ast2)) {
 	  ast2=GetFirstConjPair(ast2);
-	  if(ast2&&ast2->disp_node&&ast2->end-ast2->start>1) {
-	    use_handle_x=ast2->disp_node->handle_x;
-	    use_handle_y=ast2->disp_node->handle_y;
-	    goto have_handle;
-	  }
 	  use_handle_x=tmp->bound_l;
 	  use_handle_y=tmp->handle_left_y;
 //Dumb hack,make
@@ -1282,6 +1276,8 @@ DumpSentences(
 try DumpSentences("in principio [creavit Deus [terram et caelum]]");
 catch
 PutExcept(FALSE);
+DumpSentences("Terra autem  erat inanis et vacua"); //, et tenebrae erant super faciem abyssi: et Spiritus Dei ferebatur super aquas
+DumpSentences("et tenebrae erant super faciem abyssi"); //: et Spiritus Dei ferebatur super aquas
 //John 9:1
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation

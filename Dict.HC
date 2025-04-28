@@ -325,7 +325,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
   }
   I64 flags=0,base_flags=0,idx3,idx2,idx,cs,new_flags;
   U8 dummy[STR_LEN];
-  Bool has_forms=FALSE;
+  Bool has_forms=FALSE,has_senses=FALSE;
   U8 *tmp,*wstr;
   CJson *n,*f,*senses,*formof,*tags;
   I64 inflect_mask=0;
@@ -343,6 +343,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
   }
   base_flags=flags;
   has_forms=ToBool(GetJsonMember(j,"forms",J_ARRAY));
+  has_senses=ToBool(GetJsonMember(j,"senses",J_ARRAY));
   for(idx3=0;idx3!=2;idx3++) {
     if(idx3==0)
       senses=GetJsonMember(j,"senses",J_ARRAY);
@@ -464,6 +465,11 @@ skip:;
     }
   }
   --recur;
+  if(!added&&add) {
+//Blindly accept from "pos":
+   if(!TrieExists(word,flags))
+     DeclensionForWord(new_flags,TrieAdd(word,flags,trans));
+  }
   return flags|inflect_mask;
 }
 U0 MakeIndex(U8 *outname,U8 *in_name) {
@@ -616,6 +622,11 @@ U8 *GetWordString(U8 *word,I64 inst=0)  {
   return ret;
 }
 U8 *GetBaseWord(U8 *word,I64 inst=0) {
+  U8 cache[STR_LEN],*bw,buf[STR_LEN];
+  StrPrint(cache,"BW:%s.%d",word,inst);
+  if(bw=FramePtr(cache,mem_task)) {
+    return StrNew(bw);
+  }
   U8 *ws=GetWordString(word),*p;
   if(!ws) return NULL;
   static I64 recur=0;
@@ -623,7 +634,6 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
     --recur;
     return NULL;
   }
-  U8 buf[STR_LEN];
   I64 idx,idx2;
   CJson *j=ParseJson(ws,NULL),*s0,*s,*f,*t;
   Free(ws);
@@ -637,6 +647,7 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
 	    word=StrNew(t->str);
 	    JsonDel(j);  
 	    --recur;
+            FramePtrAdd(cache,StrNew(word,mem_task),mem_task);
 	    return word;
 	  }
         }
@@ -647,6 +658,7 @@ U8 *GetBaseWord(U8 *word,I64 inst=0) {
   --recur;
   if(inst)
     return NULL;
+  FramePtrAdd(cache,StrNew(word,mem_task),mem_task);
   return StrNew(word);
 }
 Bool IsFormOf(U8 *who,U8 *who2) {

@@ -83,6 +83,41 @@ I64 FlagsToDFPerson(I64 fl)  {
   }
   return 0;
 }
+U8 *TranslationMenu(U8 *word) {
+  if(!word) return NULL;
+  CDoc *doc=DocNew;
+  U8 *trans;
+  I64 which;
+  DocPrint(doc,
+	"$$LTPURPLE$$$$TX+CX,\"Translation Menu\"$$$$FD$$\n"
+	"  Toggle a translation or$$ BLUE$$$$MU,\"Set a new Translation\",LE=-123$$$$FD$$.\n\n"
+	);
+  for(which=0;which!=3;which++) {
+    trans=WordDBGetTranslation(,word,which);
+    if(trans) {
+	DocPrint(doc,"$$LTBLUE$$$$MU,\"%Q\",LE=%d$$$$FD$$\n",trans,which);
+    }
+    Free(trans);
+  }
+  which=PopUpMenu(doc);
+  switch(which) {
+    case -123:
+      trans=PopUpGetStr("Translation:");
+      if(trans)
+        WordDBSetTranslation(,word,trans);
+      break;
+    case 0:
+    case 1:
+    case 2:
+      trans=WordDBGetTranslation(,word,which);
+      break;
+    default:
+      trans=NULL;
+      break;
+  }
+  DocDel(doc);
+  return trans;
+}
 CTrie *ChooseWordForm(CTrie *word) {
   U8 *base_word=GetBaseWord(word->str);
   U8 *ws=GetWordString(base_word),buf[STR_LEN];
@@ -152,7 +187,7 @@ U0 Init() {
 Init;
 U0 LatinEdDrawIt(CTask *t,CDC *dc) {
   CGlAdvance ga;
-  U8 *line,buf[STR_LEN],*en;
+  U8 *line,buf[STR_LEN],*en,*base;
   I64 idx,y,idx2,len;
   CCursorFind *cf=FramePtr("Latin.cursor_find",t);
   F64 x,w,ox;
@@ -207,6 +242,19 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 	    x+=DrawSexyWord(dc,16.,x,y,word,buf);
 	  w=DrawWordInfo(dc,0,0,word,TRUE,buf);
 	  DrawWordInfo(dc,(x-ox)/2.+ox-w/2.,y+16.,word,FALSE,buf);
+	  base=GetBaseWord(word->str);
+	  if(base)
+	     word=GetWord(base);
+	  else
+	    word=NULL;
+	  if(word&&word->translation) {
+	    dc->color=BLACK;
+	    w=TTF_RenderText(dummy,0,y,word->translation);
+	    TTF_RenderText(dc,ox,y+24,word->translation);
+	    if(x<ox+w)
+	      x=ox+w;
+	  }
+	  
         } else {
 	  dc->color=LTRED;
 	  if(odoc->y==line2-1)
@@ -259,28 +307,28 @@ U0 LatinEd(U8 *file) {
     }
     while(m=ScanMsg(&x,&y)) {
       if(m==MSG_MS_L_DOWN) {
-	cf.x=x;
-	cf.y=y;
-	cf.found_ch_idx=doc->x;
+        cf.x=x;
+        cf.y=y;
+        cf.found_ch_idx=doc->x;
         cf.user_data=doc->y;
-	FramePtrAdd("Latin.cursor_find",&cf);
+        FramePtrAdd("Latin.cursor_find",&cf);
         Refresh;
         doc->y=cf.user_data;
-	doc->x=cf.found_ch_idx;
-	DocRecalc(doc,RECALCt_FIND_CURSOR);
+        doc->x=cf.found_ch_idx;
+        DocRecalc(doc,RECALCt_FIND_CURSOR);
       }
       if(m==MSG_MS_R_DOWN) {
-	cf.x=x;
-	cf.y=y;
-	cf.found_ch_idx=doc->x;
+        cf.x=x;
+        cf.y=y;
+        cf.found_ch_idx=doc->x;
         cf.user_data=doc->y;
-	FramePtrAdd("Latin.cursor_find",&cf);
+        FramePtrAdd("Latin.cursor_find",&cf);
         Refresh;
         doc->y=cf.user_data;
-	doc->x=cf.found_ch_idx;
-	DocRecalc(doc,RECALCt_FIND_CURSOR);
+        doc->x=cf.found_ch_idx;
+        DocRecalc(doc,RECALCt_FIND_CURSOR);
 //Open word form
-	if(doc->cur_entry->type_u8==DOCT_TEXT) {
+        if(doc->cur_entry->type_u8==DOCT_TEXT) {
 	  x=doc->x;
 	  line=doc->cur_entry->tag;
 	  if(Bt(char_bmp_alpha_numeric,line[x])) {
@@ -298,30 +346,56 @@ U0 LatinEd(U8 *file) {
 	      trie=ChooseWordForm(trie);
 	      if(trie) {
 	        doc->x=x;
-		DocRecalc(doc,RECALCt_FIND_CURSOR);
+	        DocRecalc(doc,RECALCt_FIND_CURSOR);
 //Delete word
-		while(--len>=0) {
+	        while(--len>=0) {
 		  EdCharDel(doc);
 	        }
-		DocPrint(doc,"%s",trie->str);
+	        DocPrint(doc,"%s",trie->str);
 	      }
 	    }
 	  }
-	}
+        }
       }
       if(m==MSG_KEY_DOWN) {
         if(x==CH_ESC)
 	  goto fin;
-        if(!x) {
+        else if(x==CH_CTRLT) {
+	  if(doc->cur_entry->type_u8==DOCT_TEXT) {
+	    x=doc->x;
+	    line=doc->cur_entry->tag;
+	    if(Bt(char_bmp_alpha_numeric,line[x])) {
+	      while(x>=0&&Bt(char_bmp_alpha_numeric,line[x])) {
+	        --x;
+	      }
+	      ++x;
+	      len=0;
+	      while(line[x+len]&&Bt(char_bmp_alpha_numeric,line[x+len])) {
+	        buf[len]=line[x+len];
+	        ++len;
+	      }
+	      buf[len]=0;
+	      if(line=TranslationMenu(buf)) {
+	        doc->x=x;
+	        DocRecalc(doc,RECALCt_FIND_CURSOR);
+	        while(--len>=0) {
+		  EdCharDel(doc);
+	        }
+	        DocPrint(doc,"%s",line);
+		Free(line);
+	      }
+	    }
+	  }
+        } else if(!x) {
 	  if(y.u8[0]==SC_PAGE_DOWN) {
 	    x=wh;
 	    while(--x>=0)
- 	     EdLineDown(doc);
+	      EdLineDown(doc);
 	  }
 	  if(y.u8[0]==SC_PAGE_UP) {
 	    x=wh;
 	    while(--x>=0)
- 	     EdLineUp(doc);
+	      EdLineUp(doc);
 	  }
 	  if(y.u8[0]==SC_CURSOR_LEFT) {
 	    EdCursorLeft(doc,y);
@@ -345,10 +419,10 @@ U0 LatinEd(U8 *file) {
     scroll=FramePtr("Latin.top");
     ++doc->y;
     if(scroll>doc->y||doc->y>=scroll+wh) {
-	if(doc->y<scroll)
-	  scroll=doc->y;
-	else
-	  scroll=MaxI64(1,doc->y-wh+1);
+      if(doc->y<scroll)
+        scroll=doc->y;
+      else
+        scroll=MaxI64(1,doc->y-wh+1);
       FramePtrSet("Latin.top",scroll);
     }
     --doc->y;

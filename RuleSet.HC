@@ -121,8 +121,6 @@ I64 FlagsPrep(I64 argc,AST **argv) {
 	break;
     if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE) {
       or|=ast->flags;
-DumpAST(ast);
-"%x\n",or;
     }
   }
   return or;
@@ -131,7 +129,7 @@ DumpAST(ast);
 I64 FlagsConj(I64 argc,AST **argv) {
   I64 i=0;
   AST *ast;
-  I64 or=0;
+  I64 or=PLURAL;
   for(i=0;i!=argc;i++)  {
     ast=argv[i];
     if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE)

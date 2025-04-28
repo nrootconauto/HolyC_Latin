@@ -3,7 +3,7 @@
 #define ALPHABET_SIZE 26
 CTask *trie_task = Fs;
 class CTrie {
-  U8 *str;
+  U8 *str,*base_word;
   U8 *front_declension;
   U8 *back_declension;
   U8 *suffix; //Used for -que

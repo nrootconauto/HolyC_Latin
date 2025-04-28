@@ -9,7 +9,7 @@ class CFileHashTable {
   U32 ident;
   U32 cnt;
   U32 body[62];
-}; //BLK_SIZE/2
+}; //BLK_SIZE/2
 class CFileHashEntry {
   U32 ident;
   U32 value;
@@ -49,7 +49,6 @@ U0 FHalfBlkRead(CFile *db,U8 *data,I64 blk) {
   else
     MemCpy(data,full,BLK_SIZE/2);
 }
-
 
 I64 FileAllocateBlk(CFile *db) {
   I64 final=db->de.size>>BLK_SIZE_BITS;
@@ -208,14 +207,11 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   FClose(file);
 }
 U0 WordDBFromDict(U8 *db,U8 *latin_json_file) {
-PrintI(latin_json_file,1);
   DBInit(db);
   CFile *dbf=FOpen(db,"w+");
   FileHashAdd(dbf,0,"DB,Version",1);
   FClose(dbf);
-PrintI(latin_json_file,1);
   U8 *olatin=FileRead(latin_json_file),*ptr=olatin,*trans;
-PrintI("o",olatin);
   I64 lines=StrOcc(olatin,'\n'),line=0;
   CJson *j,*word,*s,*g,*ss,*gs;
   CHeapCtrl *hc,*old=Fs->data_heap;
@@ -406,7 +402,6 @@ U0 WordDBPeenisumPoems(U8 *db,U8 *dirp="Peenisum") {
   Free(dirp);
 }
 U8 *WordDBGetTranslation(U8 *db_name=__DIR__"/Words.DB",U8 *word,I64 which=0) {
-PrintI(db_name,111);
   U8 *tmp=GetBaseWord(word);
   if(tmp)
      word=tmp;
@@ -417,9 +412,9 @@ PrintI(db_name,111);
   U8 *ret=NULL;
   U8 buf[3*STR_LEN];
   CFileHashEntry hent;
-  if(!FileHashGet(&hent,f,0,word)) {
+  CTrie *trie;
+  if(!FileHashGet(&hent,f,0,word))
     goto fin;
-  }
   if(which==0)
     ret=MStrPrint("%s",hent.translation1);
   else if(which==1&&hent.translation2[0])
@@ -435,6 +430,7 @@ fin:
 }
 U0 WordDBSetTranslation(U8 *db_name=__DIR__"/Words.DB",U8 *word,U8 *trans,I64 which=0) {
   U8 *tmp=GetBaseWord(word);
+  CTrie *trie;
   if(tmp)
      word=tmp;
   else
@@ -452,7 +448,10 @@ U0 WordDBSetTranslation(U8 *db_name=__DIR__"/Words.DB",U8 *word,U8 *trans,I64 wh
   else if(which==2)
     StrCpy(hent.translation3,trans);
   FHalfBlkWrite(f,&hent,blk);
-"%s,%s,%d\n",word,trans,blk;
+  for(trie=TrieGet(tmp);trie;trie=trie->next) {
+    Free(trie->translation);
+    trie->translation=StrNew(trans,mem_task);
+  }
 fin:
   Free(word);
   FClose(f);
