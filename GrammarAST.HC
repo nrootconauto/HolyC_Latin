@@ -35,6 +35,7 @@ class AST {
   F64 prob,final_prob;
   I64 number;
   U8 *note;
+  U8 *error_string;
   I64 raw_type,act_as_type;
   I64 flags; //From Latin.HC
   ASTSet *nomitive;

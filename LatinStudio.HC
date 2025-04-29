@@ -296,11 +296,6 @@ U0 LatinEd(U8 *file) {
   while(TRUE) {
     ww=(Fs->win_right-Fs->win_left)*8/line_height;
     wh=(Fs->win_bottom-Fs->win_top)*8/line_height;
-    x=doc->x,y=doc->y;
-    DocBottom(doc);
-    lc=doc->y;
-    doc->x=x,doc->y=y;
-    DocRecalc(doc,RECALCt_FIND_CURSOR);
     if(ms.pos.z!=oldz&&0) {
       scroll=FramePtr("Latin.top");
       scroll=ClampI64(scroll+ms.pos.z-oldz,1,MaxI64(1,lc-wh));
@@ -320,6 +315,12 @@ U0 LatinEd(U8 *file) {
         doc->x=cf.found_ch_idx;
         DocRecalc(doc,RECALCt_FIND_CURSOR);
       }
+
+      if(m==MSG_KEY_DOWN&&x==CH_CTRLF) {
+	m=0;
+	goto word_form;
+      }
+
       if(m==MSG_MS_R_DOWN) {
         cf.x=x;
         cf.y=y;
@@ -330,6 +331,7 @@ U0 LatinEd(U8 *file) {
         doc->y=cf.user_data;
         doc->x=cf.found_ch_idx;
         DocRecalc(doc,RECALCt_FIND_CURSOR);
+word_form:
 //Open word form
         if(doc->cur_entry->type_u8==DOCT_TEXT) {
 	  x=doc->x;
@@ -419,6 +421,7 @@ U0 LatinEd(U8 *file) {
         }
       }
     }
+    Refresh;
     scroll=FramePtr("Latin.top");
     ++doc->y;
     if(scroll>doc->y||doc->y>=scroll+wh) {
@@ -429,7 +432,6 @@ U0 LatinEd(U8 *file) {
       FramePtrSet("Latin.top",scroll);
     }
     --doc->y;
-    Refresh;
   }
 fin:;
   FramePtrDel("Latin.doc");
