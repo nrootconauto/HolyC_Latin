@@ -171,8 +171,8 @@ U0 MakeWordPairsDB(U8 *db_name,U8 *latin,U8 *trans) {
   U8 buf[STR_LEN];
   latin=TransliterateStr(latin);
   trans=TransliterateStr(trans);
-  U8 **latint=TokenizeSentence(latin,NULL,TRUE),*lword;
-  U8 **transt=TokenizeSentence(trans,NULL,TRUE),*tword;
+  U8 **latint=TokenizeSentence(latin,NULL,TRUE,FALSE),*lword;
+  U8 **transt=TokenizeSentence(trans,NULL,TRUE,FALSE),*tword;
   Free(latin);
   Free(trans);
   CFile *file=FOpen(db_name,"w+");

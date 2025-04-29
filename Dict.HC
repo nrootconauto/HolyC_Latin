@@ -844,6 +844,7 @@ I64 SetWordDftTranslationIdx(U8 *word,I64 dft) {
   return 0;
 }
 
+
 //Use this instead of TrieGet,This will account for -ne -que suffixes
 CTrie *GetWord(U8 *word) {
   if(!word) return NULL;

@@ -7,7 +7,7 @@ U8 *SkipWhitespace(U8 *s) {
     s++;
   return s;
 }
-U8 **TokenizeSentence(U8 *str,U8 **en=NULL,Bool include_punc=FALSE) {
+U8 **TokenizeSentence(U8 *str,U8 **en=NULL,Bool include_punc=TRUE,Bool stop_at_period=TRUE) {
   U8 *ostr=str;
   U8 **ret;
   I64 tcnt=0;
@@ -16,7 +16,6 @@ phase1:
   switch(*str) {
     case '[':
     case ']':
-    case ',':
     case '=':
 punc1:
       tcnt++;
@@ -33,6 +32,9 @@ punc1:
     case '.':
     case ':':
     case ';':
+    case ',':
+      if(stop_at_period&&*str=='.')
+	goto phase2_st;
       if(include_punc)
 	goto punc1;
     case 0:
@@ -56,9 +58,6 @@ phase2:
       case ']':
 	ret[tcnt]=StrNew("]");
 	break;
-      case ',':
-	ret[tcnt]=StrNew(",");
-	break;
     end:
       tcnt++;
       str++;
@@ -77,6 +76,11 @@ phase2:
     case '.':
     case ':': 
     case ';':
+    case ',':
+      if(stop_at_period&&*str=='.') {
+	++str; //skip '.'
+	goto fin;
+      }
       if(include_punc) {
 	ret[tcnt++]=MStrPrint("%c",*str);
 	str++;

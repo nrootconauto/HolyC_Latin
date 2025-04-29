@@ -849,7 +849,7 @@ U0 InteractViewDrawIt(CTask *t,CDC *dc) {
   I64 x,y;
   if(ast=FramePtr("InteractAst",t)) {
     if(st=FramePtr("InteractText",t)) {
-    toks=TokenizeSentence(st,&st);
+    toks=TokenizeSentence(st,&st,TRUE,TRUE);
     tcnt=0;
     while(toks[tcnt])
       tcnt++;
@@ -968,7 +968,7 @@ U0 InteractView(U8 *st) {
   DocClear;
   FramePtrAdd("InteractCurWord",NULL);
   FramePtrAdd("InteractText",st);
-  toks=TokenizeSentence(st,&st);
+  toks=TokenizeSentence(st,&st,TRUE,TRUE);
   tcnt=0;
   while(toks[tcnt])
     tcnt++;
@@ -1040,8 +1040,8 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
   CFileBMP *bmp;
   while(*SkipWhitespace(st)) {
     tcnt=0;
-    toks=TokenizeSentence(st,&st);
-    while(toks[tcnt]) {
+    toks=TokenizeSentence(st,&st,TRUE,TRUE);
+    while(tmp=toks[tcnt]) {
       tcnt++;
     }
     ast=ParseSentenceJoin(tcnt,toks);
@@ -1281,8 +1281,12 @@ DumpSentences("et tenebrae erant super faciem abyssi"); //: et Spiritus Dei fere
 //John 9:1
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
-DumpSentences("[non habeam   inimicitias aliis]. [[res viventium] non habeat mecum inimicitias].","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
+DumpSentences("[non habeam   inimicitias aliis]. [res viventium] non habeat mecum inimicitias.","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
+DumpSentences("Dixitque Deus : Fiat lux");
+DumpSentences("Terra autem erat inanis et vacua,et  tenebris erant super faciem abyssi");
+Break;
 DocMax;
+
 DumpSentences(
 	"ingeniculo [dominum  liberandi] qui fui [ [nexionis vastatorem] et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."

@@ -268,6 +268,7 @@ InitLatin;
 #include "Dict.HC";
 
 U0 InitDict0() {
+  CTrie *t;
   TrieAdd("nam",CONJUNCTION,"thus");
   TrieAdd("namque",CONJUNCTION,"thus");
   TrieAdd("duo",NUMBER,"two");
@@ -279,5 +280,19 @@ U0 InitDict0() {
   TrieAdd("duodecim",NUMBER,"twelve");
   TrieAdd("ego",PRONOUN|NOMITIVE|SINGULAR,"I");
   TrieAdd("qui",PRONOUN|NOMITIVE|SINGULAR|INTEROGITIVE,"who");
+
+#define LATIN_TRIE_COLON "hlccolon"
+#define LATIN_TRIE_COMMA "hlccomma"
+#define LATIN_TRIE_SEMICOLON "hlcsemicolon"
+  t=TrieAdd(LATIN_TRIE_COLON,,":");
+  Free(t->str);
+  t->str=StrNew(":");
+  t=TrieAdd(LATIN_TRIE_COMMA,,",");
+  Free(t->str);
+  t->str=StrNew(",");
+  t=TrieAdd(LATIN_TRIE_SEMICOLON,,";");
+  Free(t->str);
+  t->str=StrNew(";");
+
 }
 InitDict0;

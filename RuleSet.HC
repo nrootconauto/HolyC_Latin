@@ -150,6 +150,25 @@ I64 FlagsPlural(I64 argc,AST **argv) {
   }
   return or;
 } 
+
+I64 FlagsColon(I64 argc,AST **argv) {
+  return CONJUNCTION|argv[0]->flags;
+} 
+
+I64 FlagsComma(I64 argc,AST **argv) {
+  I64 i=0;
+  AST *ast;
+  I64 or=0;
+  for(i=0;i!=argc;i++)  {
+    ast=argv[i];
+    if(ast->act_as_type==AST_VERB||ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE)
+      or|=ast->flags;
+  }
+  return or|CONJUNCTION;
+} 
+
+
+
 I64 FlagsPluralQue(I64 argc,AST **argv) {
   I64 i=0;
   AST *ast;
@@ -651,54 +670,68 @@ ASTSet *DoTerminals(U8 *_word,I64 idx,U8 *force) {
     rule=rules_list->body[i];
     if(force&&StrCmp(force,rule->name))
       goto skip;
-    if(rule->is_word)
-     if(word=GetWord(_word)) {
-      while(word) {
-        if((word->flags&rule->word_flags==rule->word_flags)||!StrICmp(_word,rule->name)) {
-	  ret=GCCAlloc(sizeof(AST));
-	  ret->prob=rule->weight;
-	  ret->word_idx=idx;
-	  ret->act_as_type=AST_NOUN;
-	  ret->raw_type=AST_NOUN;
-	  if(rule->raw_type) { 
-	    ret->act_as_type=ret->raw_type=rule->raw_type;
-	  } else if(word->flags&NOUN) {
-	    ret->act_as_type=ret->raw_type=AST_NOUN;
-	  } else if(word->flags&VERB) {
-	    ret->act_as_type=ret->raw_type=AST_VERB;
-	  } else if(word->flags&CONJUNCTION) {
-	    ret->act_as_type=ret->raw_type=AST_CONJUNCTION;
-	  } else if(word->flags&ADJECTIVE) {
-	    ret->act_as_type=ret->raw_type=AST_ADJECTIVE;
-	  } else if(word->flags&INFINITIVE) {
-	    ret->act_as_type=ret->raw_type=AST_INFINITIVE;
-	  } else if(word->flags&ADVERB) {
-	    ret->act_as_type=ret->raw_type=AST_ADVERB;
-	  }
-	  ret->word=word;
-	  ret->flags=word->flags;
-	  ret->end=idx+1;
-	  ret->start=idx;
-	  ret->args=I64SetAdd(ret->args,ret);
-	  ret->rule=rule;
+    if(rule->is_word) {
+      if(!StrCmp(_word,",")) {
+	word=GetWord(LATIN_TRIE_COMMA);
+	goto enter;
+      }
+      if(!StrCmp(_word,":")) {
+	word=GetWord(LATIN_TRIE_COLON);
+	goto enter;
+      }
+      if(!StrCmp(_word,";")) {
+	word=GetWord(LATIN_TRIE_SEMICOLON);
+	goto enter;
+      }
+      if(word=GetWord(_word)) {
+enter:
+        while(word) {
+	  if((word->flags&rule->word_flags==rule->word_flags)||!StrICmp(_word,rule->name)) {
+	    ret=GCCAlloc(sizeof(AST));
+	    ret->prob=rule->weight;
+	    ret->word_idx=idx;
+	    ret->act_as_type=AST_NOUN;
+	    ret->raw_type=AST_NOUN;
+	    if(rule->raw_type) { 
+	      ret->act_as_type=ret->raw_type=rule->raw_type;
+	    } else if(word->flags&NOUN) {
+	      ret->act_as_type=ret->raw_type=AST_NOUN;
+	    } else if(word->flags&VERB) {
+	      ret->act_as_type=ret->raw_type=AST_VERB;
+	    } else if(word->flags&CONJUNCTION) {
+	      ret->act_as_type=ret->raw_type=AST_CONJUNCTION;
+	    } else if(word->flags&ADJECTIVE) {
+	      ret->act_as_type=ret->raw_type=AST_ADJECTIVE;
+	    } else if(word->flags&INFINITIVE) {
+	      ret->act_as_type=ret->raw_type=AST_INFINITIVE;
+	    } else if(word->flags&ADVERB) {
+	      ret->act_as_type=ret->raw_type=AST_ADVERB;
+	    }
+	    ret->word=word;
+	    ret->flags=word->flags;
+	    ret->end=idx+1;
+	    ret->start=idx;
+	    ret->args=I64SetAdd(ret->args,ret);
+	    ret->rule=rule;
 
-	  if(ret->flags&VOCATIVE)
-	    ret->prob/=3.;
-	  if(ret->flags&ABLATIVE)
-	    ret->prob/=2.;
-	  if(ret->flags&DATIVE)
-	    ret->prob/=2.;
-	  if(ret->flags&GENITIVE)
-	    ret->prob/=2.;
+	    if(ret->flags&VOCATIVE)
+	      ret->prob/=3.;
+	    if(ret->flags&ABLATIVE)
+	      ret->prob/=2.;
+	    if(ret->flags&DATIVE)
+	      ret->prob/=2.;
+	    if(ret->flags&GENITIVE)
+	      ret->prob/=2.;
 
-          if(RulePost(ret,rule,ret->args->body,ret->args->cnt)) {
-	    all=ASTSetAddSmart(all,ret);
-	  } else {
+	    if(RulePost(ret,rule,ret->args->body,ret->args->cnt)) {
+	      all=ASTSetAddSmart(all,ret);
+	    } else {
 //	    ret->args
-//	    ASTDel(ret);
-          }
+	      //	    ASTDel(ret);
+	    }
+	  }
+	  word=word->next;
         }
-        word=word->next;
       }
     }
 skip:;

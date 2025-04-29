@@ -55,7 +55,7 @@ Noun@Gen(HasQueAtEnd)[FlagsPluralQue] NOUN -> Noun@Gen(NOUN) !Noun@Gen; (3.0)
 
 
 
-Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
+Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
 Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (4.0)
 Verb@Verb(HasQueAtEnd)[FlagsPluralQue] VERB -> Verb@Verb(VERB) !Verb@Verb; (2.0)
 
@@ -148,12 +148,13 @@ Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION)
 
 //
 Noun@Noun[FlagsTransfer] NOUN -> !"non"(CONJUNCTION) Noun@Noun(NOUN);
-Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB) Adverb@Adverb(ADVERB);
+Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB) Adverb@Adverb(ADVERB);(1.5)
 Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
 //
 
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
-Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
+Sent CLAUSE -> Noun@Noun !Verb@Verb [!Prep@Prep Noun@Noun](WHERE); (2)
+Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
 Sent(VerbAgree) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun;(1.)
@@ -165,3 +166,13 @@ Sent(VerbAgree)  CLAUSE -> Pron@Inter !Verb@Verb Noun@Noun;(1.)
 Sent CLAUSE -> Sent !Conj@Conj Sent;(1.)
 Sent CLAUSE -> !Adverb@Adverb Sent; (.1) //Now he [is] brave
 Sent CLAUSE -> Sent !Adverb@Adverb; (.5) //"I praise them all [at once]" dafuq?
+
+
+
+//
+// Punctuation
+//
+Sent[FlagsColon] CLAUSE -> Sent(NOUN) !":"(CONJUNCTION) Sent(NOUN);
+Sent[FlagsCooma] CLAUSE -> Sent(NOUN) !","(CONJUNCTION) Sent(NOUN);(.7)
+Noun@Noun(CaseAgree)[FlagsComma] CLAUSE -> Noun@Noun(NOUN) !","(CONJUNCTION) Noun@Noun(NOUN);(1.5)
+Adj@Adj(CaseAgree)[FlagsComma] CLAUSE -> Adj@Adj(NOUN) !","(CONJUNCTION) Adj@Adj(NOUN);(1.5)
