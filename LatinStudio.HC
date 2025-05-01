@@ -185,6 +185,130 @@ U0 Init() {
   DefineLstLoad("DF_PERSON","1st_Person\02nd_Person\03rd_Person\0");
 }
 Init;
+U8 *CurrentSentence(CDoc *doc) {
+  U8 *ret;
+  I64 c;
+  I64 oldc,oldl,cnt;
+  oldc=doc->x,oldl=doc->y;
+  ret=DocSave(doc,&cnt);
+  DocLoad(doc=DocNew,ret,cnt);
+  Free(ret);
+  doc->x=oldc,doc->y=oldl;
+  DocRecalc(doc,RECALCt_FIND_CURSOR);
+  CDoc *rd=DocNew;
+ 
+  while(c=EdCurU8(doc)) {
+    if(c=='.') {
+      EdCursorRight(doc);
+      DocRecalc(doc,RECALCt_NORMAL);
+      break;
+    }
+    EdCursorLeft(doc,SC_CURSOR_LEFT);
+    DocRecalc(doc,RECALCt_NORMAL);
+    if(doc->x<=0&&doc->y<=0)
+	break;
+  }
+  while(c=EdCurU8(doc)) {
+    if(c=='.'||c<0)
+      break;
+    DocPrint(rd,"%c",c);
+    EdCursorRight(doc,SC_CURSOR_RIGHT);
+    DocRecalc(doc,RECALCt_NORMAL);
+  }
+
+  DocDel(doc);
+  ret=DocSave(rd);
+  DocDel(rd);
+  return ret;
+}
+U0 GrammarASTDump0(CDoc *doc,AST *ast,U8 **toks,I64 *depths,I64 depth=0) {
+  if(!ast) return;
+  I64 i;
+  I64Set *set;
+  if(ast->error) {
+    DocPrint(doc,"$$TR-C,\"%Q\"$$$$ID,2$$\n$$RED$$",ast->error);
+    for(i=ast->start;i!=ast->end;++i) {
+      DocPrint(doc,"%Q ",toks[i]);
+      ++depths[i];
+    }
+    DocPrint(doc,"$$FD$$$$ID,-2$$\n");
+    ++depth;
+  }
+  GrammarASTDump0(doc,ast->base_expression,toks,depths,depth);
+  if(set=ast->args) {
+    i=set->cnt;
+    while(--i>=0) {
+      if(ast!=set->body[i])
+        GrammarASTDump0(doc,set->body[i],toks,depths,depth);
+    }
+  }
+}
+U0 GrammarCheckAtSentence(CDoc *doc) {
+  U8 *sent=CurrentSentence(doc);
+  if(!sent) return;
+  FramePtrAdd("GrammarCheck",1);
+  U8 *st=sent,*tmp;
+  U8 **toks=TokenizeSentence(st,&st,TRUE,TRUE);
+  I64 tcnt=0,*error_depths,i;
+  CDC *dc;
+  while(tmp=toks[tcnt])
+    tcnt++;
+
+  AST *ast=ParseSentenceJoin(tcnt,toks);
+  CDoc *errs=DocNew;
+  if(ast) {
+    dc=DrawSentence(ast,tcnt,toks);
+    error_depths=CAlloc(8*tcnt);
+    GrammarASTDump0(errs,ast,toks,error_depths);
+    DocTop(errs);
+    DocPrint(errs,"$$TX+CX,\"Grammar Check\"$$\n\n\n\n\n\n");
+    dc=DrawSentence(ast,tcnt,toks);
+    DocSprite(errs,DC2Sprite(dc));
+    i=dc->height/8;
+    DCDel(dc);
+    while(--i>=0)
+      DocPrint(errs,"\n");
+
+    tcnt=0;
+    while(tmp=toks[tcnt]) {
+      switch(error_depths[tcnt]) {
+	case 0:
+	  DocPrint(errs,"$$BLACK$$%Q $$FD$$",tmp);
+	  break;
+	  case :
+	  DocPrint(errs,"$$LTRED$$%Q $$FD$$",tmp);
+	  break;
+	  case :
+	  DocPrint(errs,"$$LTPURPLE$$%Q $$FD$$",tmp);
+	  break;
+	  case :
+	  DocPrint(errs,"$$RED$$%Q $$FD$$",tmp);
+	  break;
+	  case :
+	  DocPrint(errs,"$$PURPLE$$%Q $$FD$$",tmp);
+	  break;
+	  default:
+	  DocPrint(errs,"$$YELLOW$$%Q $$FD$$",tmp);
+	  break;
+      }
+	tcnt++;
+    }
+    DocPrint(errs,"\n\n");;
+    DocTop(errs);
+    PopUp(tmp=MStrPrint("DocEd(%d);;",errs),Fs);
+    Free(tmp);
+    Free(error_depths);
+  }
+  tcnt=0;
+  while(toks[tcnt])
+    Free(toks[tcnt++]);
+  Free(toks);
+  ASTDel(ast);
+
+  FramePtrDel("GrammarCheck");
+  Free(sent);
+  DocDel(errs);
+}
 U0 LatinEdDrawIt(CTask *t,CDC *dc) {
   CGlAdvance ga;
   U8 *line,buf[STR_LEN],*en,*base;
@@ -320,7 +444,10 @@ U0 LatinEd(U8 *file) {
 	m=0;
 	goto word_form;
       }
-
+      if(m==MSG_KEY_DOWN&&x==CH_CTRLC) {
+	GrammarCheckAtSentence(doc);
+	m=0;
+      }
       if(m==MSG_MS_R_DOWN) {
         cf.x=x;
         cf.y=y;

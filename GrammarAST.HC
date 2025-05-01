@@ -35,7 +35,7 @@ class AST {
   F64 prob,final_prob;
   I64 number;
   U8 *note;
-  U8 *error_string;
+  U8 *error;
   I64 raw_type,act_as_type;
   I64 flags; //From Latin.HC
   ASTSet *nomitive;
@@ -81,6 +81,18 @@ I64Set *I64SetAdd(I64Set *dst,I64 a,Bool repeats=FALSE){
   GCFree(dst);
   return tmp;
 }
+I64Set *I64SetRem(I64Set *s,I64 v) {
+  I64 idx,ptr=0,del=0;
+  for(idx=0;idx!=s->cnt;idx++) {
+    if(s->body[idx]!=v)
+      s->body[ptr++]=s->body[idx];
+    else
+      del++;
+  }
+  s->cnt-=del;
+  return s;
+}
+
 ASTSet *ASTSetAdd(ASTSet *dst,AST *a) {
   if(!a) return dst;
   ASTSet *tmp;

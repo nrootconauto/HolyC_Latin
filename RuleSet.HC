@@ -227,6 +227,7 @@ I64 FlagsNom(I64 argc,AST **argv) {
   return or;
 } 
 
+U8 *error;
 Bool VerbAgree(I64 argc,AST **argv) {
   I64 nom=FALSE,acc=FALSE;
   I64 dat=FALSE,abl=FALSE;
@@ -236,20 +237,30 @@ Bool VerbAgree(I64 argc,AST **argv) {
   for(i=0;i!=argc;i++)  {
     a=argv[i];
     if(a->flags&NOMITIVE)
-      if(nom++)
+      if(nom++) {
+	error=GCStrNew("Multiple Nomitives");
 	return FALSE;
+      }
     if(a->flags&ACCUSATIVE)
-      if(acc++)
+      if(acc++) {
+	error=GCStrNew("Multiple Accusatives");
 	return FALSE;
+      }
     if(a->flags&ABLATIVE)
-      if(abl++)
+      if(abl++) {
+	error=GCStrNew("Multiple Ablatives");
 	return FALSE;
+      }
     if(a->flags&DATIVE)
-      if(dat++)
+      if(dat++) {
+	error=GCStrNew("Multiple Datives");
 	return FALSE;
+      }
     if(a->flags&VOCATIVE)
-      if(voc++)
+      if(voc++) {
+	error=GCStrNew("Multiple Vocatives");
 	return FALSE;
+      }
   }
   return TRUE;
 }
@@ -277,10 +288,14 @@ Bool NumberAgree(I64 argc,AST **argv) {
     if(ast->act_as_type==AST_NOUN)
       if(nomitive_only) {
         if(ast->flags&NOMITIVE)
-	  if(ToBool(ast->flags&PLURAL)^^plural)
+	  if(ToBool(ast->flags&PLURAL)^^plural) {
+	    error=GCStrNew("Number disagree");
 	    return FALSE;
-      } else if(ToBool(ast->flags&PLURAL)^^plural)
+	  }
+      } else if(ToBool(ast->flags&PLURAL)^^plural) {
+        error=GCStrNew("Number disagree");
         return FALSE;
+      }
   }
   return TRUE;
 }
@@ -328,6 +343,7 @@ pass:;
 //	  return FALSE;
       } else {
 	if((ast->flags&mask)!=cs) {
+          error=GCStrNew("Case disagree");
 	  return FALSE;
 	}
       }
@@ -652,9 +668,12 @@ I64Set **MatrixPtr(U8 **matrix,I64 x,I64 y,I64 cnt) {
 }
 Bool RulePost(AST *ast,CRule *rule,I64 *args,I64 arg_cnt) {
   Bool ret=TRUE;
+  error=NULL;
   if(rule->validate_fun)
     if(!CallExtStr(rule->validate_fun,arg_cnt,args)) {
-      ret=FALSE;
+      if(!FramePtr("GrammarCheck")||!error)
+        ret=FALSE;
+      ast->error=error;
     }
   if(rule->flags_fun)
     ast->flags=CallExtStr(rule->flags_fun,arg_cnt,args);
@@ -725,9 +744,6 @@ enter:
 
 	    if(RulePost(ret,rule,ret->args->body,ret->args->cnt)) {
 	      all=ASTSetAddSmart(all,ret);
-	    } else {
-//	    ret->args
-	      //	    ASTDel(ret);
 	    }
 	  }
 	  word=word->next;
@@ -1017,23 +1033,53 @@ I64Set *PackratMatrix(U8 **words,I64 cnt) {
 
   return matrix;
 }
+Bool ASTHasErrors(AST *ast) {
+  Bool ret=FALSE;
+  I64 i;
+  I64Set *set;
+  if(!ast) return FALSE;
+  if(ast->error) return TRUE;
+  ret|=ASTHasErrors(ast->base_expression);
+  if(set=ast->args) {
+    for(i=0;i!=set->cnt;++i) 
+      if(ast!=set->body[i])
+        ret|=ASTHasErrors(set->body[i]);
+  }
+  return ret;
+}
 AST *ParseSentenceJoin(I64 argc,U8 **argv) {
   U8 **matrix=PackratMatrix(argv,argc);
+  Bool has_good=FALSE;
   AST *ret=NULL,*cur;
   ASTSet *set;
   I64 y;
-  I64 ass;
-  F64 best_prob=-1.;
+  I64 ass,best_len=0;
+  F64 best_prob=-10000.,mul;
   for(y=0;y!=argc;y++) {
     set=*MatrixPtr(matrix,0,y,argc);
     if(set) {
       I64 can=set->cnt;
       while(--can>=0) {
         cur=set->body[can];
-        if(cur->start==0&&cur->end==argc) {
-	  if(best_prob<=cur->prob) {
+        if(cur->start==0&&cur->end==argc)
+	  has_good|=ASTHasErrors(cur);
+	else if(cur->start==0)
+	  best_len=MaxI64(cur->end,best_len);
+      }
+      can=set->cnt;
+      while(--can>=0) {
+        cur=set->body[can];
+        if((cur->start==0&&cur->end==argc)||(!has_good&&cur->start==0&&cur->end==best_len)) {
+          if(!ASTHasErrors(cur)) {
+	    mul=1.;
+	  } else { //cur->error==TRUE
+	    mul=1.;
+	    if(has_good)
+	      mul=0.;
+	  }
+	  if(best_prob<=mul*cur->prob) {
 	    if(ret) ASTDel(ret);
-	    best_prob=cur->prob;
+	    best_prob=mul*cur->prob;
 	    ret=ASTClone(cur);
 	  } 
         }
