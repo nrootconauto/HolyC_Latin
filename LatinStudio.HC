@@ -1,4 +1,5 @@
 #include "WordForms.HC";
+#include "DumbDoc.HC";
 F64 line_height=25;
 class CNounForm {
   Bool plural format "$$CB,\"Plural\"$$\n";
@@ -185,38 +186,35 @@ U0 Init() {
   DefineLstLoad("DF_PERSON","1st_Person\02nd_Person\03rd_Person\0");
 }
 Init;
-U8 *CurrentSentence(CDoc *doc) {
+U8 *CurrentSentence(CDDoc *doc,CD2I64 *start=NULL) {
   U8 *ret;
   I64 c;
   I64 oldc,oldl,cnt;
   oldc=doc->x,oldl=doc->y;
-  ret=DocSave(doc,&cnt);
-  DocLoad(doc=DocNew,ret,cnt);
-  Free(ret);
   doc->x=oldc,doc->y=oldl;
-  DocRecalc(doc,RECALCt_FIND_CURSOR);
   CDoc *rd=DocNew;
  
-  while(c=EdCurU8(doc)) {
+  while(c=DDocCurU32(doc)) {
     if(c=='.') {
-      EdCursorRight(doc);
-      DocRecalc(doc,RECALCt_NORMAL);
+      DDocRight(doc);
       break;
     }
-    EdCursorLeft(doc,SC_CURSOR_LEFT);
-    DocRecalc(doc,RECALCt_NORMAL);
+    DDocLeft(doc);
     if(doc->x<=0&&doc->y<=0)
 	break;
   }
-  while(c=EdCurU8(doc)) {
+  if(start) {
+    start->x=doc->x;
+    start->y=doc->y;
+  }
+  while(c=DDocCurU32(doc)) {
     if(c=='.'||c<0)
       break;
     DocPrint(rd,"%c",c);
-    EdCursorRight(doc,SC_CURSOR_RIGHT);
-    DocRecalc(doc,RECALCt_NORMAL);
+    DDocRight(doc);
   }
+  doc->x=oldc,doc->y=oldl;
 
-  DocDel(doc);
   ret=DocSave(rd);
   DocDel(rd);
   return ret;
@@ -243,11 +241,42 @@ U0 GrammarASTDump0(CDoc *doc,AST *ast,U8 **toks,I64 *depths,I64 depth=0) {
     }
   }
 }
-U0 GrammarCheckAtSentence(CDoc *doc) {
-  U8 *sent=CurrentSentence(doc);
+U0 ClearMarkings(CDDoc *doc,I64 x,I64 y,I64 x2,I64 y2) {
+  CDDLine *ln;
+  I64 cnt,oy=y,sx,ex;
+  I64Set *markers;
+  CDDMarker *mark;
+  Bool whole_line;
+  do {
+    ln=doc->lines->body[y];
+    whole_line=oy<y<y2;
+    if(markers=ln->markers) {
+again:;
+      cnt=markers->cnt;
+      while(--cnt>=0) {
+        mark=markers->body[cnt];
+	if(whole_line)
+	  sx=0,ex=I64_MAX;
+	else if(y==oy)
+	  sx=x,ex=I64_MAX;
+	else if(y==y2)
+	  sx=0,ex=x2;
+        if(sx<=mark->offset&&mark->offset<ex) {
+	  I64SetRem(markers,mark);
+	  goto again;
+        }
+      }
+    }
+  } while(++y<y2);
+}
+U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
+  CD2I64 sentence_start;
+  I64 ox=doc->x,oy=doc->y;
+  U8 *sent=CurrentSentence(doc,&sentence_start);
   if(!sent) return;
   FramePtrAdd("GrammarCheck",1);
-  U8 *st=sent,*tmp;
+  I64 color,lastx,lasty;
+  U8 *st=sent,*tmp,*line_ptr,*oline_ptr;
   U8 **toks=TokenizeSentence(st,&st,TRUE,TRUE);
   I64 tcnt=0,*error_depths,i;
   CDC *dc;
@@ -269,33 +298,64 @@ U0 GrammarCheckAtSentence(CDoc *doc) {
     while(--i>=0)
       DocPrint(errs,"\n");
 
+    doc->x=sentence_start.x;
+    doc->y=sentence_start.y;
+    tcnt=0;
+    while(tmp=toks[tcnt]) {
+	lastx=doc->x,lasty=doc->y;
+      DDFind(doc,tmp); //Goes to end of find
+        ClearMarkings(doc,lastx,lasty,doc->x,doc->y);
+      if(error_depths[tcnt]) {
+        switch(error_depths[tcnt]) {
+	  case 1:
+	    color=LTRED;
+	    break;
+	  case :
+	    color=LTPURPLE;
+	    break;
+	  case :
+	    color=RED;
+	    break;
+	  case :
+	    color=PURPLE;
+	    break;
+	  default:
+	    color=YELLOW;
+	    break;
+        }
+        DDMarkerNew(doc,StrLen(tmp),color,"grammar"); //TODO
+      }
+      ++tcnt;
+    }
+
     tcnt=0;
     while(tmp=toks[tcnt]) {
       switch(error_depths[tcnt]) {
-	case 0:
+        case 0:
 	  DocPrint(errs,"$$BLACK$$%Q $$FD$$",tmp);
 	  break;
-	  case :
+        case :
 	  DocPrint(errs,"$$LTRED$$%Q $$FD$$",tmp);
 	  break;
-	  case :
+        case :
 	  DocPrint(errs,"$$LTPURPLE$$%Q $$FD$$",tmp);
 	  break;
-	  case :
+        case :
 	  DocPrint(errs,"$$RED$$%Q $$FD$$",tmp);
 	  break;
-	  case :
+        case :
 	  DocPrint(errs,"$$PURPLE$$%Q $$FD$$",tmp);
 	  break;
-	  default:
+        default:
 	  DocPrint(errs,"$$YELLOW$$%Q $$FD$$",tmp);
 	  break;
       }
-	tcnt++;
+      tcnt++;
     }
     DocPrint(errs,"\n\n");;
     DocTop(errs);
-    PopUp(tmp=MStrPrint("DocEd(%d);;",errs),Fs);
+    if(popup)
+      PopUp(tmp=MStrPrint("DocEd(%d);;",errs),Fs);
     Free(tmp);
     Free(error_depths);
   }
@@ -309,42 +369,64 @@ U0 GrammarCheckAtSentence(CDoc *doc) {
   Free(sent);
   DocDel(errs);
 }
+I64 MarkerSort(CDDMarker *a,CDDMarker *b) {
+  return a->offset-b->offset;
+}
+CDDMarker *MarkerForWord0(I64Set *set,I64 st,I64 en) {
+  if(!set) return NULL;
+  I64 cnt=set->cnt;
+  CDDMarker *mark;
+  while(--cnt>=0) {
+    mark=set->body[cnt];
+    if(st<=mark->offset<en)
+	return mark; //TODO closest
+  }
+  return NULL;
+}
 U0 LatinEdDrawIt(CTask *t,CDC *dc) {
   CGlAdvance ga;
   U8 *line,buf[STR_LEN],*en,*base;
-  I64 idx,y,idx2,len;
+  I64 idx,y,idx2,len,cp;
   CCursorFind *cf=FramePtr("Latin.cursor_find",t);
   F64 x,w,ox;
   CTrie *word;
-  CDoc *doc=FramePtr("Latin.doc",t),*odoc=doc;
+  CDDoc *doc=FramePtr("Latin.doc",t),*odoc=doc;
+  CDDLine *ddline;
+  I64Set *markers;
+  CDDMarker *mark;
+  I64 start,end;
   CDC *dummy=DCNew(1,1);
   if(!doc)
     return;
-  line=DocSave(doc,&x);
-  doc=DocNew;
-  DocLoad(doc,line,x);
-  Free(line);
   dc->color=BLACK;
   I64 oline=FramePtr("Latin.top",t),line2;
   FramePtrDel("Latin.cursor_find",t);
   for(line2=oline;line2<=(t->win_bottom-t->win_top)*8/line_height+oline-1;++line2) {
-    if (DocGoToLine(doc,line2) && doc->cur_entry->type_u8==DOCT_TEXT)
-      line=MStrPrint("%s ",doc->cur_entry->tag); //Add a end of line space
-    else //We set DOCF_PLAIN_TEXT,so assume a newline
-      line=StrNew(" ");
+    if(line2>=doc->lines->cnt)
+      break;
+    base=DDocSave(doc,line2,line2+1);
+    line=MStrPrint("%s ",base);
+    Free(base);
     y=(line2-oline)*line_height;
     if(cf) {
       if(y<=cf->y<=y+line_height) {
-	cf->user_data=line2-1;
+        cf->user_data=line2;
       }
     }
+    ddline=doc->lines->body[line2];
+//Draw line markers
+    if(markers=ddline->markers) {
+      QSortI64(markers->body,markers->cnt,&MarkerSort);
+    }
+//Draw Text
     x=0;
     for(idx2=0;line[idx2];) {
+      start=idx2;
       en=SkipWhitespace(line+idx2);
       if(en!=line+idx2) {
         MemCpy(buf,line+idx2,len=en-&line[idx2]);
         buf[len]=0;
-        if(odoc->y==line2-1) {
+        if(odoc->y==line2) {
 	  x+=TTF_RenderText(dc,x,y,buf,,,odoc->x-idx2);
         } else
 	  x+=TTF_RenderText(dc,x,y,buf,,,,cf);
@@ -355,14 +437,14 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 	  ++len;
         MemCpy(buf,line+idx2,len);
         buf[len]=0;
-        if(cf&&cf->user_data==line2-1) {
+        if(cf&&cf->user_data==line2) {
 	  cf->found_ch_offset=idx2;
-          TTF_RenderText(dummy,x,y,buf,,,,cf);
-	}
+	  TTF_RenderText(dummy,x,y,buf,,,,cf);
+        }
         if(word=GetWord(buf)) {
 	  dc->color=GREEN;
 	  ox=x;
-	  if(odoc->y==line2-1)
+	  if(odoc->y==line2)
 	    x+=DrawSexyWord(dc,16.,x,y,word,buf,odoc->x-idx2);
 	  else
 	    x+=DrawSexyWord(dc,16.,x,y,word,buf);
@@ -370,7 +452,7 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 	  DrawWordInfo(dc,(x-ox)/2.+ox-w/2.,y+16.,word,FALSE,buf);
 	  base=GetBaseWord(word->str);
 	  if(base)
-	     word=GetWord(base);
+	    word=GetWord(base);
 	  else
 	    word=NULL;
 	  if(word&&word->translation) {
@@ -380,10 +462,10 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 	    if(x<ox+w)
 	      x=ox+w;
 	  }
-	  
+
         } else {
 	  dc->color=LTRED;
-	  if(odoc->y==line2-1)
+	  if(odoc->y==line2)
 	    x+=TTF_RenderText(dc,x,y,buf,,,odoc->x-idx2);
 	  else
 	    x+=TTF_RenderText(dc,x,y,buf);
@@ -394,11 +476,16 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
         buf[0]=line[idx2];
         buf[len]=0;
         dc->color=BLACK;
-        if(odoc->y==line2-1)
+        if(odoc->y==line2)
 	  x+=TTF_RenderText(dc,x,y,buf,,,odoc->x-idx2);
         else
 	  x+=TTF_RenderText(dc,x,y,buf);
-	idx2+=len;
+        idx2+=len;
+      }
+      end=idx2;
+      if(mark=MarkerForWord0(markers,start,end)) {
+	dc->color=mark->color;
+	GrRect(dc,ox,y+17,x-ox,4); //TODO font size
       }
     }
     Free(line);
@@ -407,13 +494,18 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
   DocDel(doc);
 }
 U0 LatinEd(U8 *file) {
-  CDoc *doc=DocRead(file,DOCF_PLAIN_TEXT|DOCF_NO_CURSOR);
+  U8 *line,buf[STR_LEN];
+  CDDoc *doc;
   DocClear;
   I64 m,x,y,ww,wh,scroll,lc,len;
   I64 oldz=ms.pos.z;
   CTrie *trie;
-  U8 *line,buf[STR_LEN];
-  FramePtrAdd("Latin.top",1);
+  if(FileFind(file)) {
+    doc=DDocLoad(line=FileRead(file));
+    Free(line);
+  } else
+    doc=DDocNew;
+  FramePtrAdd("Latin.top",0);
   FramePtrAdd("Latin.doc",doc);
   CCursorFind cf;
   Fs->draw_it=&LatinEdDrawIt;
@@ -422,7 +514,7 @@ U0 LatinEd(U8 *file) {
     wh=(Fs->win_bottom-Fs->win_top)*8/line_height;
     if(ms.pos.z!=oldz&&0) {
       scroll=FramePtr("Latin.top");
-      scroll=ClampI64(scroll+ms.pos.z-oldz,1,MaxI64(1,lc-wh));
+      scroll=ClampI64(scroll+ms.pos.z-oldz,0,MaxI64(0,lc-wh));
       FramePtrSet("Latin.top",scroll);
       oldz=ms.pos.z;
     }
@@ -437,7 +529,6 @@ U0 LatinEd(U8 *file) {
         Refresh;
         doc->y=cf.user_data;
         doc->x=cf.found_ch_idx;
-        DocRecalc(doc,RECALCt_FIND_CURSOR);
       }
 
       if(m==MSG_KEY_DOWN&&x==CH_CTRLF) {
@@ -457,12 +548,10 @@ U0 LatinEd(U8 *file) {
         Refresh;
         doc->y=cf.user_data;
         doc->x=cf.found_ch_idx;
-        DocRecalc(doc,RECALCt_FIND_CURSOR);
 word_form:
 //Open word form
-        if(doc->cur_entry->type_u8==DOCT_TEXT) {
 	  x=doc->x;
-	  line=doc->cur_entry->tag;
+          line=DDocSave(doc,doc->y,doc->y+1);
 	  if(Bt(char_bmp_alpha_numeric,line[x])) {
 	    while(x>=0&&Bt(char_bmp_alpha_numeric,line[x])) {
 	      --x;
@@ -477,25 +566,23 @@ word_form:
 	    if(trie=GetWord(buf)) {
 	      trie=ChooseWordForm(trie);
 	      if(trie) {
-	        doc->x=x;
-	        DocRecalc(doc,RECALCt_FIND_CURSOR);
+	        doc->x=x+len;
 //Delete word
 	        while(--len>=0) {
-		  EdCharDel(doc);
+		  DDocBackspace(doc);
 	        }
-	        DocPrint(doc,"%s",trie->str);
+	        DDocPrint(doc,"%s",trie->str);
 	      }
 	    }
 	  }
+	  Free(line);
         }
-      }
       if(m==MSG_KEY_DOWN) {
         if(x==CH_ESC)
 	  goto fin;
         else if(x==CH_CTRLT) {
-	  if(doc->cur_entry->type_u8==DOCT_TEXT) {
 	    x=doc->x;
-	    line=doc->cur_entry->tag;
+            line=DDocSave(doc,doc->y,doc->y+1);
 	    if(Bt(char_bmp_alpha_numeric,line[x])) {
 	      while(x>=0&&Bt(char_bmp_alpha_numeric,line[x])) {
 	        --x;
@@ -508,49 +595,45 @@ word_form:
 	      }
 	      buf[len]=0;
 	      if(line=TranslationMenu(buf)) {
-	        doc->x=x;
-	        DocRecalc(doc,RECALCt_FIND_CURSOR);
+	        doc->x=x+len;
 	        while(--len>=0) {
-		  EdCharDel(doc);
+		  DDocBackspace(doc);
 	        }
-	        DocPrint(doc,"%s",line);
+	        DDocPrint(doc,"%s",line);
 		Free(line);
 	      }
 	    }
-	  }
         } else if(!x) {
 	  if(y.u8[0]==SC_PAGE_DOWN) {
 	    x=wh;
 	    while(--x>=0)
-	      EdLineDown(doc);
+	      DDocDown(doc);
 	  }
 	  if(y.u8[0]==SC_PAGE_UP) {
 	    x=wh;
 	    while(--x>=0)
-	      EdLineUp(doc);
+	      DDocUp(doc);
 	  }
 	  if(y.u8[0]==SC_CURSOR_LEFT) {
-	    EdCursorLeft(doc,y);
+	    DDocLeft(doc,y);
 	  }
 	  if(y.u8[0]==SC_CURSOR_RIGHT) 
-	    EdCursorRight(doc,y);
+	    DDocRight(doc,y);
 	  if(y.u8[0]==SC_CURSOR_UP)
-	    EdLineUp(doc,y);
+	    DDocUp(doc,y);
 	  if(y.u8[0]==SC_CURSOR_DOWN)
-	    EdLineDown(doc,y);
+	    DDocDown(doc,y);
         } else if(x==CH_BACKSPACE) {
-	  EdCursorLeft(doc);
-	  EdCharDel(doc);
+	  DDocBackspace(doc);
         } else if(Bt(char_bmp_displayable,x&0xffff)) {
-	  EdCharIns(x,y,doc);
+	  DDocInsChr(doc,x);
         } else if(x=='\n') {
-	  EdCharIns(x,y,doc);
+	  DDocInsChr(doc,x);
         }
       }
     }
     Refresh;
     scroll=FramePtr("Latin.top");
-    ++doc->y;
     if(scroll>doc->y||doc->y>=scroll+wh) {
       if(doc->y<scroll)
         scroll=doc->y;
@@ -558,12 +641,12 @@ word_form:
         scroll=MaxI64(1,doc->y-wh+1);
       FramePtrSet("Latin.top",scroll);
     }
-    --doc->y;
   }
 fin:;
+  line=DDocSave(doc);
+  FileWrite(file,line,StrLen(line));
+  Free(line);
   FramePtrDel("Latin.doc");
   FramePtrDel("Latin.top");
-  DocWrite(doc);
-  DocDel(doc);
 }
 LatinEd("/Ass.DD");
