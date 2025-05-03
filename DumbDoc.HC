@@ -1,3 +1,5 @@
+#ifndef DUMBDOC_HH
+#define DUMDDOC_HH
 #include "GrammarAST"; //I64Set
 
 class CDDMarker {
@@ -9,6 +11,7 @@ class CDDLine:CQue {
   I64Set *string; //unicode codepoints
   I64Set *selected;
   I64Set *markers; //CDDMarker*
+  Bool tainted,pad[7];
 };
 
 class CDDoc {
@@ -159,7 +162,7 @@ U0 DDocBackspace(CDDoc *doc) {
   CDDMarker *mark;
   I64 cnt,i,olen;
   if(doc->x||doc->y) {
-    if(ln->string->cnt==0) {
+    if(!ln->string||ln->string->cnt==0) {
       DDocLeft(doc);
       doc->lines=I64SetRem(doc->lines,ln);
     } else {
@@ -172,6 +175,7 @@ U0 DDocBackspace(CDDoc *doc) {
 	  olen=0;
         for(i=0;i!=ln->string->cnt;++i) {
 	  ln2->string=I64SetAdd(ln2->string,ln->string->body[i],TRUE);
+	  ln2->tainted=TRUE;
         }
 	if(markers) {
 	  cnt=markers->cnt;
@@ -184,7 +188,9 @@ U0 DDocBackspace(CDDoc *doc) {
         doc->x=olen;
       } else {
         DDocLeft(doc);
-        LineRemoveAt(doc->lines->body[doc->y],doc->x);
+	ln=doc->lines->body[doc->y];
+        LineRemoveAt(ln,doc->x);
+	ln->tainted=TRUE;
       }
     }
   }
@@ -202,6 +208,7 @@ U0 DDocInsChr(CDDoc *doc,I64 c) {
     if(ln->string) {
       for(i=doc->x;i!=ln->string->cnt;++i) {
         newln->string=I64SetAdd(newln->string,ln->string->body[i],TRUE);
+	newln->tainted=TRUE;
       }
       ln->string->cnt=doc->x;
     }
@@ -218,6 +225,7 @@ U0 DDocInsChr(CDDoc *doc,I64 c) {
     }
   } else {
     LineInsertAt(ln,at,c);
+    ln->tainted=TRUE;
     DDocRight(doc);
   }
 }
@@ -321,8 +329,10 @@ Bool DDFind(CDDoc *doc,U8 *str) {
   CDDLine *ln=doc->lines->body[doc->lines->cnt-1];
   I64 endx=0,endy=doc->lines->cnt-1;
   I64 cmp;
-  if(ln)
+  if(ln&&ln->string)
     endx=ln->string->cnt;
+  else
+    endx=0;
   while(cmp=DDStrCmp(doc,str)) {
     DDocRight(doc);
     if(doc->x>=endx&&doc->y>=endy) {
@@ -338,4 +348,5 @@ Bool DDFind(CDDoc *doc,U8 *str) {
 #if __CMD_LINE__
 CDDoc *doc=DDocLoad("abc\ndef123\n456");
 "%s\n",DDocSave(doc);
+#endif
 #endif

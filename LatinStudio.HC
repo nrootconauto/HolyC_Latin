@@ -186,7 +186,7 @@ U0 Init() {
   DefineLstLoad("DF_PERSON","1st_Person\02nd_Person\03rd_Person\0");
 }
 Init;
-U8 *CurrentSentence(CDDoc *doc,CD2I64 *start=NULL) {
+U8 *CurrentSentence(CDDoc *doc,CD2I64 *start=NULL,CD2I64 *end=NULL) {
   U8 *ret;
   I64 c;
   I64 oldc,oldl,cnt;
@@ -212,6 +212,12 @@ U8 *CurrentSentence(CDDoc *doc,CD2I64 *start=NULL) {
       break;
     DocPrint(rd,"%c",c);
     DDocRight(doc);
+  }
+  if(c=='.')
+    DDocRight(doc);
+  if(end) {
+    end->x=doc->x;
+    end->y=doc->y;
   }
   doc->x=oldc,doc->y=oldl;
 
@@ -246,21 +252,19 @@ U0 ClearMarkings(CDDoc *doc,I64 x,I64 y,I64 x2,I64 y2) {
   I64 cnt,oy=y,sx,ex;
   I64Set *markers;
   CDDMarker *mark;
-  Bool whole_line;
   do {
     ln=doc->lines->body[y];
-    whole_line=oy<y<y2;
     if(markers=ln->markers) {
 again:;
       cnt=markers->cnt;
       while(--cnt>=0) {
         mark=markers->body[cnt];
-	if(whole_line)
-	  sx=0,ex=I64_MAX;
-	else if(y==oy)
+	if(y==oy)
 	  sx=x,ex=I64_MAX;
 	else if(y==y2)
 	  sx=0,ex=x2;
+        else
+	  sx=0,ex=I64_MAX;
         if(sx<=mark->offset&&mark->offset<ex) {
 	  I64SetRem(markers,mark);
 	  goto again;
@@ -368,6 +372,39 @@ U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
   FramePtrDel("GrammarCheck");
   Free(sent);
   DocDel(errs);
+}
+U0 GrammarCheckBG(CDDoc *doc) {
+  I64 old_x=doc->x,old_y=doc->y;
+  CD2I64 end,old_end;
+  doc->x=0,doc->y=0;
+  old_end.x=0,old_end.y=0;
+  end.x=0;
+  end.y=0;
+  CDDLine *ln;
+again:;
+  do {
+    old_end.x=end.x;
+    old_end.y=end.y;
+    doc->x=end.x;
+    doc->y=end.y;
+    ln=doc->lines->body[doc->y];
+    if(!ln->tainted) {
+      if(++doc->y<doc->lines->cnt) {
+        end.x=0;
+        end.y=doc->y;
+        goto again;
+      } else
+        break;
+    } else {
+     ln->tainted=FALSE;
+    }
+    Free(CurrentSentence(doc,NULL,&end));
+    doc->x=old_end.x;
+    doc->y=old_end.y;
+    GrammarCheckAtSentence(doc,FALSE);
+  } while(end.x!=old_end.x||end.y!=old_end.y);
+  doc->x=old_x;
+  doc->y=old_y;
 }
 I64 MarkerSort(CDDMarker *a,CDDMarker *b) {
   return a->offset-b->offset;
@@ -499,6 +536,7 @@ U0 LatinEd(U8 *file) {
   DocClear;
   I64 m,x,y,ww,wh,scroll,lc,len;
   I64 oldz=ms.pos.z;
+  F64 next_tS=tS+3.;
   CTrie *trie;
   if(FileFind(file)) {
     doc=DDocLoad(line=FileRead(file));
@@ -640,6 +678,10 @@ word_form:
       else
         scroll=MaxI64(1,doc->y-wh+1);
       FramePtrSet("Latin.top",scroll);
+    }
+    if(tS>next_tS) {
+      GrammarCheckBG(doc);
+	next_tS=tS+3.;
     }
   }
 fin:;
