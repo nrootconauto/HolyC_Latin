@@ -1283,7 +1283,7 @@ DumpSentences("et tenebrae erant super faciem abyssi"); //: et Spiritus Dei fere
 //1st conjugation
 DumpSentences("[non habeam   inimicitias aliis]. [res viventium] non habeat mecum inimicitias.","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
 DumpSentences("Dixitque Deus : Fiat lux");
-DumpSentences("Terra autem erat inanis et vacua,et  tenebris erant super faciem abyssi");
+DumpSentences("Terra autem erat [inanis et vacua] ,et  tenebris erant super faciem abyssi");
 Break;
 DocMax;
 

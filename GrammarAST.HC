@@ -25,10 +25,6 @@ class ASTSet {
   I64 cnt;
   AST *body[0]; 
 };
-class I64Set {
-  I64 cnt;
-  I64 body[0];
-};
 extern class CRule;
 class AST {
   CRule *rule;
@@ -60,38 +56,6 @@ class AST {
 };
 extern U0 DumpAST(AST*a);
 extern ASTSet *ASTSetClone(ASTSet *orig);
-I64Set *I64SetAdd(I64Set *dst,I64 a,Bool repeats=FALSE){
-  I64Set *tmp;
-  I64 i;
-  if(!dst) {
-    dst=GCCAlloc(sizeof(ASTSet)+8);
-    dst->cnt=1;
-    dst->body[0]=a;
-    return dst;
-  } 
-  if(!repeats)
-  for(i=0;i!=dst->cnt;i++) {
-    if(dst->body[i]==a)
-      return dst;
-  }
-  tmp=GCCAlloc(sizeof(I64Set)+8*(dst->cnt+1));
-  tmp->cnt=dst->cnt+1;
-  MemCpy(tmp->body,dst->body,dst->cnt*8);
-  tmp->body[tmp->cnt-1]=a;
-  GCFree(dst);
-  return tmp;
-}
-I64Set *I64SetRem(I64Set *s,I64 v) {
-  I64 idx,ptr=0,del=0;
-  for(idx=0;idx!=s->cnt;idx++) {
-    if(s->body[idx]!=v)
-      s->body[ptr++]=s->body[idx];
-    else
-      del++;
-  }
-  s->cnt-=del;
-  return s;
-}
 
 ASTSet *ASTSetAdd(ASTSet *dst,AST *a) {
   if(!a) return dst;

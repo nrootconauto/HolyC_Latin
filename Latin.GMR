@@ -76,10 +76,10 @@ Infin@Infin NOUN -> "non"(ADVERB) !Infin@Infin Adverb@Adverb(NOUN);(.1)
 
 Noun@Noun[FlagsAcc] NOUN -> Infin@Infin; //I like "eating"
 Noun@Noun[FlagsNom] NOUN -> Infin@Infin; //I like "eating"
-Noun@Noun[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
-Noun@Noun[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
-Noun@Noun[FlagsNom] NOUN -> !Infin@Infin Noun@Noun(NOUN); (.2) //Less common
-Noun@Noun[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (.5) //more commons
+Noun@Noun[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (1.2) //Less common
+Noun@Noun[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.5) //more commons
+Noun@Noun[FlagsNom] NOUN -> !Infin@Infin Noun@Noun(NOUN); (1.2) //Less common
+Noun@Noun[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.5) //more commons
 
 //I like "pigs eating carrots"
 Noun@Noun(VerbAgree)[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NOUN);
@@ -154,7 +154,7 @@ Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
 
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
 Sent CLAUSE -> Noun@Noun !Verb@Verb [!Prep@Prep Noun@Noun](WHERE); (2)
-Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
+Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
 Sent(VerbAgree) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun;(1.)
@@ -174,5 +174,5 @@ Sent CLAUSE -> Sent !Adverb@Adverb; (.5) //"I praise them all [at once]" dafuq?
 //
 Sent[FlagsColon] CLAUSE -> Sent(NOUN) !":"(CONJUNCTION) Sent(NOUN);
 Sent[FlagsCooma] CLAUSE -> Sent(NOUN) !","(CONJUNCTION) Sent(NOUN);(.7)
-Noun@Noun(CaseAgree)[FlagsComma] CLAUSE -> Noun@Noun(NOUN) !","(CONJUNCTION) Noun@Noun(NOUN);(1.5)
-Adj@Adj(CaseAgree)[FlagsComma] CLAUSE -> Adj@Adj(NOUN) !","(CONJUNCTION) Adj@Adj(NOUN);(1.5)
+Noun@Noun(CaseAgree)[FlagsComma] NOUN -> Noun@Noun(NOUN) !","(CONJUNCTION) Noun@Noun(NOUN);(1.5)
+Adj@Adj(CaseAgree)[FlagsComma] ADJECTIVE -> Adj@Adj(ADJECTIVE) !","(CONJUNCTION) Adj@Adj(ADJECTIVE);(1.5)

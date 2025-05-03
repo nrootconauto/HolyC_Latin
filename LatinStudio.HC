@@ -286,7 +286,6 @@ U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
   I64 ox=doc->x,oy=doc->y;
   U8 *sent=CurrentSentence(doc,&sentence_start);
   if(!sent) return;
-  FramePtrAdd("GrammarCheck",1);
   I64 color,lastx,lasty;
   U8 *st=sent,*tmp,*line_ptr,*oline_ptr,*tmp2;
   U8 **toks=TokenizeSentence(st,&st,TRUE,TRUE);
@@ -297,6 +296,10 @@ U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
     tcnt++;
 
   AST *ast=ParseSentenceJoin(tcnt,toks);
+  if(!ast) {
+    FramePtrAdd("GrammarCheck",1);
+    ast=ParseSentenceJoin(tcnt,toks);
+  }
   CTrie **forms=CAlloc(8*tcnt);
   CDoc *errs=DocNew;
   if(ast) {

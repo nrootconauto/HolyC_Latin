@@ -317,6 +317,110 @@ CJson *GetJsonMember(CJson *j,U8 *member,I64 type=-1) {
 	      CONJUGATION4| \
 	      NOUN|VERB|PARTICIPLE|INFINITIVE|PRONOUN)
 #define CASE_MASK (NOMITIVE|ACCUSATIVE|ABLATIVE|DATIVE|GENITIVE|VOCATIVE)
+//For things like "accusative/genetive"
+I64Set *ParseSlashList(U8 **_start) {
+  I64Set *s=NULL;
+  U8 *start=*_start;
+  U8 buf[STR_LEN],*end=start,c;
+again:
+  buf[0]=0;
+  while(c=*end) {
+    if(Bt(char_bmp_white_space,c)) {
+      if(buf[0]) {
+        s=I64SetAdd(s,GCStrNew(buf));
+      }
+      break;
+    }
+    if(c=='/') {
+      s=I64SetAdd(s,GCStrNew(buf));
+      ++end;
+      goto again;
+    }
+    CatPrint(buf,"%c",c);
+    ++end;
+  }
+  while(c=*end) {
+    if(!Bt(char_bmp_white_space,c))
+      break;
+    ++end;
+  }
+  *_start=end;
+  return s;
+}
+I64 Nugget2Flags(U8 *tmp) {
+  I64 flags=0;
+  if(StrIMatch("masculine",tmp)) flags|=MASCULINE;
+  if(StrIMatch("gerund",tmp)) flags|=GERUND;
+  if(StrIMatch("feminine",tmp)) flags|=FEMININE;
+  if(StrIMatch("neuter",tmp)) flags|=NEUTER;
+  if(StrIMatch("singular",tmp)) flags|=SINGULAR;
+  if(StrIMatch("plural",tmp)) flags|=PLURAL;
+  if(StrIMatch("nominative",tmp)) flags|=NOMITIVE;
+  if(StrIMatch("accusative",tmp)) flags|=ACCUSATIVE;
+  if(StrIMatch("vocative",tmp)) flags|=VOCATIVE;
+  if(StrIMatch("dative",tmp)) flags|=DATIVE;
+  if(StrIMatch("ablative",tmp)) flags|=ABLATIVE;
+  if(StrIMatch("genitive",tmp)) flags|=GENITIVE;
+  if(StrIMatch("infinitive",tmp)) flags|=INFINITIVE;
+  if(StrIMatch("imperfect",tmp)) flags|=IMPERFECT;
+  if(StrIMatch("future",tmp)) flags|=FUTURE;
+  if(StrIMatch("first-person",tmp)) flags|=_1P;
+  if(StrIMatch("second-person",tmp)) flags|=_2P;
+  if(StrIMatch("third-person",tmp)) flags|=_3P;
+  if(StrIMatch("imperative",tmp)) flags|=IMPERATIVE;
+  if(StrIMatch("perfect",tmp)) flags|=PERFECT;
+  if(StrIMatch("pluperfect",tmp)) flags|=PLUPERFECT;
+  if(StrIMatch("subjunctive",tmp)) flags|=SUBJUNCTIVE;
+  if(StrIMatch("passive",tmp)) flags|=PASSIVE;
+  if(StrIMatch("comparative",tmp)) flags|=COMPARATIVE;
+  if(StrIMatch("superlative",tmp)) flags|=SUPERLATIVE;
+  if(StrIMatch("participle",tmp)){ flags|=PARTICIPLE;}
+  if(StrIMatch("determiner",tmp)) flags|=DETIRMINER;
+  if(StrIMatch("pronoun",tmp)) flags|=PRONOUN;
+  if(StrIMatch("declension-1",tmp)) flags|=DECLENSION1;
+  if(StrIMatch("declension-2",tmp)) flags|=DECLENSION2;
+  if(StrIMatch("declension-3",tmp)) flags|=DECLENSION3;
+  if(StrIMatch("declension-4",tmp)) flags|=DECLENSION4;
+  if(StrIMatch("declension-5",tmp)) flags|=DECLENSION5;
+  if(StrIMatch("conjugation-1",tmp)) flags|=CONJUGATION1;
+  if(StrIMatch("conjugation-2",tmp)) flags|=CONJUGATION2;
+  if(StrIMatch("conjugation-3",tmp)) flags|=CONJUGATION3;
+  if(StrIMatch("conjugation-4",tmp)) flags|=CONJUGATION4;
+  if(StrIMatch("active",tmp)) flags|=0; //ACTIVE is implicit
+  if(StrIMatch("intransitive",tmp)) flags|=INTRANSITIVE;
+  if(StrIMatch("superlative",tmp)) flags|=SUPERLATIVE;
+  if(StrIMatch("comparative",tmp)) flags|=COMPARATIVE;
+  if(StrIMatch("present",tmp)) flags|=PRESENT;
+  return flags;
+}
+U0 WordString2FlagsRecur(U8 *word,U8*trans,I64Set *set,I64 depth,I64 flags,I64 base) {
+  if(!set) return;
+  if(depth==set->cnt) {
+    if(flags!=base) {
+      DeclensionForWord(flags,TrieAdd(word,flags,trans));
+    }
+    return;
+  }
+  I64Set *sub=set->body[depth];
+  I64 oflags=flags,idx;
+  if(sub) {
+    idx=sub->cnt;
+    while(--idx>=0) {
+      flags=oflags|Nugget2Flags(sub->body[idx]);
+      WordString2FlagsRecur(word,trans,set,depth+1,flags,base);
+    }
+  } else
+    WordString2FlagsRecur(word,trans,set,depth+1,oflags,base);
+}
+I64 WordString2Flags(U8 *word,U8 *trans,U8 *tmp,I64 base_flags) {
+  I64Set *all=NULL;
+  while(*tmp) {
+    all=I64SetAdd(all,ParseSlashList(&tmp));
+  }
+  if(all) {
+    WordString2FlagsRecur(word,trans,all,0,base_flags,base_flags);
+  }
+}
 I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
   static I64 recur=0;
   if(++recur>=2) {
@@ -326,8 +430,8 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
   I64 flags=0,base_flags=0,idx3,idx2,idx,cs,new_flags;
   U8 dummy[STR_LEN];
   Bool has_forms=FALSE,has_senses=FALSE;
-  U8 *tmp,*wstr;
-  CJson *n,*f,*senses,*formof,*tags;
+  U8 *tmp,*wstr,*tmp2;
+  CJson *n,*f,*senses,*formof,*tags,*glosses,*g;
   I64 inflect_mask=0;
   I64 added=0;
   if(n=GetJsonMember(j,"pos",J_STR)) {
@@ -341,9 +445,29 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
     else if(!StrICmp(n->str,"pron")) flags|=PRONOUN;
     else if(!StrICmp(n->str,"det")) flags|=DETIRMINER;
   }
+
   base_flags=flags;
   has_forms=ToBool(GetJsonMember(j,"forms",J_ARRAY));
-  has_senses=ToBool(GetJsonMember(j,"senses",J_ARRAY));
+  has_senses=ToBool(senses=GetJsonMember(j,"senses",J_ARRAY));
+  if(has_senses) {
+    for(idx=0;idx!=senses->cnt;++idx) {
+      StrPrint(dummy,"%d",idx);
+      n=GetJsonMember(senses,dummy);
+      if(!n)
+        break;
+      glosses=GetJsonMember(n,"glosses",J_ARRAY);
+      if(glosses)
+        for(idx2=0;idx2!=glosses->cnt;++idx2) {
+	  flags=base_flags;
+	  StrPrint(dummy,"%d",idx2);
+	  if(g=GetJsonMember(glosses,dummy,J_STR)) {
+	    tmp=g->str;
+	    WordString2Flags(word,trans,tmp,base_flags);
+	  }
+        }
+    }
+  }
+  flags=base_flags;
   for(idx3=0;idx3!=2;idx3++) {
     if(idx3==0)
       senses=GetJsonMember(j,"senses",J_ARRAY);
@@ -430,7 +554,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	    if(!idx2)
 	      base_flags|=flags;
 	    if(has_forms)
-		goto skip;
+	      goto skip;
 	  }
 	  if(add) {
 	    if(BCnt(flags&(CASE_MASK))>1) {
@@ -444,20 +568,20 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 		    VOCATIVE
 		    };
 	      for(cs=0;cs!=6;cs++) {
-		new_flags=(flags&~CASE_MASK)|each[cs];
+	        new_flags=(flags&~CASE_MASK)|each[cs];
 	        if(!TrieExists(word,new_flags)&&flags&each[cs]) {
 		  added++;
 		  DeclensionForWord(new_flags,TrieAdd(word,new_flags,trans));
 	        }
 	      }
 	    } else
-	    if(!TrieExists(word,flags)) {
-	      if(flags&NOUN&&!(flags&CASE_MASK))
-		goto skip;
-	      DbgPrint("ADD:%d,%s,%X\n",idx3,f->str,flags);
-	      added++;
-	      DeclensionForWord(flags,TrieAdd(word,flags,trans));
-	    }
+	      if(!TrieExists(word,flags)) {
+	        if(flags&NOUN&&!(flags&CASE_MASK))
+		  goto skip;
+	        DbgPrint("ADD:%d,%s,%X\n",idx3,f->str,flags);
+	        added++;
+	        DeclensionForWord(flags,TrieAdd(word,flags,trans));
+	      }
 	  }
 skip:;
         }
@@ -467,8 +591,8 @@ skip:;
   --recur;
   if(!added&&add) {
 //Blindly accept from "pos":
-   if(!TrieExists(word,flags))
-     DeclensionForWord(new_flags,TrieAdd(word,flags,trans));
+    if(!TrieExists(word,flags))
+      DeclensionForWord(new_flags,TrieAdd(word,flags,trans));
   }
   return flags|inflect_mask;
 }

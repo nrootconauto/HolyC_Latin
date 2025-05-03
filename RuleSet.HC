@@ -725,7 +725,8 @@ enter:
 	      ret->act_as_type=ret->raw_type=AST_INFINITIVE;
 	    } else if(word->flags&ADVERB) {
 	      ret->act_as_type=ret->raw_type=AST_ADVERB;
-	    }
+	    } else if(!StrCmp(_word,":")||!StrCmp(_word,",")||!StrCmp(_word,";"))
+	      ret->act_as_type=ret->raw_type=AST_CONJUNCTION;
 	    ret->word=word;
 	    ret->flags=word->flags;
 	    ret->end=idx+1;
@@ -1055,6 +1056,7 @@ AST *ParseSentenceJoin(I64 argc,U8 **argv) {
   I64 y;
   I64 ass,best_len=0;
   F64 best_prob=-10000.,mul;
+  Bool check=FramePtr("GrammarCheck");
   for(y=0;y!=argc;y++) {
     set=*MatrixPtr(matrix,0,y,argc);
     if(set) {
@@ -1062,26 +1064,29 @@ AST *ParseSentenceJoin(I64 argc,U8 **argv) {
       while(--can>=0) {
         cur=set->body[can];
         if(cur->start==0&&cur->end==argc)
-	  has_good|=ASTHasErrors(cur);
+	  has_good|=!ASTHasErrors(cur);
 	else if(cur->start==0)
 	  best_len=MaxI64(cur->end,best_len);
       }
       can=set->cnt;
       while(--can>=0) {
         cur=set->body[can];
-        if((cur->start==0&&cur->end==argc)||(!has_good&&cur->start==0&&cur->end==best_len)) {
+        if((cur->start==0&&cur->end==argc)||(!has_good&&cur->start==0&&cur->end==best_len&&check)) {
           if(!ASTHasErrors(cur)) {
 	    mul=1.;
 	  } else { //cur->error==TRUE
 	    mul=1.;
-	    if(has_good)
+	    if(has_good) {
 	      mul=0.;
+	      goto skip;
+	    }
 	  }
 	  if(best_prob<=mul*cur->prob) {
 	    if(ret) ASTDel(ret);
 	    best_prob=mul*cur->prob;
 	    ret=ASTClone(cur);
-	  } 
+	  }
+skip:; 
         }
       }
     }
