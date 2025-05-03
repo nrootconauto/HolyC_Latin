@@ -203,6 +203,10 @@ U8 *CurrentSentence(CDDoc *doc,CD2I64 *start=NULL,CD2I64 *end=NULL) {
     if(doc->x<=0&&doc->y<=0)
 	break;
   }
+  while(Bt(char_bmp_white_space,c=DDocCurU32(doc))) {
+    if(!c) break;
+    DDocRight(doc);
+  }
   if(start) {
     start->x=doc->x;
     start->y=doc->y;
@@ -225,10 +229,12 @@ U8 *CurrentSentence(CDDoc *doc,CD2I64 *start=NULL,CD2I64 *end=NULL) {
   DocDel(rd);
   return ret;
 }
-U0 GrammarASTDump0(CDoc *doc,AST *ast,U8 **toks,I64 *depths,I64 depth=0) {
+U0 GrammarASTDump0(CDoc *doc,AST *ast,U8 **toks,CTrie **forms,I64 *depths,I64 depth=0) {
   if(!ast) return;
   I64 i;
   I64Set *set;
+  if(ast->word)
+    forms[ast->word_idx]=ast->word;
   if(ast->error) {
     DocPrint(doc,"$$TR-C,\"%Q\"$$$$ID,2$$\n$$RED$$",ast->error);
     for(i=ast->start;i!=ast->end;++i) {
@@ -238,12 +244,12 @@ U0 GrammarASTDump0(CDoc *doc,AST *ast,U8 **toks,I64 *depths,I64 depth=0) {
     DocPrint(doc,"$$FD$$$$ID,-2$$\n");
     ++depth;
   }
-  GrammarASTDump0(doc,ast->base_expression,toks,depths,depth);
+  GrammarASTDump0(doc,ast->base_expression,toks,forms,depths,depth);
   if(set=ast->args) {
     i=set->cnt;
     while(--i>=0) {
       if(ast!=set->body[i])
-        GrammarASTDump0(doc,set->body[i],toks,depths,depth);
+        GrammarASTDump0(doc,set->body[i],toks,forms,depths,depth);
     }
   }
 }
@@ -259,13 +265,15 @@ again:;
       cnt=markers->cnt;
       while(--cnt>=0) {
         mark=markers->body[cnt];
-	if(y==oy)
+	if(y==oy&&y==y2)
+	  sx=x,ex=x2;
+	else if(y==oy)
 	  sx=x,ex=I64_MAX;
 	else if(y==y2)
 	  sx=0,ex=x2;
         else
 	  sx=0,ex=I64_MAX;
-        if(sx<=mark->offset&&mark->offset<ex) {
+        if(sx<=mark->offset<ex) {
 	  I64SetRem(markers,mark);
 	  goto again;
         }
@@ -280,19 +288,21 @@ U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
   if(!sent) return;
   FramePtrAdd("GrammarCheck",1);
   I64 color,lastx,lasty;
-  U8 *st=sent,*tmp,*line_ptr,*oline_ptr;
+  U8 *st=sent,*tmp,*line_ptr,*oline_ptr,*tmp2;
   U8 **toks=TokenizeSentence(st,&st,TRUE,TRUE);
   I64 tcnt=0,*error_depths,i;
   CDC *dc;
+  CDDMarker *mark;
   while(tmp=toks[tcnt])
     tcnt++;
 
   AST *ast=ParseSentenceJoin(tcnt,toks);
+  CTrie **forms=CAlloc(8*tcnt);
   CDoc *errs=DocNew;
   if(ast) {
     dc=DrawSentence(ast,tcnt,toks);
     error_depths=CAlloc(8*tcnt);
-    GrammarASTDump0(errs,ast,toks,error_depths);
+    GrammarASTDump0(errs,ast,toks,forms,error_depths);
     DocTop(errs);
     DocPrint(errs,"$$TX+CX,\"Grammar Check\"$$\n\n\n\n\n\n");
     dc=DrawSentence(ast,tcnt,toks);
@@ -306,9 +316,15 @@ U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
     doc->y=sentence_start.y;
     tcnt=0;
     while(tmp=toks[tcnt]) {
-	lastx=doc->x,lasty=doc->y;
-      DDFind(doc,tmp); //Goes to end of find
-        ClearMarkings(doc,lastx,lasty,doc->x,doc->y);
+      mark=NULL;
+      DDFind(doc,tmp);
+      lastx=doc->x,lasty=doc->y;
+ //Skip word
+      tmp2=tmp;
+      while(ReadUTF8(tmp2,&tmp2))
+        DDocRight(doc);
+  
+      ClearMarkings(doc,lastx,lasty,doc->x,doc->y);
       if(error_depths[tcnt]) {
         switch(error_depths[tcnt]) {
 	  case 1:
@@ -327,7 +343,17 @@ U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
 	    color=YELLOW;
 	    break;
         }
-        DDMarkerNew(doc,StrLen(tmp),color,"grammar"); //TODO
+        SwapI64(&doc->x,&lastx);
+        mark=DDMarkerNew(doc,StrLen(tmp),color,"grammar"); //TODO message
+        SwapI64(&doc->x,&lastx);
+      }
+      if(!mark&&forms[tcnt]) {
+        SwapI64(&doc->x,&lastx);
+        mark=DDMarkerNew(doc,StrLen(tmp),-1,"");
+        SwapI64(&doc->x,&lastx);
+      }
+      if(mark) {
+	mark->word=forms[tcnt];
       }
       ++tcnt;
     }
@@ -362,7 +388,10 @@ U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
       PopUp(tmp=MStrPrint("DocEd(%d);;",errs),Fs);
     Free(tmp);
     Free(error_depths);
+
+  
   }
+  Free(forms);
   tcnt=0;
   while(toks[tcnt])
     Free(toks[tcnt++]);
@@ -373,13 +402,13 @@ U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
   Free(sent);
   DocDel(errs);
 }
-U0 GrammarCheckBG(CDDoc *doc) {
+U0 GrammarCheckBG(CDDoc *doc,I64 top,I64 bottom) {
   I64 old_x=doc->x,old_y=doc->y;
   CD2I64 end,old_end;
   doc->x=0,doc->y=0;
-  old_end.x=0,old_end.y=0;
+  old_end.x=0,old_end.y=top;
   end.x=0;
-  end.y=0;
+  end.y=top;
   CDDLine *ln;
 again:;
   do {
@@ -392,6 +421,8 @@ again:;
       if(++doc->y<doc->lines->cnt) {
         end.x=0;
         end.y=doc->y;
+	if(end.y>=bottom)
+	  break;
         goto again;
       } else
         break;
@@ -402,6 +433,8 @@ again:;
     doc->x=old_end.x;
     doc->y=old_end.y;
     GrammarCheckAtSentence(doc,FALSE);
+    if(end.y>=bottom)
+	break;
   } while(end.x!=old_end.x||end.y!=old_end.y);
   doc->x=old_x;
   doc->y=old_y;
@@ -479,6 +512,9 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 	  TTF_RenderText(dummy,x,y,buf,,,,cf);
         }
         if(word=GetWord(buf)) {
+	  if(mark=MarkerForWord0(markers,start,start+1))
+	    if(mark->word)
+	      word=mark->word;
 	  dc->color=GREEN;
 	  ox=x;
 	  if(odoc->y==line2)
@@ -520,9 +556,11 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
         idx2+=len;
       }
       end=idx2;
-      if(mark=MarkerForWord0(markers,start,end)) {
-	dc->color=mark->color;
-	GrRect(dc,ox,y+17,x-ox,4); //TODO font size
+      if(mark=MarkerForWord0(markers,start,start+1)) {
+	if(mark->color>=0) {
+	  dc->color=mark->color;
+	  GrRect(dc,ox,y+17,x-ox,4); //TODO font size
+	}
       }
     }
     Free(line);
@@ -680,8 +718,8 @@ word_form:
       FramePtrSet("Latin.top",scroll);
     }
     if(tS>next_tS) {
-      GrammarCheckBG(doc);
-	next_tS=tS+3.;
+      GrammarCheckBG(doc,scroll,wh);
+      next_tS=tS+3.;
     }
   }
 fin:;

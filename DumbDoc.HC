@@ -6,6 +6,7 @@ class CDDMarker {
   I64 offset,len;
   I64 color;
   U8 *note;
+  CTrie *word;
 }
 class CDDLine:CQue {
   I64Set *string; //unicode codepoints
@@ -313,9 +314,13 @@ skip2:;
   return ptr;
 }
 I64 DDStrCmp(CDDoc *doc,U8 *str) {
-  I64 cp,x=doc->x,y=doc->y,ret;
+  I64 cp,x=doc->x,y=doc->y,ret,cp2;
   while(cp=ReadUTF8(str,&str)) {
-    ret=cp-DDocCurU32(doc);
+    cp2=DDocCurU32(doc);
+    if(cp<0xff&&cp2<0xff)
+      ret=ToUpper(cp)-ToUpper(cp2);
+    else
+      ret=cp-cp2;
     if(ret)
       break;
     DDocRight(doc);
