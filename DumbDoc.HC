@@ -117,7 +117,7 @@ U0 DDocUp(CDDoc *doc,I64 sc=0) {
 }
 U0 DDocDown(CDDoc *doc,I64 sc=0) {
    CDDLine *ln;
-   if(doc->y+1=doc->lines->cnt) return;
+   if(doc->y+1==doc->lines->cnt) return;
    ln=doc->lines->body[++doc->y];
    if(ln->string) {
      doc->x=MinI64(ln->string->cnt,doc->x);
