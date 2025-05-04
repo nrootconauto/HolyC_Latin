@@ -557,7 +557,7 @@ ent:
       if(!ast->base_expression) {
         goto use_middle;
       } 
-      if(ast->flags&(CONJUNCTION|CONJUNCTION2)) {
+      if(ast->flags&(CONJUNCTION|CONJUNCTION2)&&!(ast->flags&CONJUNCTION_NO_JOIN)) {
 conj:
         bound_l=ast->base_expression->start;
         bound_r=ast->base_expression->end;

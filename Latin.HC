@@ -62,6 +62,9 @@
 #define VOCATIVE (1<<55)
 #define NEGATIVE (1<<56)
 #define NUMBER (1<<57)
+//See Visual.HC has no grammatical effect
+//This causes conjunctions like ":" to not appear "joined".
+#define CONJUNCTION_NO_JOIN (1<<58)
 class CDeclension:CQue {
   I64 flags;
   U64 set;

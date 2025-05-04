@@ -325,12 +325,8 @@ I64Set *ParseSlashList(U8 **_start) {
 again:
   buf[0]=0;
   while(c=*end) {
-    if(Bt(char_bmp_white_space,c)) {
-      if(buf[0]) {
-        s=I64SetAdd(s,GCStrNew(buf));
-      }
+    if(Bt(char_bmp_white_space,c))
       break;
-    }
     if(c=='/') {
       s=I64SetAdd(s,GCStrNew(buf));
       ++end;
@@ -339,6 +335,8 @@ again:
     CatPrint(buf,"%c",c);
     ++end;
   }
+  if(buf[0])
+    s=I64SetAdd(s,GCStrNew(buf));
   while(c=*end) {
     if(!Bt(char_bmp_white_space,c))
       break;
@@ -397,6 +395,7 @@ U0 WordString2FlagsRecur(U8 *word,U8*trans,I64Set *set,I64 depth,I64 flags,I64 
   if(!set) return;
   if(depth==set->cnt) {
     if(flags!=base) {
+DbgPrint("RADD:%s,%X\n",word,flags);
       DeclensionForWord(flags,TrieAdd(word,flags,trans));
     }
     return;
@@ -407,6 +406,7 @@ U0 WordString2FlagsRecur(U8 *word,U8*trans,I64Set *set,I64 depth,I64 flags,I64 
     idx=sub->cnt;
     while(--idx>=0) {
       flags=oflags|Nugget2Flags(sub->body[idx]);
+DbgPrint("R:%s\n",sub->body[idx]);
       WordString2FlagsRecur(word,trans,set,depth+1,flags,base);
     }
   } else

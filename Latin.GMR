@@ -77,7 +77,7 @@ Infin@Infin NOUN -> "non"(ADVERB) !Infin@Infin Adverb@Adverb(NOUN);(.1)
 Noun@Noun[FlagsAcc] NOUN -> Infin@Infin; //I like "eating"
 Noun@Noun[FlagsNom] NOUN -> Infin@Infin; //I like "eating"
 Noun@Noun[FlagsAcc] NOUN -> !Infin@Infin Noun@Noun(NOUN); (1.2) //Less common
-Noun@Noun[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.5) //more commons
+Noun@Noun[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.5) //more commons
 Noun@Noun[FlagsNom] NOUN -> !Infin@Infin Noun@Noun(NOUN); (1.2) //Less common
 Noun@Noun[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin ; (1.5) //more commons
 
@@ -140,8 +140,8 @@ Sent(CaseAgree) CLAUSE -> !Noun@Noun Adj@Adj;(.1) //Favor lesser than explicit "
 Sent(CaseAgree) CLAUSE -> Adj@Adj !Noun@Noun;(.1) //Favor lesser than explicit "is".
 
 // Quam is certified word for  comparsions
-Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> Noun@Noun(COMPARE) !"quam" Noun@Noun(COMPARE);(.6) //Favor comparions
-Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> ["tam"(WHERE) Noun@Noun](COMPARE) !"quam" Noun@Noun(COMPARE);(.6) //Favor comparions
+Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> Noun@Noun(COMPARE) !"quam" Noun@Noun(COMPARE);(1.6) //Favor comparions
+Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> ["tam"(WHERE) Noun@Noun](COMPARE) !"quam" Noun@Noun(COMPARE);(1.8) //Favor comparions
 Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION); (1.) //et ea means "and too XXXX"
 
 //End
@@ -154,6 +154,7 @@ Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
 
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
 Sent CLAUSE -> Noun@Noun !Verb@Verb [!Prep@Prep Noun@Noun](WHERE); (2)
+Sent CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun [!Prep@Prep Noun@Noun](WHERE); (2)
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
 Sent(VerbAgree) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;(1.1)
@@ -172,7 +173,7 @@ Sent CLAUSE -> Sent !Adverb@Adverb; (.5) //"I praise them all [at once]" dafuq?
 //
 // Punctuation
 //
-Sent[FlagsColon] CLAUSE -> Sent(NOUN) !":"(CONJUNCTION) Sent(NOUN);
-Sent[FlagsCooma] CLAUSE -> Sent(NOUN) !","(CONJUNCTION) Sent(NOUN);(.7)
+Sent[FlagsColon] CLAUSE -> Sent(NOUN) !":"(CONJUNCTION) Sent(NOUN);(1.5)
+Sent[FlagsComma] CLAUSE -> Sent(NOUN) !","(CONJUNCTION) Sent(NOUN);(.7)
 Noun@Noun(CaseAgree)[FlagsComma] NOUN -> Noun@Noun(NOUN) !","(CONJUNCTION) Noun@Noun(NOUN);(1.5)
 Adj@Adj(CaseAgree)[FlagsComma] ADJECTIVE -> Adj@Adj(ADJECTIVE) !","(CONJUNCTION) Adj@Adj(ADJECTIVE);(1.5)

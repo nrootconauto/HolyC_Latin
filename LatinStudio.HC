@@ -1,6 +1,7 @@
 #include "WordForms.HC";
 #include "DumbDoc.HC";
 F64 line_height=25;
+CDC *ed_scrn=DCNew(GR_WIDTH,GR_HEIGHT);
 class CNounForm {
   Bool plural format "$$CB,\"Plural\"$$\n";
   I64 case format "$$LS,D=\"DF_CASES\"$$\n";
@@ -305,6 +306,7 @@ U0 GrammarCheckAtSentence(CDDoc *doc,Bool popup=TRUE) {
   if(ast) {
     dc=DrawSentence(ast,tcnt,toks);
     error_depths=CAlloc(8*tcnt);
+    NumberAST(ast);
     GrammarASTDump0(errs,ast,toks,forms,error_depths);
     DocTop(errs);
     DocPrint(errs,"$$TX+CX,\"Grammar Check\"$$\n\n\n\n\n\n");
@@ -540,6 +542,7 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
 	  }
 
         } else {
+invalid:
 	  dc->color=LTRED;
 	  if(odoc->y==line2)
 	    x+=TTF_RenderText(dc,x,y,buf,,,odoc->x-idx2);
@@ -569,10 +572,14 @@ U0 LatinEdDrawIt(CTask *t,CDC *dc) {
     Free(line);
   }
   DCDel(dummy);
-  DocDel(doc);
+  gc_enable=TRUE;
+}
+U0 CopyScrn(CTask*,CDC *dc) {
+  GrBlot(dc,0,0,ed_scrn);
 }
 U0 LatinEd(U8 *file) {
   U8 *line,buf[STR_LEN];
+  CDC *empty=DCNew(1,1),*buffer=DCNew(GR_WIDTH,GR_HEIGHT);
   CDDoc *doc;
   DocClear;
   I64 m,x,y,ww,wh,scroll,lc,len;
@@ -587,7 +594,7 @@ U0 LatinEd(U8 *file) {
   FramePtrAdd("Latin.top",0);
   FramePtrAdd("Latin.doc",doc);
   CCursorFind cf;
-  Fs->draw_it=&LatinEdDrawIt;
+  Fs->draw_it=&CopyScrn;
   while(TRUE) {
     ww=(Fs->win_right-Fs->win_left)*8/line_height;
     wh=(Fs->win_bottom-Fs->win_top)*8/line_height;
@@ -605,7 +612,8 @@ U0 LatinEd(U8 *file) {
         cf.user_data=doc->y;
         cf.best_dist=I16_MAX*I16_MAX;
         FramePtrAdd("Latin.cursor_find",&cf);
-        Refresh;
+//Sometimes winmgr likes to stop showing after alot of lag
+        LatinEdDrawIt(Fs,empty);
         doc->y=cf.user_data;
         doc->x=cf.found_ch_idx;
       }
@@ -624,7 +632,8 @@ U0 LatinEd(U8 *file) {
         cf.found_ch_idx=doc->x;
         cf.user_data=doc->y;
         FramePtrAdd("Latin.cursor_find",&cf);
-        Refresh;
+//Sometimes winmgr likes to stop showing after alot of lag
+        LatinEdDrawIt(Fs,empty);
         doc->y=cf.user_data;
         doc->x=cf.found_ch_idx;
 word_form:
@@ -711,6 +720,11 @@ word_form:
         }
       }
     }
+//Sometimes winmgr likes to stop showing after alot of lag
+    DCFill(buffer,TRANSPARENT);
+    LatinEdDrawIt(Fs,buffer);
+    DCFill(ed_scrn);
+    GrBlot(ed_scrn,0,0,buffer);
     Refresh;
     scroll=FramePtr("Latin.top");
     if(scroll>doc->y||doc->y>=scroll+wh) {
@@ -721,7 +735,7 @@ word_form:
       FramePtrSet("Latin.top",scroll);
     }
     if(tS>next_tS) {
-      GrammarCheckBG(doc,scroll,wh);
+      GrammarCheckBG(doc,scroll,scroll+wh);
       next_tS=tS+3.;
     }
   }
@@ -731,5 +745,9 @@ fin:;
   Free(line);
   FramePtrDel("Latin.doc");
   FramePtrDel("Latin.top");
+  Fs->draw_it=0;
+  Refresh;
+  DCDel(empty);
+  DCDel(buffer);
 }
 LatinEd("/Ass.DD");

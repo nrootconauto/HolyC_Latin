@@ -152,7 +152,7 @@ I64 FlagsPlural(I64 argc,AST **argv) {
 } 
 
 I64 FlagsColon(I64 argc,AST **argv) {
-  return CONJUNCTION|argv[0]->flags;
+  return CONJUNCTION_NO_JOIN|CONJUNCTION|argv[0]->flags;
 } 
 
 I64 FlagsComma(I64 argc,AST **argv) {
@@ -372,29 +372,11 @@ Bool HasQueAtEndWithCase(I64 argc,AST **argv) {
 
 //Momitive quam albative
 Bool CaseQuam(I64 argc,AST **argv) {
-  I64 i=0;
-  AST *ast;
-  I64 cs=NOMITIVE,mask=CASE_MASK;
-  Bool has_nomitive=FALSE;
-  Bool has_ablative=FALSE;
-  while(i<argc) {
-    ast=argv[i];
-    if(ast->act_as_type==AST_NOUN) {
-      if((ast->flags&mask)!=cs) {
-	return FALSE;
-      }
-      if(cs&mask==NOMITIVE) {
-	has_nomitive=TRUE;
-	cs=ABLATIVE;
-      }
-      if(cs&mask==ABLATIVE) {
-	has_ablative=TRUE;
-	cs=ABLATIVE;
-      }
-    }
-    i++;
-  }
-  return has_nomitive&&has_ablative;
+//https://latinforaddicts.wordpress.com/2012/04/16/uses-of-quam-subjunctive/
+//Words are in same case
+  if(CaseAgree(argc,argv))
+    return TRUE;
+  return FALSE;
 }
 Bool CaseX(I64 x,I64 argc,AST **argv) {
   I64 i=0;
