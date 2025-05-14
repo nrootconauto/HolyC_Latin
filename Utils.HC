@@ -1,4 +1,4 @@
-#include "GarabageCollector.HC";
+0#include "GarabageCollector.HC";
 #ifndef UTILS_H
 #define UTILS_H 1
 // a b c NULL (NULL terminated),ends at end of input or '.'

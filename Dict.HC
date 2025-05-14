@@ -372,7 +372,7 @@ I64 Nugget2Flags(U8 *tmp) {
   if(StrIMatch("passive",tmp)) flags|=PASSIVE;
   if(StrIMatch("comparative",tmp)) flags|=COMPARATIVE;
   if(StrIMatch("superlative",tmp)) flags|=SUPERLATIVE;
-  if(StrIMatch("participle",tmp)){ flags|=PARTICIPLE;}
+  if(StrIMatch("participle",tmp)){ flags|=PARTICIPLE|ADJECTIVE;} //Whoops ,adjective,this is intentional
   if(StrIMatch("determiner",tmp)) flags|=DETIRMINER;
   if(StrIMatch("pronoun",tmp)) flags|=PRONOUN;
   if(StrIMatch("declension-1",tmp)) flags|=DECLENSION1;
@@ -395,7 +395,7 @@ U0 WordString2FlagsRecur(U8 *word,U8*trans,I64Set *set,I64 depth,I64 flags,I64 
   if(!set) return;
   if(depth==set->cnt) {
     if(flags!=base) {
-DbgPrint("RADD:%s,%X\n",word,flags);
+DbgPrint("RADD:%s,%X,%X\n",word,flags,base);
       DeclensionForWord(flags,TrieAdd(word,flags,trans));
     }
     return;
@@ -516,7 +516,7 @@ I64 GetWordFlags0(U8 *word,CJson *j,Bool add=TRUE,U8 *trans=NULL) {
 	      if(!StrICmp(f->str,"passive")) flags|=PASSIVE;
 	      if(!StrICmp(f->str,"comparative")) flags|=COMPARATIVE;
 	      if(!StrICmp(f->str,"superlative")) flags|=SUPERLATIVE;
-	      if(!StrICmp(f->str,"participle")){ flags|=PARTICIPLE;}
+	      if(!StrICmp(f->str,"participle")){ flags|=PARTICIPLE|ADJECTIVE;}
 	      if(!StrICmp(f->str,"determiner")) flags|=DETIRMINER;
 	      if(!StrICmp(f->str,"pronoun")) flags|=PRONOUN;
 	      if(!StrICmp(f->str,"declension-1")) flags|=DECLENSION1;

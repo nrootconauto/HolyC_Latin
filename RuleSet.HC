@@ -135,7 +135,7 @@ I64 FlagsConj(I64 argc,AST **argv) {
     if(ast->act_as_type==AST_NOUN||ast->act_as_type==AST_ADJECTIVE)
       or|=ast->flags;
   }
-  return or|CONJUNCTION;
+  return or&~(SINGULAR|CONJUNCTION);
 } 
 
 
@@ -201,6 +201,10 @@ I64 FlagsTransfer(I64 argc,AST **argv) {
   }
   return or;
 } 
+
+I64 FlagsTransferNoConj(I64 argc,I64 *argv) {
+  return FlagsTransfer(argc,argv)&~(CONJUNCTION|CONJUNCTION2);
+}
 
 I64 FlagsTransferGen(I64 argc,I64 **argv) {
   return FlagsTransfer(argc,argv)&~GENITIVE;

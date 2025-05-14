@@ -383,7 +383,6 @@ AST *GetLastConjPair(AST *ast) {
     return GetLastConjPair(best);
   return best;
 }
-
 CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *max_h=NULL) {
   CDisplayNode *ret=GCCAlloc(sizeof CDisplayNode),*tmp;
   ret->ast=ast;
@@ -557,11 +556,15 @@ ent:
       if(!ast->base_expression) {
         goto use_middle;
       } 
+//If we have 2 adjectives,use them like a conjunction
+      ast2=set->body[idx];
+      if(ast->flags&ADJECTIVE&&ast2->flags&ADJECTIVE) {
+	goto conj;
+      }
       if(ast->flags&(CONJUNCTION|CONJUNCTION2)&&!(ast->flags&CONJUNCTION_NO_JOIN)) {
 conj:
         bound_l=ast->base_expression->start;
         bound_r=ast->base_expression->end;
-        ast2=set->body[idx];
 //Ignore "[","]"
         if(ast2->end==bound_l&&IsOfSomeType(ast,ast2)) {
 	  ast2=GetLastConjPair(ast2);
@@ -1281,12 +1284,18 @@ DumpSentences("et tenebrae erant super faciem abyssi"); //: et Spiritus Dei fere
 //John 9:1
 //DumpSentences("et praeteriens [vidit hominem caecum a nativitate].");
 //1st conjugation
-DumpSentences("[non habeam   inimicitias aliis]. [res viventium] non habeat mecum inimicitias.","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
-DumpSentences("Dixitque Deus : Fiat lux");
-DumpSentences("Terra autem erat [inanis et vacua] ,et  tenebris erant super faciem abyssi");
-Break;
-DocMax;
-
+//DumpSentences("[non habeam   inimicitias aliis]. [res viventium] non habeat mecum inimicitias.","May I have no hostillity with others.\0May other living creatures have no hostility with me.\0");
+//DumpSentences("Dixitque Deus : Fiat lux");
+//DumpSentences("Terra autem erat [inanis et vacua] ,et  tenebris erant super faciem abyssi");
+//
+DocClear;
+/*Del("/WWW/Tattvarth2.DD");
+DumpSentences(
+  FileRead("/Ass.DD"),
+"",
+  "/WWW/Tattvarth2.DD"
+);
+Break;*/
 DumpSentences(
 	"ingeniculo [dominum  liberandi] qui fui [ [nexionis vastatorem] et [sciendum omnia]]." // 
 	"ita  habeamus [virtutem suum]."

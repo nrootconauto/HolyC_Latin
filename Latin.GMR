@@ -6,7 +6,8 @@ Num@Num ADJECTIVE = NUMBER;
 
 Adj@Adj[FlagsAcc] ADJECTIVE -> Num@Num;
 Adj@Adj[FlagsNom] ADJECTIVE -> Num@Num;
-Noun@Noun NOUN -> Num@Num !Noun@Noun;
+Adj@Adj[FlagsTransfer] ADJECTIVE -> Num@Num;
+Noun@Noun(CaseAgree) NOUN -> Num@Num !Noun@Noun;
 
 
 Adj@Adj ADJECTIVE = ADJECTIVE;
@@ -50,13 +51,16 @@ Noun@Gen NOUN = ADJECTIVE,GENITIVE;
 Noun@Noun[FlagsTransferGen] NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
 Noun@Noun[FlagsTransferGen] NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
 Noun@Noun[FlagsTransfer] NOUN -> !Noun@Gen; (.09) //For verbs
+Noun@Noun[FlagsTransfer] NOUN -> !Noun@Gen; (.09) //For verbs
 
-Noun@Gen(HasQueAtEnd)[FlagsPluralQue] NOUN -> Noun@Gen(NOUN) !Noun@Gen; (3.0)
+//Handle adjectives on genitive
+Noun@Gen(CaseAgree) NOUN -> Adj@Adj !Noun@Gen;
+Noun@Gen(CaseAgree) NOUN -> !Noun@Gen Adj@Adj;
 
 
 
 Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
-Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (4.0)
+Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (4.0)
 Verb@Verb(HasQueAtEnd)[FlagsPluralQue] VERB -> Verb@Verb(VERB) !Verb@Verb; (2.0)
 
 
@@ -86,18 +90,18 @@ Noun@Noun(VerbAgree)[FlagsNom] NOUN -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NO
 Noun@Noun(VerbAgree)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NOUN);
 
 
-Noun@Noun[FlagsPrep] NOUN -> Noun@Noun(NOUN) !Prep@Prep Noun@Noun(WHERE);(.6)
-Noun@Noun[FlagsPrep] NOUN -> Adj@Adj(NOUN) !Prep@Prep Noun@Noun(WHERE);(.7) //sometimes adjective comes befoe preposition(with great care)
+Noun@Noun[FlagsPrep] NOUN -> Noun@Noun(NOUN) !Prep@Prep Noun@Noun(WHERE);(1.6)
+Noun@Noun[FlagsPrep] NOUN -> Adj@Adj(NOUN) !Prep@Prep Noun@Noun(WHERE);(1.7) //sometimes adjective comes befoe preposition(with great care)
 Noun@Noun NOUN -> !Noun@Noun Adj@Adj; (.99)
 
 Verb@Verb VERB -> Verb@Verb(VERB) !Prep@Prep Noun@Noun(WHERE);
 
-Verb@Verb VERB -> !Verb@Verb Adverb@Adverb;(.5)
+Verb@Verb VERB -> !Verb@Verb Adverb@Adverb;(1.5)
 Verb@Verb VERB -> !Verb@Verb;
 
 Verb@Verb VERB -> Verb@Verb(CONJUNCTION) !Conj@Conj Verb@Verb(CONJUNCTION); (.7)
 
-Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;(.5)
+Verb@Verb VERB -> Adverb@Adverb !Verb@Verb;(1.5)
 
 //
 // Dumb hack,conjunctions can become before the verb they affect(Vulgate Genesis 1:2)
@@ -108,7 +112,7 @@ Verb@Verb VERB -> Conj@Conj(CONJUNCTION) !Verb@Verb;(.1)
 //
 // "In the begining",God created....
 //
-Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;(.9)
+Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;(1.9)
 //
 //  "((Walking by))...[he] saw a blind man"
 //  
@@ -127,7 +131,7 @@ Sent CLAUSE -> Sent(CONJUNCTION) !Pron@Pron Sent(CONJUNCTION); (.15) //Favor les
 Sent (CaseAgree)[FlagsAppositive] NOUN -> !Noun@Noun Noun@Noun; (.01)  //Less common than genitives
 
 //Intranstive words can be used as transitive verbs when used with prepositions
-Verb@Verb(Intransitive) VERB -> !Verb@Verb Prep@Prep; (.7) //Favor explicit use of syntax
+Verb@Verb(Intransitive) VERB -> !Verb@Verb Prep@Prep; (1.7) //Favor explicit use of syntax
 
 //Gentives can be used with adjactives to "desirous of learning"
 Adj@Adj(CaseGen) ADJECTIVE -> !Adj@Adj Noun@Noun ; (.05) //Less common?
@@ -154,7 +158,7 @@ Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
 
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)
 Sent CLAUSE -> Noun@Noun !Verb@Verb [!Prep@Prep Noun@Noun](WHERE); (2)
-Sent CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun [!Prep@Prep Noun@Noun](WHERE); (2)
+Sent CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun [!Prep@Prep Noun@Noun](WHERE); (2)
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb;(1.)
 Sent(VerbAgree) CLAUSE -> Noun@Noun Noun@Noun !Verb@Verb;(1.1)
 Sent(VerbAgree) CLAUSE -> !Verb@Verb Noun@Noun Noun@Noun;(1.1)
