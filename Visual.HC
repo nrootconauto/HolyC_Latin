@@ -338,11 +338,32 @@ Bool IsOfSomeType(AST *a,AST *b) {
     return FALSE;
   return TRUE;
 }
+CDisplayNode *GetDisplayNode(AST *a) {
+  CDisplayNode *r;
+  AST *b=a->base_expression;
+  while(b) {
+    if(r=b->disp_node)
+      return r;
+    b=b->base_expression;
+  }
+  b=a->parent_node;
+  while(b) {
+    if(r=b->disp_node)
+      return r;
+    b=b->parent_node;
+  }
+  if(r=a->disp_node)
+    return r;
+  return NULL;
+}
 //Used for grouping togheter conjunctions
-AST *GetFirstConjPair(AST *ast) {
+AST *GetFirstConjPair(AST *ast,Bool adj=FALSE) {
   I64 min=I64_MAX,idx;
   AST*best=ast,*tmp;
-  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)))
+  I64 extra=0;
+  if(adj)
+     extra=ADJECTIVE|NUMBER;
+  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2|extra)))
      return ast;
   if(!ast->args) return ast;
   if(ast->base_expression) {
@@ -357,14 +378,17 @@ AST *GetFirstConjPair(AST *ast) {
     }
   }
   if(ast!=best)
-    return GetFirstConjPair(best);
+    return GetFirstConjPair(best,adj);
   return best;
 }
 //Used for grouping togheter conjunctions
-AST *GetLastConjPair(AST *ast) {
+AST *GetLastConjPair(AST *ast,Bool adj=FALSE) {
+  I64 extra=0;
   I64 max=I64_MIN,idx;
   AST*best=ast,*tmp;
-  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2)))
+  if(adj)
+     extra=ADJECTIVE|NUMBER;
+  if(!(ast->flags&(CONJUNCTION|CONJUNCTION2|extra)))
      return ast;
 //Self is an argument
   if(!ast->args) return ast;
@@ -380,7 +404,7 @@ AST *GetLastConjPair(AST *ast) {
     }
   }
   if(ast!=best)
-    return GetLastConjPair(best);
+    return GetLastConjPair(best,adj);
   return best;
 }
 CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *max_h=NULL) {
@@ -392,6 +416,7 @@ CDisplayNode *DisplayNode(CDisplayTmp *world,CDC *dc,AST *ast,I64 level=0,I64 *m
   I64 color=LTGRAY,idx,run,run2,idx2,old_color,old_color2;
   I64Set *left_sides=NULL,*right_sides=NULL,*set2=NULL;
   U8 *optr,*base_word;
+  Bool adj_style;
   I64 level2,max_level=0;
   AST *ast2;
   F64 use_handle_x,use_handle_y;
@@ -557,8 +582,10 @@ ent:
         goto use_middle;
       } 
 //If we have 2 adjectives,use them like a conjunction
+      adj_style=FALSE;
       ast2=set->body[idx];
-      if(ast->flags&ADJECTIVE&&ast2->flags&ADJECTIVE) {
+      if(ast->flags&(ADJECTIVE|NUMBER)&&ast2->flags&(ADJECTIVE|NUMBER)) {
+	adj_style=TRUE;
 	goto conj;
       }
       if(ast->flags&(CONJUNCTION|CONJUNCTION2)&&!(ast->flags&CONJUNCTION_NO_JOIN)) {
@@ -567,7 +594,9 @@ conj:
         bound_r=ast->base_expression->end;
 //Ignore "[","]"
         if(ast2->end==bound_l&&IsOfSomeType(ast,ast2)) {
-	  ast2=GetLastConjPair(ast2);
+	  ast2=GetLastConjPair(ast2,adj_style);
+	  if(GetDisplayNode(ast2))
+	    tmp=GetDisplayNode(ast2);
 	  while(0<=bound_l<world->word_cnt) {
 	    if(StrCmp(world->words[bound_l],"["))
 	      break;
@@ -578,7 +607,9 @@ conj:
 	  use_x=world->word_offsets[bound_l];
 	  use_y=use_handle_y;
         } else if(set->body[idx]->start==bound_r&&IsOfSomeType(ast,ast2)) {
-	  ast2=GetFirstConjPair(ast2);
+	  ast2=GetFirstConjPair(ast2,adj_style);
+	  if(GetDisplayNode(ast2))
+	    tmp=GetDisplayNode(ast2);
 	  use_handle_x=tmp->bound_l;
 	  use_handle_y=tmp->handle_left_y;
 //Dumb hack,make
@@ -1136,6 +1167,7 @@ U0 DumpSentences(U8 *st,U8 *translations=NULL,CDoc *to_file=NULL) {
 }
 #if __CMD_LINE__
 DocMax;
+DumpSentences("[[tongitio scripturarum] et [tongitio sensitivus]] sunt saxum");
 /*
 
 DumpSentences(
@@ -1288,16 +1320,9 @@ DumpSentences("et tenebrae erant super faciem abyssi"); //: et Spiritus Dei fere
 //DumpSentences("Dixitque Deus : Fiat lux");
 //DumpSentences("Terra autem erat [inanis et vacua] ,et  tenebris erant super faciem abyssi");
 //
-DocClear;
-/*Del("/WWW/Tattvarth2.DD");
+Del("/WWW/Tattvarth1.DD");
 DumpSentences(
-  FileRead("/Ass.DD"),
-"",
-  "/WWW/Tattvarth2.DD"
-);
-Break;*/
-DumpSentences(
-	"ingeniculo [dominum  liberandi] qui fui [ [nexionis vastatorem] et [sciendum omnia]]." // 
+	"ingeniculo [dominum  liberandi] qui fui [ [nexionis vastatorem] et [sciendam omnia]]." // 
 	"ita  habeamus [virtutem suum]."
         "[iustus [fides et mos et cognitio]] sunt semitam."
 	"[[fides rei] reperire]  es [verum  fidem]."
@@ -1305,7 +1330,7 @@ DumpSentences(
 	"[[non animus] animusque nexioque libertasque motusque et dividere] componunt rem."
 	"hi definiunt [[nomen et imaginem] et [potentiam et statum]]."
 	"[septem cognitiones] colligunt rationem et sententiam."
-	"[septem cognitiones] colligunt [ causam descriptumque habensque et [locum  nixa] diuturnitatemque partitamque]."
+	"[septem cognitiones] colligunt [ causam descriptum habens et [locum  nixum] diuturnitatem partitamque]."
 	"[septem haec] sunt [ existendum locum numerum  longitudinem tempus aetatemque et [cogitationem et comparandum]]."
 	"[quinque genus cognitionum] sunt [sensum scriptum inobservatum divinationem omnisciensque]. "
 	"hoc sunt [duo [verum cognitionem] generum]."
@@ -1366,7 +1391,7 @@ DumpSentences(
 	"Senory knowledge,scriptural knowledge and divination may be false knowledges.\0"
 	"False knowledge from a abscence of falsehood and reality is insaity.\0"
 	"Representation,words,composite,anayltical comman straight and specific are the positions.\0"
-//,"/WWW/Tattvarth1.DD"
+,"/WWW/Tattvarth1.DD"
 );//et [prohibere et]18
 #endif	
 #endif

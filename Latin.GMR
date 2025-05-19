@@ -16,28 +16,30 @@ Det@Det ADJECTIVE = DETIRMINER;
 
 
 Noun@Noun[FlagsTransfer] NOUN -> Adj@Adj; (.99) //Substanive adjective is rarley used
-Adverb@Adverb[FlagsTransfer] NOUN -> Adj@Adj; (.1) // Adjectives are like adverbs sometimes
+Adverb@Adverb[FlagsTransferAdv] NOUN -> Adj@Adj; (.1) // Adjectives are like adverbs sometimes
 
 Det@Det ADJECTIVE = DETIRMINER;
 Noun@Noun NOUN = NOUN;
 Noun@Noun[FlagsTransfer] NOUN -> Det@Det; (.98)
-Noun@Noun(CaseAgree)[FlagsTransfer] NOUN -> !Det@Det Noun@Noun; (.99)
-Noun@Noun(CaseAgree)[FlagsTransfer] NOUN -> !Pron@Pron Noun@Noun; (.5)
+Noun@Noun(CaseAgree)[FlagsTransferNoun] NOUN -> !Det@Det Noun@Noun; (.99)
+Noun@Noun(CaseAgree)[FlagsTransferNoun] NOUN -> !Pron@Pron Noun@Noun; (.5)
 
 Pron@Inter QUESTION = INTEROGITIVE;
 Pron@Pron NOUN = PRONOUN;
 
 
 Gerund@Gerund NOUN = GERUND;
-Noun@Noun[FlagsTransfer] NOUN -> Gerund@Gerund;
+Noun@Noun[FlagsTransferNoun] NOUN -> Gerund@Gerund;
 
 
 Partic@Partic NOUN = PARTICIPLE;
-Noun@Noun[FlagsTransfer] NOUN -> !Partic@Partic; (.3)
-Adj@Adj[FlagsTransfer] ADJECTIVE -> !Partic@Partic; (.9) //The "boiled" water
-//Noun@Noun NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
+Noun@Noun[FlagsTransferNoun] NOUN -> !Partic@Partic; (.3)
+Noun@Gen[FlagsTransferNoun] NOUN -> !Partic@Partic; (.3)
+Adj@Adj[FlagsTransferAdj] ADJECTIVE -> !Partic@Partic; (.9) //The "boiled" water
+Noun@Noun[FlagsAcc] NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
+Noun@Noun[FlagsNom] NOUN -> !Partic@Partic Noun@Noun;(.05) //TODO what case
 
-Noun@Noun [FlagsTransfer] NOUN -> !Pron@Pron;
+Noun@Noun [FlagsTransferNoun] NOUN -> !Pron@Pron;
 
 Conj@Conj CONJUNCTION = CONJUNCTION;
 Noun@Noun(CaseAgree)[FlagsConj] NOUN -> Noun@Noun !Conj@Conj Noun@Noun;(1.5)
@@ -46,21 +48,25 @@ Adj@Adj(CaseAgree) ADJECTIVE -> Adj@Adj(CONJUNCTION) !Conj@Conj Adj@Adj(CONJUNCT
 Adj@Adj(CaseAgree)[FlagsConj] ADJECTIVE -> Adj@Adj(CONJUNCTION) !Adj@Adj ;(1.1)
 
 Noun@Gen NOUN = NOUN,GENITIVE; 
-Noun@Gen NOUN = ADJECTIVE,GENITIVE; 
+Adj@Gen NOUN = ADJECTIVE,GENITIVE; 
 
 Noun@Noun[FlagsTransferGen] NOUN -> Noun@Gen !Noun@Noun; (.5)  //More common
 Noun@Noun[FlagsTransferGen] NOUN -> !Noun@Noun Noun@Gen; (.1) //Less common
-Noun@Noun[FlagsTransfer] NOUN -> !Noun@Gen; (.09) //For verbs
-Noun@Noun[FlagsTransfer] NOUN -> !Noun@Gen; (.09) //For verbs
+Noun@Noun[FlagsTransferNoun] NOUN -> !Noun@Gen; (.09) //For verbs
+Noun@Noun[FlagsTransferNoun] NOUN -> !Noun@Gen; (.09) //For verbs
+Noun@Gen[FlagsTransferNoun] NOUN -> !Adj@Gen; (.9) //Substatnice gentiive nouns
 
 //Handle adjectives on genitive
-Noun@Gen(CaseAgree) NOUN -> Adj@Adj !Noun@Gen;
-Noun@Gen(CaseAgree) NOUN -> !Noun@Gen Adj@Adj;
+Noun@Gen(CaseAgree)[FlagsAdj] NOUN -> Adj@Adj !Noun@Gen;
+Noun@Gen(CaseAgree)[FlagsAdj] NOUN -> !Noun@Gen Adj@Adj;
+
+Noun@Gen(FlagsConj) NOUN-> Noun@Gen !Conj@Conj Noun@Gen;
+Noun@Gen(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Gen(NOUN) !Noun@Gen; (2.0)
 
 
 
 Noun@Noun(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Noun(NOUN) !Noun@Noun; (2.0)
-Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (4.0)
+Adj@Adj(HasQueAtEndWithCase)[FlagsPluralQue] ADJECTIVE -> Adj@Adj(ADJECTIVE) !Adj@Adj; (4.0)
 Verb@Verb(HasQueAtEnd)[FlagsPluralQue] VERB -> Verb@Verb(VERB) !Verb@Verb; (2.0)
 
 
@@ -68,8 +74,8 @@ Adverb@Adverb ADVERB = ADVERB;
 Prep@Prep WHERE = PREPOSITION;
 Verb@Verb VERB = VERB;
 Verb@Intran VERB = VERB,INTRANSITIVE;
-Noun@Noun NOUN -> Adj@Adj !Noun@Noun;(.001)
-Noun@Noun(CaseAgree) NOUN -> Adj@Adj !Noun@Noun;
+Noun@Noun(CaseAgree)[FlagsAdj] NOUN -> Adj@Adj !Noun@Noun;(.001)
+Noun@Noun(CaseAgree)[FlagsAdj] NOUN -> !Noun@Noun Adj@Adj;
 
 Infin@Infin NOUN = INFINITIVE;
 
@@ -92,7 +98,6 @@ Noun@Noun(VerbAgree)[FlagsAcc] NOUN -> Noun@Noun(NOUN) !Infin@Infin Noun@Noun(NO
 
 Noun@Noun[FlagsPrep] NOUN -> Noun@Noun(NOUN) !Prep@Prep Noun@Noun(WHERE);(1.6)
 Noun@Noun[FlagsPrep] NOUN -> Adj@Adj(NOUN) !Prep@Prep Noun@Noun(WHERE);(1.7) //sometimes adjective comes befoe preposition(with great care)
-Noun@Noun NOUN -> !Noun@Noun Adj@Adj; (.99)
 
 Verb@Verb VERB -> Verb@Verb(VERB) !Prep@Prep Noun@Noun(WHERE);
 
@@ -134,8 +139,8 @@ Sent (CaseAgree)[FlagsAppositive] NOUN -> !Noun@Noun Noun@Noun; (.01)  //Less co
 Verb@Verb(Intransitive) VERB -> !Verb@Verb Prep@Prep; (1.7) //Favor explicit use of syntax
 
 //Gentives can be used with adjactives to "desirous of learning"
-Adj@Adj(CaseGen) ADJECTIVE -> !Adj@Adj Noun@Noun ; (.05) //Less common?
-Adj@Adj(CaseGen) ADJECTIVE -> Noun@Noun !Adj@Adj ; (.1)
+Adj@Adj(CaseGen)[FlagsAdj] ADJECTIVE -> !Adj@Adj Noun@Noun ; (.05) //Less common?
+Adj@Adj(CaseGen)[FlagsAdj] ADJECTIVE -> Noun@Noun !Adj@Adj ; (.1)
 //
 
 
@@ -146,14 +151,14 @@ Sent(CaseAgree) CLAUSE -> Adj@Adj !Noun@Noun;(.1) //Favor lesser than explicit "
 // Quam is certified word for  comparsions
 Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> Noun@Noun(COMPARE) !"quam" Noun@Noun(COMPARE);(1.6) //Favor comparions
 Noun@Noun(CaseQuam)[FlagsAcc] NOUN -> ["tam"(WHERE) Noun@Noun](COMPARE) !"quam" Noun@Noun(COMPARE);(1.8) //Favor comparions
-Adj@Adj[FlagsTransfer] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION); (1.) //et ea means "and too XXXX"
+Adj@Adj[FlagsTransferAdj] ADJECTIVE -> !"et" "is"(CONJUNCTION) Adj@Adj(CONJUNCTION); (1.) //et ea means "and too XXXX"
 
 //End
 
 //
-Noun@Noun[FlagsTransfer] NOUN -> !"non"(CONJUNCTION) Noun@Noun(NOUN);
-Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB) Adverb@Adverb(ADVERB);(1.5)
-Verb@Verb[FlagsTransfer] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
+Noun@Noun[FlagsTransferNoun] NOUN -> !"non"(CONJUNCTION) Noun@Noun(NOUN);
+Verb@Verb[FlagsTransferVerb] VERB -> "non"(ADVERB) !Verb@Verb(VERB) Adverb@Adverb(ADVERB);(1.5)
+Verb@Verb[FlagsTransferVerb] VERB -> "non"(ADVERB) !Verb@Verb(VERB);
 //
 
 Sent(VerbAgree) CLAUSE -> Noun@Noun !Verb@Verb Noun@Noun; (1.1)

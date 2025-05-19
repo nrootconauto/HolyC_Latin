@@ -49,6 +49,7 @@ class AST {
   CTrie *word; //May be NULL,if NULL use base_expression
   I64 word_idx;
   AST *base_expression;
+  AST *parent_node; //For base_expression
   CDisplayNode *disp_node;
 //Private
   I64 start;
@@ -88,8 +89,10 @@ AST *ASTClone(AST *orig) {
   MemCpy(ret,orig,sizeof AST);
   ret->note=GCStrNew(ret->note);
   ret->disp_node=NULL;
-  if(ret->base_expression)
+  if(ret->base_expression) {
     ret->base_expression=ASTClone(ret->base_expression);
+    ret->base_expression->parent_node=ret;
+  }
   ret->nomitive=ASTSetClone(ret->nomitive);
   ret->accusative=ASTSetClone(ret->accusative);
   ret->dative=ASTSetClone(ret->dative);

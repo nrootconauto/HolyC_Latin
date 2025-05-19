@@ -96,6 +96,7 @@ I64 MemberNameToI64(U8 *str) {
   else
     return -1;
 }
+#define PART_MASK (VERB|NOUN|ADVERB|ADJECTIVE|CONJUNCTION|PREPOSITION)
 #define CASE_MASK (NOMITIVE|ACCUSATIVE|ABLATIVE|DATIVE|VOCATIVE)
 #define NUMBER_MASK (PLURAL)
 I64 FlagsSingle(I64 argc,AST **argv) {
@@ -201,13 +202,28 @@ I64 FlagsTransfer(I64 argc,AST **argv) {
   }
   return or;
 } 
-
+I64 FlagsTransferAdj(I64 argc,AST **argv) {
+  return (FlagsTransfer(argc,argv)&~PART_MASK)|ADJECTIVE;
+}
+I64 FlagsTransferNoun(I64 argc,AST **argv) {
+  return (FlagsTransfer(argc,argv)&~PART_MASK)|NOUN;
+}
+I64 FlagsTransferVerb(I64 argc,AST **argv) {
+  return (FlagsTransfer(argc,argv)&~PART_MASK)|VERB;
+}
+I64 FlagsTransferAdv(I64 argc,AST **argv) {
+  return (FlagsTransfer(argc,argv)&~PART_MASK)|ADVERB;
+}
 I64 FlagsTransferNoConj(I64 argc,I64 *argv) {
   return FlagsTransfer(argc,argv)&~(CONJUNCTION|CONJUNCTION2);
 }
 
 I64 FlagsTransferGen(I64 argc,I64 **argv) {
   return FlagsTransfer(argc,argv)&~GENITIVE;
+}
+I64 FlagsAdj(I64 argc,I64 **argv) {
+  I64 r=FlagsTransfer(argc,argv)&~ADJECTIVE;
+  return r;
 }
 
 I64 FlagsAcc(I64 argc,AST **argv) {
@@ -661,8 +677,11 @@ Bool RulePost(AST *ast,CRule *rule,I64 *args,I64 arg_cnt) {
         ret=FALSE;
       ast->error=error;
     }
-  if(rule->flags_fun)
+  if(rule->flags_fun) {
+     if(!HashFind(rule->flags_fun,Fs->hash_table,HTT_FUN))
+	"UNK:%s\n",rule->flags_fun;
     ast->flags=CallExtStr(rule->flags_fun,arg_cnt,args);
+  }
   return ret;
 }
 ASTSet *DoTerminals(U8 *_word,I64 idx,U8 *force) {
@@ -849,6 +868,7 @@ pass:
         ret=GCCAlloc(sizeof(AST));
         ret->flags=tmp->flags;
         ret->base_expression=ASTClone(tmp);
+        ret->base_expression->parent_node=ret;
         ret->args=NULL;
       } else
         ret=ASTClone(tmp);
