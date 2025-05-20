@@ -61,7 +61,7 @@ Noun@Gen(CaseAgree)[FlagsAdj] NOUN -> Adj@Adj !Noun@Gen;
 Noun@Gen(CaseAgree)[FlagsAdj] NOUN -> !Noun@Gen Adj@Adj;
 
 Noun@Gen(FlagsConj) NOUN-> Noun@Gen !Conj@Conj Noun@Gen;
-Noun@Gen(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Gen(NOUN) !Noun@Gen; (2.0)
+Noun@Gen(HasQueAtEndWithCase)[FlagsPluralQue] NOUN -> Noun@Gen(NOUN) !Noun@Gen; (2.0)
 
 
 
@@ -121,7 +121,7 @@ Sent CLAUSE -> [Prep@Prep Noun@Noun(WHERE)](WHERE)  !Sent;(1.9)
 //
 //  "((Walking by))...[he] saw a blind man"
 //  
-Sent CLAUSE -> !Partic@Partic Sent(WHERE); (.9)
+Sent CLAUSE -> !Partic@Partic Sent(WHERE); (.9)
 //End
 
 

@@ -361,7 +361,7 @@ AST *GetFirstConjPair(AST *ast,Bool adj=FALSE) {
   I64 min=I64_MAX,idx;
   AST*best=ast,*tmp;
   I64 extra=0;
-  if(adj)
+  if(adj&&0)
      extra=ADJECTIVE|NUMBER;
   if(!(ast->flags&(CONJUNCTION|CONJUNCTION2|extra)))
      return ast;
@@ -386,7 +386,7 @@ AST *GetLastConjPair(AST *ast,Bool adj=FALSE) {
   I64 extra=0;
   I64 max=I64_MIN,idx;
   AST*best=ast,*tmp;
-  if(adj)
+  if(adj&&0)
      extra=ADJECTIVE|NUMBER;
   if(!(ast->flags&(CONJUNCTION|CONJUNCTION2|extra)))
      return ast;
@@ -602,16 +602,16 @@ conj:
 	      break;
 	    bound_l++;
 	  }
-	  use_handle_x=tmp->bound_r;
-	  use_handle_y=tmp->handle_right_y;
+	  use_handle_x=tmp->handle_x;
+	  use_handle_y=tmp->handle_y;
 	  use_x=world->word_offsets[bound_l];
-	  use_y=use_handle_y;
+	  use_y=tmp->handle_right_y	;
         } else if(set->body[idx]->start==bound_r&&IsOfSomeType(ast,ast2)) {
 	  ast2=GetFirstConjPair(ast2,adj_style);
 	  if(GetDisplayNode(ast2))
 	    tmp=GetDisplayNode(ast2);
-	  use_handle_x=tmp->bound_l;
-	  use_handle_y=tmp->handle_left_y;
+	  use_handle_x=tmp->handle_x;
+	  use_handle_y=tmp->handle_y;
 //Dumb hack,make
 	  bound_r--;
 	  while(0<=bound_r<world->word_cnt) {
@@ -620,7 +620,7 @@ conj:
 	    bound_r--;
 	  }
 	  use_x=world->word_offsets[bound_r];
-	  use_y=use_handle_y;
+	  use_y=tmp->handle_left_y;
         } else 
 	  goto use_middle;
       } else {
@@ -1320,6 +1320,13 @@ DumpSentences("et tenebrae erant super faciem abyssi"); //: et Spiritus Dei fere
 //DumpSentences("Dixitque Deus : Fiat lux");
 //DumpSentences("Terra autem erat [inanis et vacua] ,et  tenebris erant super faciem abyssi");
 //
+DocClear;
+Del("/WWW/Tattvarth2.DD");
+DumpSentences(
+  FileRead("/WWW/TV2.DD"),"","/WWW/Tattvarth2.DD"
+);
+Break;PressAKey;
+
 Del("/WWW/Tattvarth1.DD");
 DumpSentences(
 	"ingeniculo [dominum  liberandi] qui fui [ [nexionis vastatorem] et [sciendam omnia]]." // 

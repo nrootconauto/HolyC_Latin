@@ -395,7 +395,21 @@ U0 WordString2FlagsRecur(U8 *word,U8*trans,I64Set *set,I64 depth,I64 flags,I64 
   if(!set) return;
   if(depth==set->cnt) {
     if(flags!=base) {
-DbgPrint("RADD:%s,%X,%X\n",word,flags,base);
+      DbgPrint("RADD:%s,%X,%X\n",word,flags,base);
+      if(flags&INFINITIVE)
+//Nroot doesnt like this
+        flags&=~VERB;
+//Only participles got declensions
+      if(flags&(PARTICIPLE|
+	    DECLENSION1|
+	    DECLENSION2|
+	    DECLENSION3|
+	    DECLENSION4|
+	    DECLENSION5
+	    ))
+//Nroot doesnt like this either
+        flags&=~VERB;
+
       DeclensionForWord(flags,TrieAdd(word,flags,trans));
     }
     return;
@@ -406,7 +420,7 @@ DbgPrint("RADD:%s,%X,%X\n",word,flags,base);
     idx=sub->cnt;
     while(--idx>=0) {
       flags=oflags|Nugget2Flags(sub->body[idx]);
-DbgPrint("R:%s\n",sub->body[idx]);
+      DbgPrint("R:%s\n",sub->body[idx]);
       WordString2FlagsRecur(word,trans,set,depth+1,flags,base);
     }
   } else
